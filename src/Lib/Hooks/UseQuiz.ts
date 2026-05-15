@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { currentQuizAtom, currentQuestionsAtom, isLoadingAtom } from '@/State/QuizAtoms';
 import { fetchQuiz } from '@/Lib/Api/Client';
+import type { Quiz, Question } from '@/Lib/Types';
 
 export function useQuiz(id: string) {
   const [quiz, setQuiz] = useAtom(currentQuizAtom);
@@ -25,5 +26,13 @@ export function useQuiz(id: string) {
     return () => { cancelled = true; };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { quiz, questions };
+  const patchQuiz = (data: Partial<Quiz>) => {
+    setQuiz(prev => prev ? { ...prev, ...data } : prev);
+  };
+
+  const patchQuestion = (questionId: string, data: Partial<Question>) => {
+    setQuestions(prev => prev.map(q => q.id === questionId ? { ...q, ...data } : q));
+  };
+
+  return { quiz, questions, patchQuiz, patchQuestion };
 }

@@ -1,4 +1,4 @@
-import type { Quiz, QuizWithQuestions, GenerateQuizRequest } from '../Types';
+import type { Quiz, Question, QuizWithQuestions, GenerateQuizRequest } from '../Types';
 
 const BASE = '/api';
 
@@ -46,6 +46,17 @@ export function updateQuiz(
 
 export function deleteQuiz(id: string): Promise<void> {
   return request(`/quizzes/${id}`, { method: 'DELETE' });
+}
+
+export function updateQuestion(
+  quizId: string,
+  questionId: string,
+  data: { questionText?: string; answerText?: string; options?: string[] },
+): Promise<Question> {
+  return request(`/quizzes/${quizId}/questions/${questionId}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  });
 }
 
 export function generateQuiz(data: GenerateQuizRequest): Promise<Quiz> {

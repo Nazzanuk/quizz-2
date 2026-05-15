@@ -71,6 +71,23 @@ export async function deleteQuiz(id: string): Promise<void> {
   await db.delete(quizzes).where(eq(quizzes.id, id));
 }
 
+export async function updateQuestion(
+  id: string,
+  data: { questionText?: string; answerText?: string; options?: string[] | null },
+): Promise<Question | undefined> {
+  const set: Partial<typeof questions.$inferInsert> = {};
+  if (data.questionText !== undefined) set.questionText = data.questionText;
+  if (data.answerText !== undefined) set.answerText = data.answerText;
+  if (data.options !== undefined) set.options = data.options ? JSON.stringify(data.options) : null;
+
+  const [row] = await db
+    .update(questions)
+    .set(set)
+    .where(eq(questions.id, id))
+    .returning();
+  return row ? parseQuestion(row) : undefined;
+}
+
 function parseQuestion(row: typeof questions.$inferSelect): Question {
   return {
     ...row,

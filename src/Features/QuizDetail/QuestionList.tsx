@@ -7,9 +7,12 @@ import styles from './QuestionList.module.css';
 
 interface QuestionListProps {
   questions: Question[];
+  quizId: string;
+  editing: boolean;
+  onUpdate: (questionId: string, data: Partial<Question>) => void;
 }
 
-export default function QuestionList({ questions }: QuestionListProps) {
+export default function QuestionList({ questions, quizId, editing, onUpdate }: QuestionListProps) {
   if (questions.length === 0) {
     return <p className={styles.empty}>No questions yet.</p>;
   }
@@ -18,7 +21,13 @@ export default function QuestionList({ questions }: QuestionListProps) {
     <div className={styles.list}>
       {questions.map((q, i) => (
         <ScrollReveal key={q.id} delay={i * 0.06}>
-          <QuestionItem question={q} index={i} />
+          <QuestionItem
+            question={q}
+            index={i}
+            quizId={quizId}
+            editing={editing}
+            onUpdate={onUpdate}
+          />
         </ScrollReveal>
       ))}
     </div>

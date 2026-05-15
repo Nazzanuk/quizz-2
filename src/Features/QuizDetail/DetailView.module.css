@@ -9,3 +9,65 @@
   justify-content: center;
   padding: 4rem 0;
 }
+
+.playLink {
+  display: block;
+  text-decoration: none;
+  margin-bottom: 2rem;
+}
+
+.questionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.questionsTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.count {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--sage);
+  padding: 0.1rem 0.55rem;
+  border-radius: 2rem;
+}
+
+.editToggle {
+  background: none;
+  border: 1.5px solid var(--text-dark);
+  color: var(--text-dark);
+  font-family: var(--font-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.3rem 1rem;
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.editToggle:hover {
+  background: var(--text-dark);
+  color: #fff;
+}
+
+.editToggleActive {
+  background: var(--text-dark);
+  color: #fff;
+}
+
+.deleteWrap {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  justify-content: center;
+}

@@ -1,5 +1,5 @@
 .header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 }
 
 .cover {
@@ -16,19 +16,32 @@
   opacity: 1;
 }
 
-.format {
-  font-size: 0.8rem;
-  font-weight: 500;
-  text-transform: lowercase;
-  color: var(--text-muted);
-  margin-bottom: 0.35rem;
-}
-
 .title {
   font-size: clamp(1.75rem, 5vw, 2.5rem);
   line-height: 1.1;
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
+}
+
+.titleInput {
+  width: 100%;
+  font-family: var(--font-primary);
+  font-size: clamp(1.5rem, 4.5vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-dark);
+  background: var(--sage);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.75rem;
+  margin-bottom: 0.5rem;
+  outline: none;
+  line-height: 1.2;
+  display: block;
+}
+
+.titleInput:focus {
+  box-shadow: 0 0 0 2px rgba(41, 37, 36, 0.15);
 }
 
 .desc {
@@ -38,7 +51,31 @@
   margin-bottom: 0.5rem;
 }
 
+.descInput {
+  width: 100%;
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  background: var(--sage);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  outline: none;
+  resize: vertical;
+  line-height: 1.5;
+  display: block;
+}
+
+.descInput:focus {
+  box-shadow: 0 0 0 2px rgba(41, 37, 36, 0.15);
+}
+
 .meta {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.saving {
+  font-style: italic;
 }
