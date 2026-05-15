@@ -1,0 +1,19 @@
+.card {
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  position: relative;
+  z-index: 1;
+}
+
+.sage {
+  background: var(--sage);
+}
+
+.lavender {
+  background: var(--lavender);
+}
+
+.bg {
+  background: var(--bg);
+}

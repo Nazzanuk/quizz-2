@@ -1,0 +1,31 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.input {
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--sage);
+  color: var(--text-dark);
+  outline: none;
+  transition: box-shadow 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  box-shadow: 0 0 0 2px var(--peach);
+}

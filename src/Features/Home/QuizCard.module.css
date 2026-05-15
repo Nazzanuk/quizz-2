@@ -1,0 +1,53 @@
+.link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.card {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.cover {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.content {
+  min-width: 0;
+}
+
+.format {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: lowercase;
+  color: var(--text-muted);
+  margin-bottom: 0.2rem;
+}
+
+.title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
+}

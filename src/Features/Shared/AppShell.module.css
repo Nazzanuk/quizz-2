@@ -1,0 +1,16 @@
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.main {
+  flex: 1;
+  padding: 1.5rem var(--content-pad);
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  position: relative;
+  z-index: 1;
+}

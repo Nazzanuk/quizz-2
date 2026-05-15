@@ -1,0 +1,34 @@
+.content {
+  position: relative;
+  z-index: 1;
+  padding-top: 2rem;
+}
+
+.heading {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  margin-bottom: 2rem;
+}
+
+.accent {
+  font-family: var(--font-accent);
+  font-size: 1.3em;
+  display: inline-block;
+  transform: rotate(-1deg);
+  line-height: 1;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.error {
+  font-size: 0.9rem;
+  color: #c0392b;
+  padding: 0.75rem 1rem;
+  background: rgba(192, 57, 43, 0.08);
+  border-radius: var(--radius-sm);
+}

@@ -1,0 +1,48 @@
+.container {
+  position: fixed;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: calc(100% - 3rem);
+  max-width: 420px;
+}
+
+.toast {
+  padding: 0.85rem 1.25rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow-md);
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.success {
+  background: var(--sage);
+  color: var(--text-dark);
+}
+
+.error {
+  background: var(--peach);
+  color: var(--text-dark);
+}
+
+.info {
+  background: var(--lavender);
+  color: var(--text-dark);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

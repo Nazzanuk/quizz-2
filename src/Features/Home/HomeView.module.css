@@ -1,0 +1,33 @@
+.hero {
+  position: relative;
+  padding-top: 3rem;
+  padding-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.heading {
+  font-size: clamp(2.5rem, 7vw, 4rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.accent {
+  font-family: var(--font-accent);
+  font-size: 1.3em;
+  display: inline-block;
+  transform: rotate(-1deg);
+  line-height: 1;
+}
+
+.list {
+  position: relative;
+  z-index: 1;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 0;
+}

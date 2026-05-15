@@ -1,0 +1,11 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.playLink {
+  display: block;
+  text-decoration: none;
+}

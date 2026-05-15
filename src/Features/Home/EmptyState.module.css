@@ -1,0 +1,19 @@
+.card {
+  text-align: center;
+  padding: 3rem 2rem;
+}
+
+.heading {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1.25rem;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.body {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
