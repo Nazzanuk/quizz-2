@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { generateQuiz } from '@/Lib/Ai/Gemini';
 import { generateCoverImage, generateQuestionImage } from '@/Lib/Ai/ImageGen';
-import { insertQuiz, insertQuestions, updateQuiz, updateQuestionImage } from '@/Lib/Db/Queries';
+import {
+  insertQuiz,
+  insertQuestions,
+  updateQuiz,
+  updateQuestionImage,
+  updateQuestionOptionImages,
+} from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
 
@@ -47,6 +53,10 @@ export async function POST(req: Request) {
     questionText: q.questionText,
     answerText: q.answerText,
     options: q.options,
+    // Reserve slots for option images so the UI knows to render an image grid
+    optionImages: q.optionImageDescriptions?.some(d => d)
+      ? (q.options?.map(() => null) ?? null)
+      : null,
     imageUrl: null as string | null,
     format: 'mcq' as const,
     order: i,
@@ -54,18 +64,30 @@ export async function POST(req: Request) {
 
   await insertQuestions(questionRows);
 
-  // Fire all image generation in background — doesn't block the response
+  // All image generation is fire-and-forget — doesn't block the response
   const imageTopic = topic ?? generated.title;
   generateCoverImage(imageTopic)
     .then((url) => updateQuiz(quizId, { coverImageUrl: url }))
     .catch(() => {});
 
-  questionRows.forEach((row, i) => {
-    const desc = generated.questions[i].imageDescription;
-    if (!desc) return;
-    generateQuestionImage(desc)
-      .then((url) => updateQuestionImage(row.id, url))
-      .catch(() => {});
+  generated.questions.forEach((q, i) => {
+    const row = questionRows[i];
+
+    if (q.imageDescription) {
+      generateQuestionImage(q.imageDescription)
+        .then((url) => updateQuestionImage(row.id, url))
+        .catch(() => {});
+    }
+
+    if (q.optionImageDescriptions?.some(d => d)) {
+      Promise.all(
+        q.optionImageDescriptions.map((desc) =>
+          desc ? generateQuestionImage(desc).catch(() => null) : null,
+        ),
+      )
+        .then((urls) => updateQuestionOptionImages(row.id, urls))
+        .catch(() => {});
+    }
   });
 
   return NextResponse.json(quiz, { status: 201 });

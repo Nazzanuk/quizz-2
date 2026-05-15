@@ -28,6 +28,11 @@ const responseSchema: Schema = {
             type: SchemaType.STRING,
             nullable: true,
           },
+          optionImageDescriptions: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING, nullable: true },
+            nullable: true,
+          },
         },
         required: ['questionText', 'answerText'],
       },
@@ -44,6 +49,7 @@ export interface GeneratedQuiz {
     answerText: string;
     options: string[] | null;
     imageDescription: string | null;
+    optionImageDescriptions: (string | null)[] | null;
   }[];
 }
 
@@ -84,7 +90,8 @@ function buildPrompt(opts: {
     source,
     formatInstructions,
     'Generate a short, descriptive title and a one-sentence description.',
-    'For each question, set imageDescription to a concise visual description (e.g. "photo of the Eiffel Tower at dusk") ONLY when an image would genuinely help answer the question — such as identifying a landmark, artwork, flag, species, map location, or other visual subject. Set imageDescription to null for all other questions.',
+    'For each question, set imageDescription to a concise visual description ONLY when an image of the subject would genuinely help answer the question (e.g. a landmark, artwork, flag, species, map location). Set to null otherwise.',
+    'For MCQ questions where the answer options are visual things (flags, landmarks, species, artworks, people, etc.), set optionImageDescriptions to an array of 4 concise image descriptions — one per option, in the same order as options. Each entry describes what to show for that option. Set optionImageDescriptions to null for questions where text options suffice.',
     'Return valid JSON matching the schema.',
   ].join('\n\n');
 }

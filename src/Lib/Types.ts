@@ -24,6 +24,7 @@ export interface Question {
   questionText: string;
   answerText: string;
   options: string[] | null;
+  optionImages: (string | null)[] | null;
   imageUrl: string | null;
   format: QuizFormat;
   order: number;

@@ -114,3 +114,24 @@
 .cancelBtn:hover {
   color: var(--text-dark);
 }
+
+.optionThumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.optionThumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.optionThumbSkeleton {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 0.5rem;
+  background: rgba(0, 0, 0, 0.06);
+}

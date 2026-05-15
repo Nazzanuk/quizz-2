@@ -43,14 +43,26 @@ export async function insertQuiz(data: {
   return row as Quiz;
 }
 
-export async function insertQuestions(
-  items: (Omit<Question, 'options'> & { options?: string[] | null })[],
-): Promise<void> {
+type InsertQuestion = {
+  id: string;
+  quizId: string;
+  questionText: string;
+  answerText: string;
+  options?: string[] | null;
+  optionImages?: (string | null)[] | null;
+  imageUrl?: string | null;
+  format: QuizFormat;
+  order: number;
+};
+
+export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
   if (items.length === 0) return;
   await db.insert(questions).values(
     items.map((q) => ({
       ...q,
       options: q.options ? JSON.stringify(q.options) : null,
+      optionImages: q.optionImages ? JSON.stringify(q.optionImages) : null,
+      imageUrl: q.imageUrl ?? null,
     })),
   );
 }
@@ -95,10 +107,21 @@ export async function updateQuestionImage(
   await db.update(questions).set({ imageUrl }).where(eq(questions.id, id));
 }
 
+export async function updateQuestionOptionImages(
+  id: string,
+  optionImages: (string | null)[],
+): Promise<void> {
+  await db
+    .update(questions)
+    .set({ optionImages: JSON.stringify(optionImages) })
+    .where(eq(questions.id, id));
+}
+
 function parseQuestion(row: typeof questions.$inferSelect): Question {
   return {
     ...row,
     options: row.options ? JSON.parse(row.options) : null,
+    optionImages: row.optionImages ? JSON.parse(row.optionImages) : null,
     imageUrl: row.imageUrl ?? null,
   } as Question;
 }

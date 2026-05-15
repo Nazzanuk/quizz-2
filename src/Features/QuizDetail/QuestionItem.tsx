@@ -117,6 +117,23 @@ export default function QuestionItem({
       </div>
       <p className={styles.text}>{question.questionText}</p>
       <p className={styles.answer}>{question.answerText}</p>
+      {question.optionImages && (
+        <div className={styles.optionThumbs}>
+          {question.optionImages.map((url, i) =>
+            url ? (
+              <img
+                key={i}
+                src={url}
+                alt={question.options?.[i] ?? ''}
+                className={styles.optionThumb}
+                title={question.options?.[i]}
+              />
+            ) : (
+              <div key={i} className={styles.optionThumbSkeleton} />
+            ),
+          )}
+        </div>
+      )}
     </Card>
   );
 }
