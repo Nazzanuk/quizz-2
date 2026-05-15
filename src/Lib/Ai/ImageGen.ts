@@ -21,8 +21,8 @@ export async function generateCoverImage(topic: string): Promise<string> {
     },
   });
 
-  const result = output as string[];
+  const result = output as unknown[];
   if (!result?.[0]) throw new Error('No image URL in response');
 
-  return result[0];
+  return String(result[0]);
 }
