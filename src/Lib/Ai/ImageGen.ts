@@ -11,19 +11,18 @@ export async function generateCoverImage(topic: string): Promise<string> {
     'No text, no letters, no words. Abstract and calm.',
   ].join(' ');
 
-  const output = await replicate.run('openai/gpt-image-1', {
+  const output = await replicate.run('openai/gpt-image-2', {
     input: {
       prompt,
-      size: '1024x1024',
+      aspect_ratio: '1:1',
       quality: 'low',
-      n: 1,
+      number_of_images: 1,
+      output_format: 'webp',
     },
   });
 
-  const result = output as { url: string }[];
-  if (!result?.[0]?.url) {
-    throw new Error('No image URL in response');
-  }
+  const result = output as string[];
+  if (!result?.[0]) throw new Error('No image URL in response');
 
-  return result[0].url;
+  return result[0];
 }
