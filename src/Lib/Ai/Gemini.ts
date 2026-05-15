@@ -49,7 +49,7 @@ export async function generateQuiz(opts: {
   count: number;
 }): Promise<GeneratedQuiz> {
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash-preview-05-20',
+    model: 'gemini-2.5-flash',
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema,
