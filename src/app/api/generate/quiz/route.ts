@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateQuiz } from '@/Lib/Ai/Gemini';
-import { insertQuiz, insertQuestions } from '@/Lib/Db/Queries';
+import { generateCoverImage } from '@/Lib/Ai/ImageGen';
+import { insertQuiz, insertQuestions, updateQuiz } from '@/Lib/Db/Queries';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
 
 export async function POST(req: Request) {
@@ -48,6 +49,12 @@ export async function POST(req: Request) {
       order: i,
     })),
   );
+
+  // Fire image gen in background — doesn't block the response
+  const imageTopic = topic ?? generated.title;
+  generateCoverImage(imageTopic)
+    .then((url) => updateQuiz(quizId, { coverImageUrl: url }))
+    .catch(() => {});
 
   return NextResponse.json(quiz, { status: 201 });
 }

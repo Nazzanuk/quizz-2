@@ -1,7 +1,6 @@
 'use client';
 
 import type { Quiz } from '@/Lib/Types';
-import { FORMAT_LABELS } from '@/Lib/Constants';
 import { formatDate } from '@/Lib/Utils';
 import styles from './QuizHeader.module.css';
 
@@ -15,7 +14,6 @@ export default function QuizHeader({ quiz }: QuizHeaderProps) {
       {quiz.coverImageUrl && (
         <img src={quiz.coverImageUrl} alt="" className={styles.cover} />
       )}
-      <p className={styles.format}>{FORMAT_LABELS[quiz.format]}</p>
       <h1 className={styles.title}>{quiz.title}</h1>
       {quiz.description && (
         <p className={styles.desc}>{quiz.description}</p>
