@@ -83,12 +83,13 @@ export default function PlayView({ quizId }: PlayViewProps) {
       <div className={styles.content}>
         <PlayFormatSwitcher />
         <PlayProgress current={idx} total={questions.length} />
-        <FormatRenderer
-          key={`${current.id}-${format}`}
-          question={current}
-          format={format}
-          onAnswer={handleAnswer}
-        />
+        <div className={styles.questionWrap} key={`${current.id}-${format}`}>
+          <FormatRenderer
+            question={current}
+            format={format}
+            onAnswer={handleAnswer}
+          />
+        </div>
       </div>
     </AppShell>
   );

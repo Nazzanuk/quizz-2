@@ -12,8 +12,14 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.link:hover .card {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
 .card:active {
-  transform: scale(0.98);
+  transform: scale(0.98) !important;
+  box-shadow: var(--shadow) !important;
 }
 
 .cover {

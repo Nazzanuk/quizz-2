@@ -8,6 +8,12 @@
   object-fit: cover;
   border-radius: var(--radius-md);
   margin-bottom: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.coverLoaded {
+  opacity: 1;
 }
 
 .format {

@@ -27,17 +27,23 @@
   background: var(--sage);
   color: var(--text-dark);
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease;
+  transition: transform 0.15s ease, background 0.2s ease, opacity 0.25s ease;
 }
 
 .btn:active:not(:disabled) {
   transform: scale(0.97);
 }
 
+.btn:disabled:not(.correct):not(.wrong) {
+  opacity: 0.45;
+}
+
 .correct {
   background: #c6f0c6;
+  animation: correctPop 0.35s ease-out both;
 }
 
 .wrong {
   background: #f5c6c6;
+  animation: shake 0.4s ease-out both;
 }
