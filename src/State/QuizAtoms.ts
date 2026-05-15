@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { Quiz, Question, QuizFormat } from '@/Lib/Types';
+import type { Quiz, Question } from '@/Lib/Types';
 
 export const quizListAtom = atom<Quiz[]>([]);
 export const currentQuizAtom = atom<Quiz | null>(null);
@@ -8,7 +8,6 @@ export const isLoadingAtom = atom(false);
 
 export const createTopicAtom = atom('');
 export const createMaterialAtom = atom('');
-export const createFormatAtom = atom<QuizFormat>('mcq');
 
 export const sortedQuizListAtom = atom((get) => {
   const list = get(quizListAtom);

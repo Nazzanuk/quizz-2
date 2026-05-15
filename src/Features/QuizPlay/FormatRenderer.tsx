@@ -1,6 +1,6 @@
 'use client';
 
-import type { Question } from '@/Lib/Types';
+import type { Question, QuizFormat } from '@/Lib/Types';
 import MultipleChoice from './Formats/MultipleChoice';
 import TrueFalse from './Formats/TrueFalse';
 import FillBlank from './Formats/FillBlank';
@@ -9,16 +9,12 @@ import Jeopardy from './Formats/Jeopardy';
 
 interface FormatRendererProps {
   question: Question;
+  format: QuizFormat;
   onAnswer: (correct: boolean) => void;
 }
 
-export default function FormatRenderer({
-  question,
-  onAnswer,
-}: FormatRendererProps) {
-  switch (question.format) {
-    case 'mcq':
-      return <MultipleChoice question={question} onAnswer={onAnswer} />;
+export default function FormatRenderer({ question, format, onAnswer }: FormatRendererProps) {
+  switch (format) {
     case 'truefalse':
       return <TrueFalse question={question} onAnswer={onAnswer} />;
     case 'fillblank':

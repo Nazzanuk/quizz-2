@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { generateQuiz } from '@/Lib/Ai/Gemini';
 import { insertQuiz, insertQuestions } from '@/Lib/Db/Queries';
-import type { QuizFormat } from '@/Lib/Types';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const { topic, material, format, count } = body as {
+  const { topic, material, count } = body as {
     topic?: string;
     material?: string;
-    format: QuizFormat;
     count?: number;
   };
 
@@ -20,17 +18,10 @@ export async function POST(req: Request) {
     );
   }
 
-  if (!format) {
-    return NextResponse.json(
-      { error: 'Format is required' },
-      { status: 400 },
-    );
-  }
-
   const generated = await generateQuiz({
     topic,
     material,
-    format,
+    format: 'mcq',
     count: count ?? DEFAULT_QUESTION_COUNT,
   });
 
@@ -42,7 +33,7 @@ export async function POST(req: Request) {
     description: generated.description,
     topic: topic ?? undefined,
     sourceMaterial: material ?? undefined,
-    format,
+    format: 'mcq',
     questionCount: generated.questions.length,
   });
 
@@ -53,7 +44,7 @@ export async function POST(req: Request) {
       questionText: q.questionText,
       answerText: q.answerText,
       options: q.options,
-      format,
+      format: 'mcq' as const,
       order: i,
     })),
   );

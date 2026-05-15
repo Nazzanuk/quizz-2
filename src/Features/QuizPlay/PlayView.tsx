@@ -9,11 +9,13 @@ import {
   showResultAtom,
   scoreAtom,
   resetPlayAtom,
+  playFormatAtom,
 } from '@/State/PlayAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
 import PlayProgress from './PlayProgress';
+import PlayFormatSwitcher from './PlayFormatSwitcher';
 import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
 import styles from './PlayView.module.css';
@@ -28,6 +30,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const [answers, setAnswers] = useAtom(userAnswersAtom);
   const [showResult, setShowResult] = useAtom(showResultAtom);
   const score = useAtomValue(scoreAtom);
+  const format = useAtomValue(playFormatAtom);
   const reset = useSetAtom(resetPlayAtom);
 
   const handleAnswer = useCallback(
@@ -78,10 +81,12 @@ export default function PlayView({ quizId }: PlayViewProps) {
     <AppShell>
       <BlobField />
       <div className={styles.content}>
+        <PlayFormatSwitcher />
         <PlayProgress current={idx} total={questions.length} />
         <FormatRenderer
-          key={current.id}
+          key={`${current.id}-${format}`}
           question={current}
+          format={format}
           onAnswer={handleAnswer}
         />
       </div>
