@@ -88,9 +88,17 @@ export async function updateQuestion(
   return row ? parseQuestion(row) : undefined;
 }
 
+export async function updateQuestionImage(
+  id: string,
+  imageUrl: string,
+): Promise<void> {
+  await db.update(questions).set({ imageUrl }).where(eq(questions.id, id));
+}
+
 function parseQuestion(row: typeof questions.$inferSelect): Question {
   return {
     ...row,
     options: row.options ? JSON.parse(row.options) : null,
+    imageUrl: row.imageUrl ?? null,
   } as Question;
 }

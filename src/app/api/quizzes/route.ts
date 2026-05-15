@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { listQuizzes, insertQuiz } from '@/Lib/Db/Queries';
+import { runMigrations } from '@/Lib/Db/Migrate';
 
 export async function GET() {
+  await runMigrations();
   const list = await listQuizzes();
   return NextResponse.json(list);
 }

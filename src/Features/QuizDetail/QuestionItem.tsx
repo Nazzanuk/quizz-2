@@ -98,6 +98,9 @@ export default function QuestionItem({
 
   return (
     <Card color={color} className={styles.card}>
+      {question.imageUrl && (
+        <img src={question.imageUrl} alt="" className={styles.questionImg} />
+      )}
       <div className={styles.cardTop}>
         <p className={styles.number}>Q{index + 1}</p>
         {editing && (

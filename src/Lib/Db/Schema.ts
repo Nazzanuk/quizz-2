@@ -21,6 +21,7 @@ export const questions = sqliteTable('questions', {
   questionText: text('question_text').notNull(),
   answerText: text('answer_text').notNull(),
   options: text('options'),
+  imageUrl: text('image_url'),
   format: text('format').notNull(),
   order: integer('order').notNull(),
 });

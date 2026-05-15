@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { generateQuiz } from '@/Lib/Ai/Gemini';
-import { generateCoverImage } from '@/Lib/Ai/ImageGen';
-import { insertQuiz, insertQuestions, updateQuiz } from '@/Lib/Db/Queries';
+import { generateCoverImage, generateQuestionImage } from '@/Lib/Ai/ImageGen';
+import { insertQuiz, insertQuestions, updateQuiz, updateQuestionImage } from '@/Lib/Db/Queries';
+import { runMigrations } from '@/Lib/Db/Migrate';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
 
 export async function POST(req: Request) {
+  await runMigrations();
+
   const body = await req.json();
   const { topic, material, count } = body as {
     topic?: string;
@@ -38,23 +41,32 @@ export async function POST(req: Request) {
     questionCount: generated.questions.length,
   });
 
-  await insertQuestions(
-    generated.questions.map((q, i) => ({
-      id: crypto.randomUUID(),
-      quizId,
-      questionText: q.questionText,
-      answerText: q.answerText,
-      options: q.options,
-      format: 'mcq' as const,
-      order: i,
-    })),
-  );
+  const questionRows = generated.questions.map((q, i) => ({
+    id: crypto.randomUUID(),
+    quizId,
+    questionText: q.questionText,
+    answerText: q.answerText,
+    options: q.options,
+    imageUrl: null as string | null,
+    format: 'mcq' as const,
+    order: i,
+  }));
 
-  // Fire image gen in background — doesn't block the response
+  await insertQuestions(questionRows);
+
+  // Fire all image generation in background — doesn't block the response
   const imageTopic = topic ?? generated.title;
   generateCoverImage(imageTopic)
     .then((url) => updateQuiz(quizId, { coverImageUrl: url }))
     .catch(() => {});
+
+  questionRows.forEach((row, i) => {
+    const desc = generated.questions[i].imageDescription;
+    if (!desc) return;
+    generateQuestionImage(desc)
+      .then((url) => updateQuestionImage(row.id, url))
+      .catch(() => {});
+  });
 
   return NextResponse.json(quiz, { status: 201 });
 }

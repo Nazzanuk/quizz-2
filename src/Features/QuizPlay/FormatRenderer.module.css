@@ -1,0 +1,18 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.questionImg {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.imgLoaded {
+  opacity: 1;
+}

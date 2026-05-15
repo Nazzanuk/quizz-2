@@ -24,6 +24,10 @@ const responseSchema: Schema = {
             items: { type: SchemaType.STRING },
             nullable: true,
           },
+          imageDescription: {
+            type: SchemaType.STRING,
+            nullable: true,
+          },
         },
         required: ['questionText', 'answerText'],
       },
@@ -39,6 +43,7 @@ export interface GeneratedQuiz {
     questionText: string;
     answerText: string;
     options: string[] | null;
+    imageDescription: string | null;
   }[];
 }
 
@@ -79,6 +84,7 @@ function buildPrompt(opts: {
     source,
     formatInstructions,
     'Generate a short, descriptive title and a one-sentence description.',
+    'For each question, set imageDescription to a concise visual description (e.g. "photo of the Eiffel Tower at dusk") ONLY when an image would genuinely help answer the question — such as identifying a landmark, artwork, flag, species, map location, or other visual subject. Set imageDescription to null for all other questions.',
     'Return valid JSON matching the schema.',
   ].join('\n\n');
 }
