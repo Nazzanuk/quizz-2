@@ -40,6 +40,9 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
   if (hasImages) {
     return (
       <div className={styles.container}>
+        {question.imageUrl && (
+          <img src={question.imageUrl} alt="" className={styles.image} />
+        )}
         <h2 className={styles.question}>{question.questionText}</h2>
         <div className={styles.imageGrid}>
           {pairs.map(({ text, imageUrl }) => (
@@ -66,6 +69,9 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
 
   return (
     <div className={styles.container}>
+      {question.imageUrl && (
+        <img src={question.imageUrl} alt="" className={styles.image} />
+      )}
       <h2 className={styles.question}>{question.questionText}</h2>
       <div className={styles.options}>
         {pairs.map(({ text }) => (

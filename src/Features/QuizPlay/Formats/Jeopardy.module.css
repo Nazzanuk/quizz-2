@@ -6,7 +6,23 @@
 
 .answerCard {
   text-align: center;
-  padding: 2rem;
+  padding: 0;
+  overflow: hidden;
+}
+
+.answerCardWithImage {
+  /* no extra styles needed — image handles top area */
+}
+
+.image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.answerBody {
+  padding: 1.5rem 2rem;
 }
 
 .label {

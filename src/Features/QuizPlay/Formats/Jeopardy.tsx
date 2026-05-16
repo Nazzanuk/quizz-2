@@ -26,9 +26,14 @@ export default function Jeopardy({ question, onAnswer }: JeopardyProps) {
 
   return (
     <div className={styles.container}>
-      <Card color="lavender" className={styles.answerCard}>
-        <p className={styles.label}>The answer is:</p>
-        <h2 className={styles.answerText}>{question.questionText}</h2>
+      <Card color="lavender" className={`${styles.answerCard} ${question.imageUrl ? styles.answerCardWithImage : ''}`}>
+        {question.imageUrl && (
+          <img src={question.imageUrl} alt="" className={styles.image} />
+        )}
+        <div className={styles.answerBody}>
+          <p className={styles.label}>The answer is:</p>
+          <h2 className={styles.answerText}>{question.questionText}</h2>
+        </div>
       </Card>
 
       <p className={styles.prompt}>What is the question?</p>

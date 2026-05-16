@@ -16,11 +16,16 @@ export default function Flashcard({ question, onAnswer }: FlashcardProps) {
 
   return (
     <div className={styles.container}>
-      <Card color="sage" className={styles.card}>
-        <h2 className={styles.question}>{question.questionText}</h2>
-        {revealed && (
-          <p className={styles.answer}>{question.answerText}</p>
+      <Card color="sage" className={`${styles.card} ${question.imageUrl ? styles.cardWithImage : ''}`}>
+        {question.imageUrl && (
+          <img src={question.imageUrl} alt="" className={styles.image} />
         )}
+        <div className={styles.cardBody}>
+          <h2 className={styles.question}>{question.questionText}</h2>
+          {revealed && (
+            <p className={styles.answer}>{question.answerText}</p>
+          )}
+        </div>
       </Card>
 
       {!revealed ? (

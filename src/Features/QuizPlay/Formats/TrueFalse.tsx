@@ -33,6 +33,9 @@ export default function TrueFalse({ question, onAnswer }: TrueFalseProps) {
 
   return (
     <div className={styles.container}>
+      {question.imageUrl && (
+        <img src={question.imageUrl} alt="" className={styles.image} />
+      )}
       <h2 className={styles.question}>{question.questionText}</h2>
       <div className={styles.row}>
         <button
