@@ -9,20 +9,24 @@ import styles from './Jeopardy.module.css';
 
 interface JeopardyProps {
   question: Question;
+  allQuestions: Question[];
   onAnswer: (correct: boolean) => void;
 }
 
-export default function Jeopardy({ question, onAnswer }: JeopardyProps) {
+export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyProps) {
   const [selected, setSelected] = useState<string | null>(null);
-  const options = useMemo(
-    () => shuffleArray(question.options ?? []),
-    [question.id], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+
+  const options = useMemo(() => {
+    const distractors = shuffleArray(
+      allQuestions.filter((q) => q.id !== question.id).map((q) => q.questionText),
+    ).slice(0, 3);
+    return shuffleArray([question.questionText, ...distractors]);
+  }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSelect = (opt: string) => {
     if (selected) return;
     setSelected(opt);
-    setTimeout(() => onAnswer(opt === question.answerText), 800);
+    setTimeout(() => onAnswer(opt === question.questionText), 800);
   };
 
   return (
@@ -33,7 +37,7 @@ export default function Jeopardy({ question, onAnswer }: JeopardyProps) {
         )}
         <div className={styles.answerBody}>
           <p className={styles.label}>The answer is:</p>
-          <h2 className={styles.answerText}>{question.questionText}</h2>
+          <h2 className={styles.answerText}>{question.answerText}</h2>
         </div>
       </Card>
 
@@ -43,9 +47,9 @@ export default function Jeopardy({ question, onAnswer }: JeopardyProps) {
         {options.map((opt) => {
           let cls = styles.option;
           if (selected === opt) {
-            cls += opt === question.answerText
+            cls += opt === question.questionText
               ? ` ${styles.correct}` : ` ${styles.wrong}`;
-          } else if (selected && opt === question.answerText) {
+          } else if (selected && opt === question.questionText) {
             cls += ` ${styles.correct}`;
           }
           return (

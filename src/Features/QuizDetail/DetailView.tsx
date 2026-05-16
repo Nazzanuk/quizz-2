@@ -20,7 +20,7 @@ interface DetailViewProps {
 }
 
 export default function DetailView({ quizId }: DetailViewProps) {
-  const { quiz, questions, patchQuiz, patchQuestion } = useQuiz(quizId);
+  const { quiz, questions, patchQuiz, patchQuestion } = useQuiz(quizId, { poll: true });
   const [editing, setEditing] = useState(false);
   const router = useRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);

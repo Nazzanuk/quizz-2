@@ -7,16 +7,22 @@ import Jeopardy from './Formats/Jeopardy';
 
 interface FormatRendererProps {
   question: Question;
+  allQuestions: Question[];
   format: QuizFormat;
   onAnswer: (correct: boolean) => void;
 }
 
-export default function FormatRenderer({ question, format, onAnswer }: FormatRendererProps) {
+export default function FormatRenderer({
+  question,
+  allQuestions,
+  format,
+  onAnswer,
+}: FormatRendererProps) {
   switch (format) {
     case 'flashcard':
       return <Flashcard question={question} onAnswer={onAnswer} />;
     case 'jeopardy':
-      return <Jeopardy question={question} onAnswer={onAnswer} />;
+      return <Jeopardy question={question} allQuestions={allQuestions} onAnswer={onAnswer} />;
     default:
       return <MultipleChoice question={question} onAnswer={onAnswer} />;
   }

@@ -96,6 +96,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
         <div className={styles.questionWrap} key={`${current.id}-${format}`}>
           <FormatRenderer
             question={current}
+            allQuestions={questions}
             format={format}
             onAnswer={handleAnswer}
           />
