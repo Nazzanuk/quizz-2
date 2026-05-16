@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Quiz } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './QuizCard.module.css';
 
 interface QuizCardProps {
@@ -17,7 +18,7 @@ export default function QuizCard({ quiz, index }: QuizCardProps) {
   return (
     <Card color={color} className={styles.card}>
       {quiz.coverImageUrl && (
-        <img src={quiz.coverImageUrl} alt="" className={styles.cover} />
+        <SafeImage src={quiz.coverImageUrl} alt="" className={styles.cover} />
       )}
       <div className={styles.body}>
         <Link href={`/quiz/${quiz.id}`} className={styles.titleLink}>

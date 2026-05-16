@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import type { Question } from '@/Lib/Types';
 import { updateQuestion } from '@/Lib/Api/Client';
 import Card from '@/Features/Shared/Card';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './QuestionItem.module.css';
 
 interface QuestionItemProps {
@@ -99,7 +100,7 @@ export default function QuestionItem({
   return (
     <Card color={color} className={styles.card}>
       {question.imageUrl && (
-        <img src={question.imageUrl} alt="" className={styles.questionImg} />
+        <SafeImage src={question.imageUrl} alt="" className={styles.questionImg} />
       )}
       <div className={styles.cardTop}>
         <p className={styles.number}>Q{index + 1}</p>
@@ -121,16 +122,14 @@ export default function QuestionItem({
         <div className={styles.optionThumbs}>
           {question.optionImages.map((url, i) =>
             url ? (
-              <img
+              <SafeImage
                 key={i}
                 src={url}
                 alt={question.options?.[i] ?? ''}
                 className={styles.optionThumb}
                 title={question.options?.[i]}
               />
-            ) : (
-              <div key={i} className={styles.optionThumbSkeleton} />
-            ),
+            ) : null,
           )}
         </div>
       )}

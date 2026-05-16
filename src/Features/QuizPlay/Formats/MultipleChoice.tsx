@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { Question } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './MultipleChoice.module.css';
 
 interface MultipleChoiceProps {
@@ -13,7 +14,6 @@ interface MultipleChoiceProps {
 export default function MultipleChoice({ question, onAnswer }: MultipleChoiceProps) {
   const [selected, setSelected] = useState<string | null>(null);
 
-  // Keep option text and its image URL together so shuffle preserves the pairing
   const pairs = useMemo(() => {
     const raw = (question.options ?? []).map((text, i) => ({
       text,
@@ -22,7 +22,8 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
     return shuffleArray(raw);
   }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hasImages = question.optionImages != null;
+  // Only enter image mode when every slot has a URL — no partial or skeleton states
+  const hasImages = question.optionImages?.every((url) => url != null) ?? false;
 
   const handleSelect = (text: string) => {
     if (selected) return;
@@ -41,7 +42,7 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
     return (
       <div className={styles.container}>
         {question.imageUrl && (
-          <img src={question.imageUrl} alt="" className={styles.image} />
+          <SafeImage src={question.imageUrl} alt="" className={styles.image} />
         )}
         <h2 className={styles.question}>{question.questionText}</h2>
         <div className={styles.imageGrid}>
@@ -53,10 +54,8 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
               disabled={!!selected}
             >
               <div className={styles.imageWrap}>
-                {imageUrl ? (
-                  <img src={imageUrl} alt={text} className={styles.optionImg} />
-                ) : (
-                  <div className={styles.imgSkeleton} />
+                {imageUrl && (
+                  <SafeImage src={imageUrl} alt={text} className={styles.optionImg} />
                 )}
               </div>
               <span className={styles.imageLabel}>{text}</span>
@@ -70,7 +69,7 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
   return (
     <div className={styles.container}>
       {question.imageUrl && (
-        <img src={question.imageUrl} alt="" className={styles.image} />
+        <SafeImage src={question.imageUrl} alt="" className={styles.image} />
       )}
       <h2 className={styles.question}>{question.questionText}</h2>
       <div className={styles.options}>

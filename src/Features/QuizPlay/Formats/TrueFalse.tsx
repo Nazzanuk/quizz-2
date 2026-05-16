@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Question } from '@/Lib/Types';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './TrueFalse.module.css';
 
 interface TrueFalseProps {
@@ -34,7 +35,7 @@ export default function TrueFalse({ question, onAnswer }: TrueFalseProps) {
   return (
     <div className={styles.container}>
       {question.imageUrl && (
-        <img src={question.imageUrl} alt="" className={styles.image} />
+        <SafeImage src={question.imageUrl} alt="" className={styles.image} />
       )}
       <h2 className={styles.question}>{question.questionText}</h2>
       <div className={styles.row}>

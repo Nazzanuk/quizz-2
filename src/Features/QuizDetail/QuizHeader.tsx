@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { Quiz } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './QuizHeader.module.css';
 
 interface QuizHeaderProps {
@@ -34,7 +35,7 @@ export default function QuizHeader({ quiz, editing, onSave }: QuizHeaderProps) {
   return (
     <header className={styles.header}>
       {quiz.coverImageUrl && (
-        <img
+        <SafeImage
           src={quiz.coverImageUrl}
           alt=""
           className={`${styles.cover} ${imgLoaded ? styles.coverLoaded : ''}`}

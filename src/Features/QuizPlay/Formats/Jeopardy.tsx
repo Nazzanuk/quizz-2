@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import type { Question } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
+import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './Jeopardy.module.css';
 
 interface JeopardyProps {
@@ -28,7 +29,7 @@ export default function Jeopardy({ question, onAnswer }: JeopardyProps) {
     <div className={styles.container}>
       <Card color="lavender" className={`${styles.answerCard} ${question.imageUrl ? styles.answerCardWithImage : ''}`}>
         {question.imageUrl && (
-          <img src={question.imageUrl} alt="" className={styles.image} />
+          <SafeImage src={question.imageUrl} alt="" className={styles.image} />
         )}
         <div className={styles.answerBody}>
           <p className={styles.label}>The answer is:</p>

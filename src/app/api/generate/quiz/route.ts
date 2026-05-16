@@ -53,10 +53,7 @@ export async function POST(req: Request) {
     questionText: q.questionText,
     answerText: q.answerText,
     options: q.options,
-    // Reserve slots for option images so the UI knows to render an image grid
-    optionImages: q.optionImageDescriptions?.some(d => d)
-      ? (q.options?.map(() => null) ?? null)
-      : null,
+    optionImages: null as null, // written only after ALL option images succeed
     imageUrl: null as string | null,
     format: 'mcq' as const,
     order: i,
@@ -82,10 +79,15 @@ export async function POST(req: Request) {
     if (q.optionImageDescriptions?.some(d => d)) {
       Promise.all(
         q.optionImageDescriptions.map((desc) =>
-          desc ? generateQuestionImage(desc).catch(() => null) : null,
+          desc ? generateQuestionImage(desc).catch(() => null) : Promise.resolve(null),
         ),
       )
-        .then((urls) => updateQuestionOptionImages(row.id, urls))
+        .then((urls) => {
+          // Only store if every slot has a URL — partial sets cause broken image grids
+          if (urls.every((u) => u != null)) {
+            updateQuestionOptionImages(row.id, urls as string[]);
+          }
+        })
         .catch(() => {});
     }
   });
