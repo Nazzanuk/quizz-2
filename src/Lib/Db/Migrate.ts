@@ -6,6 +6,13 @@ let done = false;
 export async function runMigrations(): Promise<void> {
   if (done) return;
   done = true;
+
+  await db.run(sql`CREATE TABLE IF NOT EXISTS images (
+    id TEXT PRIMARY KEY,
+    data TEXT NOT NULL,
+    mime_type TEXT NOT NULL
+  )`);
+
   for (const stmt of [
     sql`ALTER TABLE questions ADD COLUMN image_url TEXT`,
     sql`ALTER TABLE questions ADD COLUMN option_images TEXT`,

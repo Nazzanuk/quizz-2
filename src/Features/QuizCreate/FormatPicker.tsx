@@ -1,7 +1,9 @@
 'use client';
 
 import type { QuizFormat } from '@/Lib/Types';
-import { ALL_FORMATS, FORMAT_LABELS } from '@/Lib/Constants';
+import { FORMAT_LABELS } from '@/Lib/Constants';
+
+const ALL_FORMATS: QuizFormat[] = ['mcq', 'flashcard', 'jeopardy'];
 import styles from './FormatPicker.module.css';
 
 interface FormatPickerProps {

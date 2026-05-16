@@ -1,6 +1,6 @@
 import { eq, desc } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions } from './Schema';
+import { quizzes, questions, images } from './Schema';
 import type { Quiz, Question, QuizFormat } from '../Types';
 import { nowISO } from '../Utils';
 
@@ -115,6 +115,15 @@ export async function updateQuestionOptionImages(
     .update(questions)
     .set({ optionImages: JSON.stringify(optionImages) })
     .where(eq(questions.id, id));
+}
+
+export async function insertImage(id: string, data: string, mimeType: string): Promise<void> {
+  await db.insert(images).values({ id, data, mimeType });
+}
+
+export async function getImage(id: string): Promise<{ data: string; mimeType: string } | null> {
+  const [row] = await db.select().from(images).where(eq(images.id, id));
+  return row ? { data: row.data, mimeType: row.mimeType } : null;
 }
 
 function parseQuestion(row: typeof questions.$inferSelect): Question {

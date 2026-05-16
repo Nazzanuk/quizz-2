@@ -98,8 +98,6 @@ function buildPrompt(opts: {
 
 const FORMAT_PROMPTS: Record<QuizFormat, string> = {
   mcq: 'Each question has exactly 4 options. The first option must be the correct answer. Include the correct answer in answerText.',
-  truefalse: 'Each question is a statement. answerText must be exactly "True" or "False". options should be ["True", "False"].',
-  fillblank: 'Each questionText contains a blank shown as "___". answerText is the word/phrase that fills the blank. options should be null.',
   flashcard: 'Each questionText is a concept or term. answerText is the explanation or definition. options should be null.',
   jeopardy: 'Each questionText is an answer/fact. answerText is the question it answers (phrased as "What is...?"). options should contain 3 distractor questions plus the correct one. The correct answerText must be first in options.',
 };

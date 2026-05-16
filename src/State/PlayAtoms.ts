@@ -21,7 +21,7 @@ export const scoreAtom = atom((get) => {
 });
 
 // Formats available for random assignment — fillblank removed (too hard to type)
-const PLAY_FORMATS: QuizFormat[] = ['mcq', 'flashcard'];
+const PLAY_FORMATS: QuizFormat[] = ['mcq', 'flashcard', 'jeopardy'];
 
 export const initPlayAtom = atom(null, (_get, set, questions: Question[]) => {
   const shuffled = shuffleArray([...questions]);

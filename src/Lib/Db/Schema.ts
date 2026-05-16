@@ -26,3 +26,9 @@ export const questions = sqliteTable('questions', {
   format: text('format').notNull(),
   order: integer('order').notNull(),
 });
+
+export const images = sqliteTable('images', {
+  id: text('id').primaryKey(),
+  data: text('data').notNull(),
+  mimeType: text('mime_type').notNull(),
+});

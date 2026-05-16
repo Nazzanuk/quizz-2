@@ -1,4 +1,5 @@
 import Replicate from 'replicate';
+import { insertImage } from '@/Lib/Db/Queries';
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
@@ -37,5 +38,15 @@ async function runImageModel(prompt: string, aspect_ratio: string): Promise<stri
   const result = output as unknown[];
   if (!result?.[0]) throw new Error('No image URL in response');
 
-  return String(result[0]);
+  const replicateUrl = String(result[0]);
+  const res = await fetch(replicateUrl);
+  if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
+
+  const buffer = await res.arrayBuffer();
+  const base64 = Buffer.from(buffer).toString('base64');
+  const mimeType = res.headers.get('content-type') ?? 'image/webp';
+
+  const id = crypto.randomUUID();
+  await insertImage(id, base64, mimeType);
+  return `/api/images/${id}`;
 }

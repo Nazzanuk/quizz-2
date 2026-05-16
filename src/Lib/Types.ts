@@ -1,7 +1,5 @@
 export type QuizFormat =
   | 'mcq'
-  | 'truefalse'
-  | 'fillblank'
   | 'flashcard'
   | 'jeopardy';
 
