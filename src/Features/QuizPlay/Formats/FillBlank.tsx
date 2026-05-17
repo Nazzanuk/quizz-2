@@ -1,52 +1,61 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
-import type { Question } from '@/Lib/Types';
+import { Fragment, useMemo } from 'react';
+import type { Question, QuizAnswerPhase } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
 import SafeImage from '@/Features/Shared/SafeImage';
-import { haptic } from '@/Features/Shared/Haptic';
-import { playSound, primeAudio } from '@/Features/Shared/Sound';
 import styles from './FillBlank.module.css';
 
 interface FillBlankProps {
   question: Question;
-  timedOut?: boolean;
-  onAnswerStart?: () => boolean;
-  onAnswer: (correct: boolean) => void;
+  answerPhase: QuizAnswerPhase;
+  pressedValue: string | null;
+  selectedValue: string | null;
+  locked: boolean;
+  onOptionPress: (value: string) => void;
+  onOptionCancelPress: (value: string) => void;
+  onOptionSelect: (value: string) => void;
 }
 
 export default function FillBlank({
   question,
-  timedOut = false,
-  onAnswerStart,
-  onAnswer,
+  answerPhase,
+  pressedValue,
+  selectedValue,
+  locked,
+  onOptionPress,
+  onOptionCancelPress,
+  onOptionSelect,
 }: FillBlankProps) {
-  const [selected, setSelected] = useState<string | null>(null);
-
   const options = useMemo(
     () => shuffleArray(question.options ?? []),
     [question.id], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const answered = timedOut || selected !== null;
-
-  const handleSelect = (text: string) => {
-    if (answered) return;
-    if (onAnswerStart && !onAnswerStart()) return;
-    primeAudio();
-    setSelected(text);
-    const correct = text === question.answerText;
-    playSound(correct ? 'correct' : 'wrong');
-    haptic(correct ? 'correct' : 'wrong');
-    setTimeout(() => onAnswer(correct), 800);
-  };
 
   const stateClass = (text: string) => {
-    if (timedOut) return text === question.answerText ? styles.correct : '';
-    if (!selected) return '';
-    if (selected === text) return text === question.answerText ? styles.correct : styles.wrong;
-    if (text === question.answerText) return styles.correct;
-    return '';
+    const isCorrect = text === question.answerText;
+    const isSelected = selectedValue === text;
+    return [
+      answerPhase === 'pressed' && pressedValue === text ? styles.pressed : '',
+      answerPhase === 'selected' && isSelected ? styles.selected : '',
+      answerPhase === 'selected' && selectedValue !== null && !isSelected ? styles.dimmed : '',
+      (answerPhase === 'revealed-correct' || answerPhase === 'timed-out') && isCorrect ? styles.correct : '',
+      answerPhase === 'revealed-wrong' && isSelected && !isCorrect ? styles.wrong : '',
+      answerPhase === 'revealed-wrong' && isCorrect ? styles.correct : '',
+      answerPhase === 'timed-out' && !isCorrect ? styles.dimmed : '',
+    ].join(' ');
+  };
+
+  const stateIcon = (text: string) => {
+    const isCorrect = text === question.answerText;
+    const isSelected = selectedValue === text;
+
+    if (answerPhase === 'revealed-correct' && isCorrect) return '✓';
+    if (answerPhase === 'revealed-wrong' && isSelected && !isCorrect) return '✕';
+    if (answerPhase === 'revealed-wrong' && isCorrect) return '✓';
+    if (answerPhase === 'timed-out' && isCorrect) return '✓';
+    return null;
   };
 
   return (
@@ -67,10 +76,18 @@ export default function FillBlank({
           <button
             key={text}
             className={`${styles.option} ${stateClass(text)}`}
-            onClick={() => handleSelect(text)}
-            disabled={answered}
+            onPointerDown={() => onOptionPress(text)}
+            onPointerLeave={() => onOptionCancelPress(text)}
+            onPointerCancel={() => onOptionCancelPress(text)}
+            onClick={() => onOptionSelect(text)}
+            disabled={locked}
           >
-            {text}
+            <span className={styles.optionInner}>
+              <span>{text}</span>
+              <span className={styles.stateBadge} aria-hidden="true">
+                {stateIcon(text)}
+              </span>
+            </span>
           </button>
         ))}
       </div>

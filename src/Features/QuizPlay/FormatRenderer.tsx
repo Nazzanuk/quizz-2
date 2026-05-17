@@ -1,6 +1,6 @@
 'use client';
 
-import type { Question, QuizFormat } from '@/Lib/Types';
+import type { Question, QuizAnswerPhase, QuizFormat } from '@/Lib/Types';
 import FillBlank from './Formats/FillBlank';
 import Jeopardy from './Formats/Jeopardy';
 import MultipleChoice from './Formats/MultipleChoice';
@@ -10,36 +10,52 @@ interface FormatRendererProps {
   question: Question;
   allQuestions: Question[];
   format: QuizFormat;
-  timedOut?: boolean;
-  onAnswerStart?: () => boolean;
-  onAnswer: (correct: boolean) => void;
+  answerPhase: QuizAnswerPhase;
+  pressedValue: string | null;
+  selectedValue: string | null;
+  locked: boolean;
+  onOptionPress: (value: string) => void;
+  onOptionCancelPress: (value: string) => void;
+  onOptionSelect: (value: string) => void;
 }
 
 export default function FormatRenderer({
   question,
   allQuestions,
   format,
-  timedOut = false,
-  onAnswerStart,
-  onAnswer,
+  answerPhase,
+  pressedValue,
+  selectedValue,
+  locked,
+  onOptionPress,
+  onOptionCancelPress,
+  onOptionSelect,
 }: FormatRendererProps) {
   switch (format) {
     case 'fill_blank':
       return (
         <FillBlank
           question={question}
-          timedOut={timedOut}
-          onAnswerStart={onAnswerStart}
-          onAnswer={onAnswer}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={locked}
+          onOptionPress={onOptionPress}
+          onOptionCancelPress={onOptionCancelPress}
+          onOptionSelect={onOptionSelect}
         />
       );
     case 'odd_one_out':
       return (
         <OddOneOut
           question={question}
-          timedOut={timedOut}
-          onAnswerStart={onAnswerStart}
-          onAnswer={onAnswer}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={locked}
+          onOptionPress={onOptionPress}
+          onOptionCancelPress={onOptionCancelPress}
+          onOptionSelect={onOptionSelect}
         />
       );
     case 'jeopardy':
@@ -47,18 +63,26 @@ export default function FormatRenderer({
         <Jeopardy
           question={question}
           allQuestions={allQuestions}
-          timedOut={timedOut}
-          onAnswerStart={onAnswerStart}
-          onAnswer={onAnswer}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={locked}
+          onOptionPress={onOptionPress}
+          onOptionCancelPress={onOptionCancelPress}
+          onOptionSelect={onOptionSelect}
         />
       );
     default:
       return (
         <MultipleChoice
           question={question}
-          timedOut={timedOut}
-          onAnswerStart={onAnswerStart}
-          onAnswer={onAnswer}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={locked}
+          onOptionPress={onOptionPress}
+          onOptionCancelPress={onOptionCancelPress}
+          onOptionSelect={onOptionSelect}
         />
       );
   }

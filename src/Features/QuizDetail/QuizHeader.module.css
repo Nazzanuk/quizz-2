@@ -1,15 +1,17 @@
 .header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .cover {
   width: 100%;
-  height: 180px;
+  height: 210px;
   object-fit: cover;
-  border-radius: var(--radius-md);
+  border-radius: calc(var(--radius-lg) - 0.4rem);
   margin-bottom: 1.25rem;
   opacity: 0;
   transition: opacity 0.5s ease;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid rgba(255, 255, 255, 0.82);
 }
 
 .coverLoaded {
@@ -34,10 +36,10 @@
 }
 
 .title {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
+  font-size: clamp(2rem, 6vw, 3rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  margin-bottom: 0.65rem;
 }
 
 .titleInput {
@@ -47,52 +49,82 @@
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--text-dark);
-  background: var(--sage);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 0.4rem 0.75rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.68)),
+    linear-gradient(145deg, rgba(223, 240, 222, 0.78), rgba(255, 248, 227, 0.48));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 1.2rem;
+  padding: 0.75rem 0.9rem;
   margin-bottom: 0.5rem;
   outline: none;
   line-height: 1.2;
   display: block;
+  box-shadow: var(--shadow), var(--shadow-inset);
 }
 
 .titleInput:focus {
-  box-shadow: 0 0 0 2px rgba(41, 37, 36, 0.15);
+  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
 }
 
 .desc {
-  font-size: 0.95rem;
+  max-width: 34rem;
+  font-size: 1rem;
   color: var(--text-muted);
   line-height: 1.5;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.9rem;
 }
 
 .descInput {
   width: 100%;
   font-family: var(--font-primary);
   font-size: 0.95rem;
-  color: var(--text-muted);
-  background: var(--sage);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 0.5rem 0.75rem;
+  color: var(--text-dark);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.68)),
+    linear-gradient(145deg, rgba(236, 231, 251, 0.78), rgba(255, 248, 227, 0.48));
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 1.2rem;
+  padding: 0.75rem 0.9rem;
   margin-bottom: 0.5rem;
   outline: none;
   resize: vertical;
   line-height: 1.5;
   display: block;
+  box-shadow: var(--shadow), var(--shadow-inset);
 }
 
 .descInput:focus {
-  box-shadow: 0 0 0 2px rgba(41, 37, 36, 0.15);
+  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 
 .meta {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--text-muted);
 }
 
 .saving {
   font-style: italic;
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.36rem 0.72rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow), var(--shadow-inset);
+  color: var(--text-dark);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }

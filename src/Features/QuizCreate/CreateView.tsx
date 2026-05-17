@@ -58,9 +58,14 @@ export default function CreateView() {
       <BlobField />
       <div className={styles.content}>
         <ScrollReveal>
+          <p className={styles.kicker}>Build a fresh round</p>
           <h1 className={styles.heading}>
             Create a <span className={styles.accent}>quiz</span>
           </h1>
+          <p className={styles.subhead}>
+            Start with a topic, your own study material, or both. We&apos;ll turn it into a
+            faster, punchier practice run.
+          </p>
         </ScrollReveal>
 
         <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
@@ -68,7 +73,7 @@ export default function CreateView() {
           <MaterialPaste value={material} onChange={setMaterial} />
           <CountPicker value={count} onChange={setCount} />
 
-          {error && <p className={styles.error}>{error}</p>}
+          {error && <p className={styles.error} role="alert">{error}</p>}
 
           <Button
             variant="primary"

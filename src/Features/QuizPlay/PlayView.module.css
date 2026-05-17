@@ -2,6 +2,9 @@
   position: relative;
   z-index: 1;
   padding-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .center {
@@ -11,15 +14,16 @@
 }
 
 .questionWrap {
-  animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideInRight 0.28s var(--ease-spring) both;
 }
 
 .retiredState {
   max-width: 32rem;
   padding: 2rem;
   border-radius: var(--radius-md);
-  background: var(--lavender);
-  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), var(--lavender));
+  box-shadow: var(--shadow-md), var(--shadow-inset);
+  border: 1px solid rgba(255, 255, 255, 0.7);
 }
 
 .retiredTitle {
@@ -39,8 +43,8 @@
   min-height: 52px;
   padding: 0 1.35rem;
   border-radius: 999px;
-  background: var(--peach);
+  background: linear-gradient(180deg, #ffc8b8 0%, var(--peach) 100%);
   color: var(--text-dark);
-  font-weight: 600;
-  box-shadow: var(--shadow);
+  font-weight: 700;
+  box-shadow: var(--shadow), var(--shadow-inset);
 }

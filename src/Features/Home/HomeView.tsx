@@ -23,12 +23,19 @@ export default function HomeView() {
       <BlobField />
       <section className={styles.hero}>
         <ScrollReveal>
+          <p className={styles.kicker}>Playful study sessions</p>
           <h1 className={styles.heading}>
             Your <span className={styles.accent}>quizzes</span>
           </h1>
-          <Link href="/quiz/new">
-            <Button variant="primary">Create a quiz</Button>
-          </Link>
+          <p className={styles.subhead}>
+            Build quick rounds from a topic or your own notes, then chase cleaner streaks in
+            short, high-energy sessions.
+          </p>
+          <div className={styles.actions}>
+            <Link href="/quiz/new">
+              <Button variant="primary">Create a quiz</Button>
+            </Link>
+          </div>
         </ScrollReveal>
       </section>
 

@@ -7,6 +7,28 @@ export const QUIZ_FORMATS = [
 
 export type QuizFormat = (typeof QUIZ_FORMATS)[number];
 
+export const QUIZ_ANSWER_PHASES = [
+  'idle',
+  'pressed',
+  'selected',
+  'revealed-correct',
+  'revealed-wrong',
+  'timed-out',
+] as const;
+
+export type QuizAnswerPhase = (typeof QUIZ_ANSWER_PHASES)[number];
+
+export const QUIZ_MILESTONES = [
+  'none',
+  'streak3',
+  'streak5',
+  'streak10',
+  'perfect',
+  'newBest',
+] as const;
+
+export type QuizMilestone = (typeof QUIZ_MILESTONES)[number];
+
 export function isQuizFormat(value: string): value is QuizFormat {
   return (QUIZ_FORMATS as readonly string[]).includes(value);
 }

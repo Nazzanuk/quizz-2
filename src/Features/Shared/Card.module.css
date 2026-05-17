@@ -1,20 +1,33 @@
 .card {
+  overflow: hidden;
   border-radius: var(--radius-md);
   padding: 2rem;
-  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: var(--shadow), var(--shadow-inset);
   position: relative;
   z-index: 1;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) ease,
+    border-color var(--motion-fast) ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 28%);
+  pointer-events: none;
 }
 
 .sage {
-  background: var(--sage);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), var(--sage));
 }
 
 .lavender {
-  background: var(--lavender);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), var(--lavender));
 }
 
 .bg {
-  background: var(--bg);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), var(--bg));
 }

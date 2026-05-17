@@ -1,28 +1,32 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { Question } from '@/Lib/Types';
+import { useMemo } from 'react';
+import type { Question, QuizAnswerPhase } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 import SafeImage from '@/Features/Shared/SafeImage';
-import { playSound, primeAudio } from '@/Features/Shared/Sound';
-import { haptic } from '@/Features/Shared/Haptic';
 import styles from './MultipleChoice.module.css';
 
 interface MultipleChoiceProps {
   question: Question;
-  timedOut?: boolean;
-  onAnswerStart?: () => boolean;
-  onAnswer: (correct: boolean) => void;
+  answerPhase: QuizAnswerPhase;
+  pressedValue: string | null;
+  selectedValue: string | null;
+  locked: boolean;
+  onOptionPress: (value: string) => void;
+  onOptionCancelPress: (value: string) => void;
+  onOptionSelect: (value: string) => void;
 }
 
 export default function MultipleChoice({
   question,
-  timedOut = false,
-  onAnswerStart,
-  onAnswer,
+  answerPhase,
+  pressedValue,
+  selectedValue,
+  locked,
+  onOptionPress,
+  onOptionCancelPress,
+  onOptionSelect,
 }: MultipleChoiceProps) {
-  const [selected, setSelected] = useState<string | null>(null);
-
   const pairs = useMemo(() => {
     const raw = (question.options ?? []).map((text, i) => ({
       text,
@@ -33,25 +37,36 @@ export default function MultipleChoice({
 
   // Only enter image mode when every slot has a URL — no partial or skeleton states
   const hasImages = question.optionImages?.every((url) => url != null) ?? false;
-  const answered = timedOut || selected !== null;
-
-  const handleSelect = (text: string) => {
-    if (answered) return;
-    if (onAnswerStart && !onAnswerStart()) return;
-    primeAudio();
-    setSelected(text);
-    const correct = text === question.answerText;
-    playSound(correct ? 'correct' : 'wrong');
-    haptic(correct ? 'correct' : 'wrong');
-    setTimeout(() => onAnswer(correct), 800);
-  };
 
   const stateClass = (text: string) => {
-    if (timedOut) return text === question.answerText ? styles.correct : '';
-    if (!selected) return '';
-    if (selected === text) return text === question.answerText ? styles.correct : styles.wrong;
-    if (text === question.answerText) return styles.correct;
-    return '';
+    const isCorrect = text === question.answerText;
+    const isSelected = selectedValue === text;
+    const isPressed = answerPhase === 'pressed' && pressedValue === text;
+    const isDimmed = selectedValue !== null && !isSelected && answerPhase === 'selected';
+    const isRevealPhase =
+      answerPhase === 'revealed-correct'
+      || answerPhase === 'revealed-wrong'
+      || answerPhase === 'timed-out';
+
+    return [
+      isPressed ? styles.pressed : '',
+      isSelected && answerPhase === 'selected' ? styles.selected : '',
+      isDimmed ? styles.dimmed : '',
+      isRevealPhase && isCorrect ? styles.correct : '',
+      answerPhase === 'revealed-wrong' && isSelected && !isCorrect ? styles.wrong : '',
+      answerPhase === 'timed-out' && !isCorrect ? styles.dimmed : '',
+    ].join(' ');
+  };
+
+  const stateIcon = (text: string) => {
+    const isCorrect = text === question.answerText;
+    const isSelected = selectedValue === text;
+
+    if (answerPhase === 'revealed-correct' && isCorrect) return '✓';
+    if (answerPhase === 'revealed-wrong' && isSelected && !isCorrect) return '✕';
+    if (answerPhase === 'revealed-wrong' && isCorrect) return '✓';
+    if (answerPhase === 'timed-out' && isCorrect) return '✓';
+    return null;
   };
 
   if (hasImages) {
@@ -66,9 +81,15 @@ export default function MultipleChoice({
             <button
               key={text}
               className={`${styles.imageOption} ${stateClass(text)}`}
-              onClick={() => handleSelect(text)}
-              disabled={answered}
+              onPointerDown={() => onOptionPress(text)}
+              onPointerLeave={() => onOptionCancelPress(text)}
+              onPointerCancel={() => onOptionCancelPress(text)}
+              onClick={() => onOptionSelect(text)}
+              disabled={locked}
             >
+              <span className={styles.imageBadge} aria-hidden="true">
+                {stateIcon(text)}
+              </span>
               <div className={styles.imageWrap}>
                 {imageUrl && (
                   <SafeImage src={imageUrl} alt={text} className={styles.optionImg} />
@@ -93,10 +114,18 @@ export default function MultipleChoice({
           <button
             key={text}
             className={`${styles.option} ${stateClass(text)}`}
-            onClick={() => handleSelect(text)}
-            disabled={answered}
+            onPointerDown={() => onOptionPress(text)}
+            onPointerLeave={() => onOptionCancelPress(text)}
+            onPointerCancel={() => onOptionCancelPress(text)}
+            onClick={() => onOptionSelect(text)}
+            disabled={locked}
           >
-            {text}
+            <span className={styles.optionInner}>
+              <span>{text}</span>
+              <span className={styles.stateBadge} aria-hidden="true">
+                {stateIcon(text)}
+              </span>
+            </span>
           </button>
         ))}
       </div>

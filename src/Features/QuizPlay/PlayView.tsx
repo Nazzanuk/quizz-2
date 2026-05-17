@@ -3,11 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import Link from 'next/link';
-import { PLAY_TIMER_SECONDS } from '@/Lib/Constants';
+import { PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
-import type { Question, QuizFormat } from '@/Lib/Types';
+import type { Question, QuizAnswerPhase, QuizFormat, QuizMilestone } from '@/Lib/Types';
 import { getResultsSummary, saveResult } from '@/Lib/Api/Client';
-import { playSound } from '@/Features/Shared/Sound';
+import { playSound, primeAudio } from '@/Features/Shared/Sound';
 import { haptic } from '@/Features/Shared/Haptic';
 import {
   currentIndexAtom,
@@ -42,12 +42,50 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
   const [previousBest, setPreviousBest] = useState<number | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [answerPhase, setAnswerPhase] = useState<QuizAnswerPhase>('idle');
+  const [milestone, setMilestone] = useState<QuizMilestone>('none');
+  const uiTimersRef = useRef<number[]>([]);
+  const milestoneTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     getResultsSummary(quizId)
       .then((s) => setPreviousBest(s.best))
       .catch(() => {});
   }, [quizId]);
+
+  const clearUiTimers = useCallback(() => {
+    uiTimersRef.current.forEach((id) => window.clearTimeout(id));
+    uiTimersRef.current = [];
+    if (milestoneTimerRef.current) {
+      window.clearTimeout(milestoneTimerRef.current);
+      milestoneTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearUiTimers, [clearUiTimers]);
+
+  const scheduleUi = useCallback((callback: () => void, delayMs: number) => {
+    const id = window.setTimeout(() => {
+      uiTimersRef.current = uiTimersRef.current.filter((value) => value !== id);
+      callback();
+    }, delayMs);
+    uiTimersRef.current.push(id);
+  }, []);
+
+  const resetRunState = useCallback(() => {
+    clearUiTimers();
+    setAnswerPhase('idle');
+    setMilestone('none');
+    setStreak(0);
+    setBestStreak(0);
+  }, [clearUiTimers]);
+
+  const startRun = useCallback((items: Question[]) => {
+    resetRunState();
+    initPlay(items);
+  }, [initPlay, resetRunState]);
 
   useEffect(() => {
     if (questions.length > 0 && questionOrder.length === 0) {
@@ -56,13 +94,36 @@ export default function PlayView({ quizId }: PlayViewProps) {
   }, [questions.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const commitAnswer = useCallback(
-    (correct: boolean) => {
+    (correct: boolean, phase: QuizAnswerPhase) => {
       const qId = questionOrder[idx];
       if (!qId) return;
+
+      setAnswerPhase(phase);
 
       const next = new Map(answers);
       next.set(qId, correct ? '__correct__' : '__wrong__');
       setAnswers(next);
+
+      const nextStreak = correct ? streak + 1 : 0;
+      const nextBestStreak = correct ? Math.max(bestStreak, nextStreak) : bestStreak;
+      const nextMilestone = correct ? (STREAK_MILESTONES[nextStreak] ?? 'none') : 'none';
+      const revealHoldMs = phase === 'timed-out'
+        ? PLAY_TIMINGS.timeoutRevealHoldMs
+        : PLAY_TIMINGS.answerRevealHoldMs;
+
+      setStreak(nextStreak);
+      setBestStreak(nextBestStreak);
+
+      if (nextMilestone !== 'none') {
+        setMilestone(nextMilestone);
+        if (milestoneTimerRef.current) window.clearTimeout(milestoneTimerRef.current);
+        milestoneTimerRef.current = window.setTimeout(() => {
+          setMilestone('none');
+          milestoneTimerRef.current = null;
+        }, PLAY_TIMINGS.milestonePulseMs);
+      } else if (!correct) {
+        setMilestone('none');
+      }
 
       if (idx + 1 >= questionOrder.length) {
         const correctCount = [...next.values()].filter((v) => v === '__correct__').length;
@@ -72,16 +133,32 @@ export default function PlayView({ quizId }: PlayViewProps) {
         const pct = next.size > 0 ? Math.round((correctCount / next.size) * 100) : 0;
         const isNewBest = previousBest !== null && pct > previousBest;
 
-        window.setTimeout(() => {
+        scheduleUi(() => {
+          setAnswerPhase('idle');
           playSound(isNewBest ? 'newBest' : 'complete');
           haptic('success');
           setShowResult(true);
-        }, 400);
+        }, revealHoldMs);
       } else {
-        window.setTimeout(() => setIdx(idx + 1), 400);
+        scheduleUi(() => {
+          setAnswerPhase('idle');
+          setIdx(idx + 1);
+        }, revealHoldMs);
       }
     },
-    [answers, idx, previousBest, questionOrder, quizId, setAnswers, setIdx, setShowResult],
+    [
+      answers,
+      bestStreak,
+      idx,
+      previousBest,
+      questionOrder,
+      quizId,
+      scheduleUi,
+      setAnswers,
+      setIdx,
+      setShowResult,
+      streak,
+    ],
   );
 
   const hasPlayableQuestions = questions.some(isPlayableQuestion);
@@ -105,9 +182,10 @@ export default function PlayView({ quizId }: PlayViewProps) {
             total={score.total}
             quizId={quizId}
             previousBest={previousBest}
+            bestStreak={bestStreak}
             wrongCount={wrongQuestions.length}
-            onRetry={() => initPlay(questions)}
-            onPracticeWeak={wrongQuestions.length > 0 ? () => initPlay(wrongQuestions) : undefined}
+            onRetry={() => startRun(questions)}
+            onPracticeWeak={wrongQuestions.length > 0 ? () => startRun(wrongQuestions) : undefined}
           />
         </div>
       </AppShell>
@@ -143,12 +221,21 @@ export default function PlayView({ quizId }: PlayViewProps) {
     <AppShell>
       <BlobField />
       <div className={styles.content}>
-        <PlayProgress current={idx} total={questionOrder.length} />
+        <PlayProgress
+          current={idx}
+          total={questionOrder.length}
+          correct={score.correct}
+          streak={streak}
+          milestone={milestone}
+          answerPhase={answerPhase}
+        />
         <ActiveQuestion
           key={`${current.id}-${format}`}
           current={current}
           questions={questions}
           format={format}
+          answerPhase={answerPhase}
+          setAnswerPhase={setAnswerPhase}
           onAnswer={commitAnswer}
         />
       </div>
@@ -160,61 +247,86 @@ interface ActiveQuestionProps {
   current: Question;
   questions: Question[];
   format: QuizFormat;
-  onAnswer: (correct: boolean) => void;
+  answerPhase: QuizAnswerPhase;
+  setAnswerPhase: (phase: QuizAnswerPhase) => void;
+  onAnswer: (correct: boolean, phase: QuizAnswerPhase) => void;
 }
 
 function ActiveQuestion({
   current,
   questions,
   format,
+  answerPhase,
+  setAnswerPhase,
   onAnswer,
 }: ActiveQuestionProps) {
-  const [timedOut, setTimedOut] = useState(false);
   const [interactionLocked, setInteractionLocked] = useState(false);
-  const hasResolvedRef = useRef(false);
-  const timeoutIdsRef = useRef<number[]>([]);
+  const [pressedValue, setPressedValue] = useState<string | null>(null);
+  const [selectedValue, setSelectedValue] = useState<string | null>(null);
+  const transitionIdsRef = useRef<number[]>([]);
+  const correctValue = format === 'jeopardy' ? current.questionText : current.answerText;
 
   useEffect(() => () => {
-    timeoutIdsRef.current.forEach((id) => window.clearTimeout(id));
+    transitionIdsRef.current.forEach((id) => window.clearTimeout(id));
   }, []);
 
   const schedule = useCallback((callback: () => void, delayMs: number) => {
     const id = window.setTimeout(() => {
-      timeoutIdsRef.current = timeoutIdsRef.current.filter((value) => value !== id);
+      transitionIdsRef.current = transitionIdsRef.current.filter((value) => value !== id);
       callback();
     }, delayMs);
-    timeoutIdsRef.current.push(id);
+    transitionIdsRef.current.push(id);
   }, []);
 
-  const handleAnswerStart = useCallback(() => {
-    if (interactionLocked || hasResolvedRef.current) return false;
-    setInteractionLocked(true);
-    return true;
-  }, [interactionLocked]);
+  const handleOptionPress = useCallback((value: string) => {
+    if (interactionLocked || answerPhase !== 'idle') return;
+    primeAudio();
+    setPressedValue(value);
+    setAnswerPhase('pressed');
+  }, [answerPhase, interactionLocked, setAnswerPhase]);
 
-  const handleAnswer = useCallback(
-    (correct: boolean) => {
-      if (hasResolvedRef.current) return;
-      hasResolvedRef.current = true;
-      onAnswer(correct);
-    },
-    [onAnswer],
-  );
+  const handleOptionCancelPress = useCallback((value: string) => {
+    if (interactionLocked) return;
+    if (answerPhase !== 'pressed' || pressedValue !== value) return;
+    setPressedValue(null);
+    setAnswerPhase('idle');
+  }, [answerPhase, interactionLocked, pressedValue, setAnswerPhase]);
+
+  const handleOptionSelect = useCallback((value: string) => {
+    if (interactionLocked) return;
+
+    setInteractionLocked(true);
+    setPressedValue(null);
+    setSelectedValue(value);
+    setAnswerPhase('selected');
+
+    const correct = value === correctValue;
+    schedule(() => {
+      const revealPhase: QuizAnswerPhase = correct
+        ? 'revealed-correct'
+        : 'revealed-wrong';
+      setAnswerPhase(revealPhase);
+      playSound(correct ? 'correct' : 'wrong');
+      haptic(correct ? 'correct' : 'wrong');
+      onAnswer(correct, revealPhase);
+    }, PLAY_TIMINGS.answerRevealDelayMs);
+  }, [correctValue, interactionLocked, onAnswer, schedule, setAnswerPhase]);
 
   const handleTimeout = useCallback(() => {
-    if (interactionLocked || hasResolvedRef.current) return;
-    hasResolvedRef.current = true;
+    if (interactionLocked) return;
     setInteractionLocked(true);
-    setTimedOut(true);
+    setPressedValue(null);
     playSound('wrong');
     haptic('wrong');
-    schedule(() => onAnswer(false), 800);
-  }, [interactionLocked, onAnswer, schedule]);
+    setAnswerPhase('timed-out');
+    onAnswer(false, 'timed-out');
+  }, [interactionLocked, onAnswer, setAnswerPhase]);
 
   return (
     <>
       <PlayTimer
         seconds={PLAY_TIMER_SECONDS[format]}
+        phase={answerPhase}
         paused={interactionLocked}
         onExpire={handleTimeout}
       />
@@ -223,9 +335,13 @@ function ActiveQuestion({
           question={current}
           allQuestions={questions}
           format={format}
-          timedOut={timedOut}
-          onAnswerStart={handleAnswerStart}
-          onAnswer={handleAnswer}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={interactionLocked}
+          onOptionPress={handleOptionPress}
+          onOptionCancelPress={handleOptionCancelPress}
+          onOptionSelect={handleOptionSelect}
         />
       </div>
     </>

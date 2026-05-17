@@ -32,12 +32,22 @@ export default function QuizHeader({ quiz, editing, imagesPending, onSave }: Qui
       {editing ? (
         <EditableHeaderFields key={quiz.id} quiz={quiz} onSave={onSave} />
       ) : (
-        <h1 className={styles.title}>{quiz.title}</h1>
+        <>
+          <h1 className={styles.title}>{quiz.title}</h1>
+          {quiz.description && (
+            <p className={styles.desc}>{quiz.description}</p>
+          )}
+        </>
       )}
 
-      <p className={styles.meta}>
-        {quiz.questionCount} questions · {formatDate(quiz.createdAt)}
-      </p>
+      <div className={styles.metaRow}>
+        <p className={styles.meta}>
+          {quiz.questionCount} questions · {formatDate(quiz.createdAt)}
+        </p>
+        {imagesPending && (
+          <span className={styles.statusPill}>Finishing images</span>
+        )}
+      </div>
     </header>
   );
 }

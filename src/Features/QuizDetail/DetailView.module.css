@@ -13,95 +13,112 @@
 .playLink {
   display: block;
   text-decoration: none;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .questionsHeader {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin: 1.35rem 0 1rem;
 }
 
 .questionsTitle {
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
   color: var(--text-dark);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  letter-spacing: -0.02em;
 }
 
 .count {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-muted);
-  background: var(--sage);
-  padding: 0.1rem 0.55rem;
+  color: var(--text-dark);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0.18rem 0.6rem;
   border-radius: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.84);
+  box-shadow: var(--shadow), var(--shadow-inset);
 }
 
 .editToggle {
-  background: none;
-  border: 1.5px solid var(--text-dark);
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.84);
   color: var(--text-dark);
   font-family: var(--font-primary);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 0.3rem 1rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  padding: 0.48rem 1rem;
   border-radius: 2rem;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  box-shadow: var(--shadow), var(--shadow-inset);
+  transition:
+    background var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) var(--ease-snappy);
 }
 
 @media (hover: hover) {
   .editToggle:hover {
-    background: var(--text-dark);
-    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
   }
 }
 
 .editToggleActive {
-  background: var(--text-dark);
+  background: linear-gradient(180deg, var(--peach-strong), var(--active));
   color: #fff;
+  box-shadow: var(--shadow-md), var(--glow-peach);
 }
 
 .metaRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: -1.25rem;
+  gap: 0.75rem;
+  margin-top: -0.25rem;
   margin-bottom: 2rem;
-  min-height: 1.5rem;
+  min-height: 2rem;
+  flex-wrap: wrap;
 }
 
 .statsText {
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   color: var(--text-muted);
 }
 
 .shareBtn {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.82);
   font-family: var(--font-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-dark);
   cursor: pointer;
-  padding: 0;
-  transition: color 0.15s ease;
+  padding: 0.48rem 0.82rem;
+  border-radius: 999px;
+  box-shadow: var(--shadow), var(--shadow-inset);
+  transition:
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) var(--ease-snappy),
+    background var(--motion-fast) ease;
 }
 
 @media (hover: hover) {
   .shareBtn:hover {
-    color: var(--text-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
   }
 }
 
 .editActions {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-top: 1px solid var(--line-soft);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -109,23 +126,31 @@
 }
 
 .addBtn {
-  background: none;
-  border: 1.5px dashed rgba(0, 0, 0, 0.2);
-  color: var(--text-muted);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.58)),
+    linear-gradient(145deg, rgba(223, 240, 222, 0.46), rgba(236, 231, 251, 0.46));
+  border: 1px dashed rgba(41, 37, 36, 0.18);
+  color: var(--text-dark);
   font-family: var(--font-primary);
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 0.6rem 1.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.9rem 1.5rem;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  box-shadow: var(--shadow), var(--shadow-inset);
+  transition:
+    color var(--motion-fast) ease,
+    border-color var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) var(--ease-snappy);
   width: 100%;
 }
 
 @media (hover: hover) {
   .addBtn:hover:not(:disabled) {
-    color: var(--text-dark);
-    border-color: var(--text-dark);
+    transform: translateY(-2px);
+    border-color: rgba(255, 143, 108, 0.42);
+    box-shadow: var(--shadow-md), var(--shadow-inset);
   }
 }
 

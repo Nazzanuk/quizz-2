@@ -21,33 +21,33 @@ interface SoundSpec {
 const SOUNDS: SoundSpec[] = [
   {
     name: 'tap',
-    prompt: 'Soft, short UI tap sound. Single subtle click. Minimal, clean.',
-    durationSeconds: 0.5,
-    promptInfluence: 0.4,
+    prompt: 'Juicy tactile mobile game tap. Soft rounded click with a tiny pop, clean and satisfying, very short, no harsh attack.',
+    durationSeconds: 0.35,
+    promptInfluence: 0.55,
   },
   {
     name: 'correct',
-    prompt: 'Bright pleasant chime confirming a correct answer. Two ascending notes, warm and rewarding.',
-    durationSeconds: 0.6,
-    promptInfluence: 0.35,
+    prompt: 'Juicy arcade correct answer sound. Bright pop into a fast two-note ascending sparkle, warm, rewarding, playful, polished mobile game feel.',
+    durationSeconds: 0.7,
+    promptInfluence: 0.6,
   },
   {
     name: 'wrong',
-    prompt: 'Gentle low buzz indicating an incorrect answer. Soft and short, not harsh or punishing.',
-    durationSeconds: 0.5,
-    promptInfluence: 0.4,
+    prompt: 'Playful wrong answer sound for a polished quiz game. Short soft descending bloop with a tiny rubbery bonk, gentle and light, not punishing or buzzy.',
+    durationSeconds: 0.55,
+    promptInfluence: 0.58,
   },
   {
     name: 'complete',
-    prompt: 'Short warm fanfare celebrating quiz completion. Triumphant but compact, ending on a major chord.',
-    durationSeconds: 1.2,
-    promptInfluence: 0.4,
+    prompt: 'Compact mobile game completion stinger. Energetic celebratory fanfare with bright layered chimes, confident finish, punchy and polished, under two seconds.',
+    durationSeconds: 1.1,
+    promptInfluence: 0.58,
   },
   {
     name: 'newBest',
-    prompt: 'Exciting sparkling celebration sound for a new high score. Upbeat ascending arpeggio with bell-like shimmer.',
-    durationSeconds: 1.4,
-    promptInfluence: 0.4,
+    prompt: 'Big juicy new high score celebration for a mobile quiz game. Punchy rising arpeggio, sparkling shimmer tail, exciting but classy, premium arcade reward.',
+    durationSeconds: 1.35,
+    promptInfluence: 0.62,
   },
 ];
 
