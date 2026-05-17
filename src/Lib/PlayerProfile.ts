@@ -26,6 +26,7 @@ function buildDefaultProfile(): PlayerProfile {
     lastPlayedAt: null,
     preferredMode: 'default',
     hostVoiceEnabled: false,
+    hideTextUi: false,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
     quizzes: {},
@@ -69,6 +70,13 @@ export function setPlayerHostMode(mode: HostMode): PlayerProfile {
 export function setPlayerHostVoiceEnabled(enabled: boolean): PlayerProfile {
   const profile = getPlayerProfile();
   const next = { ...profile, hostVoiceEnabled: enabled };
+  savePlayerProfile(next);
+  return next;
+}
+
+export function setPlayerHideTextUi(enabled: boolean): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, hideTextUi: enabled };
   savePlayerProfile(next);
   return next;
 }

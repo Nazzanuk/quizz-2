@@ -4,6 +4,7 @@
   gap: 1rem;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
   animation: settle var(--motion-base) var(--ease-spring) both;
 }
 
@@ -50,7 +51,11 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.85rem;
+  flex: 1;
   min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 0.25rem;
 }
 
 .option {
@@ -149,27 +154,34 @@
 }
 
 @media (max-width: 640px) {
+  .container {
+    gap: 0.75rem;
+  }
+
   .image {
-    max-height: 140px;
+    max-height: 120px;
   }
 
   .promptCard {
-    padding: 1rem 1rem 1.05rem;
+    padding: 0.88rem 0.92rem 0.94rem;
   }
 
   .question {
-    font-size: 1.15rem;
-    line-height: 1.3;
+    font-size: 1.08rem;
+    line-height: 1.22;
   }
 
   .grid {
     grid-template-columns: 1fr;
-    overflow: auto;
-    padding-bottom: 0.35rem;
+    gap: 0.65rem;
   }
 
   .option {
-    min-height: 102px;
+    min-height: 84px;
+  }
+
+  .optionInner {
+    padding: 0.8rem 0.82rem;
   }
 }
 

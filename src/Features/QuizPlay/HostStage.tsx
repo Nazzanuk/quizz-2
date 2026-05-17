@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { playHostVoice, stopHostVoice } from './HostVoice';
 import type {
@@ -28,6 +28,7 @@ interface HostStageProps {
   showConfidencePrompt?: boolean;
   confidence?: HostConfidenceLevel | null;
   onConfidenceChange?: (value: HostConfidenceLevel) => void;
+  hideTextUi?: boolean;
 }
 
 export default function HostStage({
@@ -40,13 +41,18 @@ export default function HostStage({
   showConfidencePrompt = false,
   confidence = null,
   onConfidenceChange,
+  hideTextUi = false,
 }: HostStageProps) {
   const [dismissedId, setDismissedId] = useState<string | null>(null);
   const voiceIssues = useAudioIssues('voice');
   const topVoiceIssue = voiceIssues[0];
+  const lastPlaybackKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!voiceEnabled || !cue || dismissedId === cue.id) return;
+    const playbackKey = cue.kind === 'recap' ? `${cue.id}:${cue.text}` : cue.id;
+    if (lastPlaybackKeyRef.current === playbackKey) return;
+    lastPlaybackKeyRef.current = playbackKey;
     playHostVoice({
       text: cue.text,
       hostPersona,
@@ -56,6 +62,8 @@ export default function HostStage({
   }, [cue, dismissedId, hostPersona, voiceEnabled]);
 
   const hidden = !cue || dismissedId === cue.id;
+
+  if (hideTextUi) return null;
 
   return (
     <section className={styles.stage}>

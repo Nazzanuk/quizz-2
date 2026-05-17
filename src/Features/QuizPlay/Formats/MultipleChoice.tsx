@@ -12,6 +12,7 @@ interface MultipleChoiceProps {
   pressedValue: string | null;
   selectedValue: string | null;
   locked: boolean;
+  hideTextUi?: boolean;
   onOptionPress: (value: string) => void;
   onOptionCancelPress: (value: string) => void;
   onOptionSelect: (value: string) => void;
@@ -23,10 +24,13 @@ export default function MultipleChoice({
   pressedValue,
   selectedValue,
   locked,
+  hideTextUi = false,
   onOptionPress,
   onOptionCancelPress,
   onOptionSelect,
 }: MultipleChoiceProps) {
+  void hideTextUi;
+
   const pairs = useMemo(() => {
     const raw = (question.options ?? []).map((text, i) => ({
       text,

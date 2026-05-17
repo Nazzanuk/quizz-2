@@ -14,6 +14,7 @@ interface FormatRendererProps {
   pressedValue: string | null;
   selectedValue: string | null;
   locked: boolean;
+  hideTextUi?: boolean;
   onOptionPress: (value: string) => void;
   onOptionCancelPress: (value: string) => void;
   onOptionSelect: (value: string) => void;
@@ -27,6 +28,7 @@ export default function FormatRenderer({
   pressedValue,
   selectedValue,
   locked,
+  hideTextUi = false,
   onOptionPress,
   onOptionCancelPress,
   onOptionSelect,
@@ -40,6 +42,7 @@ export default function FormatRenderer({
           pressedValue={pressedValue}
           selectedValue={selectedValue}
           locked={locked}
+          hideTextUi={hideTextUi}
           onOptionPress={onOptionPress}
           onOptionCancelPress={onOptionCancelPress}
           onOptionSelect={onOptionSelect}
@@ -53,6 +56,7 @@ export default function FormatRenderer({
           pressedValue={pressedValue}
           selectedValue={selectedValue}
           locked={locked}
+          hideTextUi={hideTextUi}
           onOptionPress={onOptionPress}
           onOptionCancelPress={onOptionCancelPress}
           onOptionSelect={onOptionSelect}
@@ -67,6 +71,7 @@ export default function FormatRenderer({
           pressedValue={pressedValue}
           selectedValue={selectedValue}
           locked={locked}
+          hideTextUi={hideTextUi}
           onOptionPress={onOptionPress}
           onOptionCancelPress={onOptionCancelPress}
           onOptionSelect={onOptionSelect}
@@ -80,6 +85,7 @@ export default function FormatRenderer({
           pressedValue={pressedValue}
           selectedValue={selectedValue}
           locked={locked}
+          hideTextUi={hideTextUi}
           onOptionPress={onOptionPress}
           onOptionCancelPress={onOptionCancelPress}
           onOptionSelect={onOptionSelect}

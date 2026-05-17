@@ -58,6 +58,7 @@ function getFallbackProfile(): PlayerProfile {
     lastPlayedAt: null,
     preferredMode: 'default',
     hostVoiceEnabled: false,
+    hideTextUi: false,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
     quizzes: {},

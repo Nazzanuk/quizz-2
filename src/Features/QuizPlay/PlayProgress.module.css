@@ -4,6 +4,10 @@
   gap: 0.75rem;
 }
 
+.minimalContainer {
+  gap: 0;
+}
+
 .topRow {
   display: flex;
   align-items: flex-start;

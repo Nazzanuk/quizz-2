@@ -13,6 +13,7 @@ interface FillBlankProps {
   pressedValue: string | null;
   selectedValue: string | null;
   locked: boolean;
+  hideTextUi?: boolean;
   onOptionPress: (value: string) => void;
   onOptionCancelPress: (value: string) => void;
   onOptionSelect: (value: string) => void;
@@ -24,6 +25,7 @@ export default function FillBlank({
   pressedValue,
   selectedValue,
   locked,
+  hideTextUi = false,
   onOptionPress,
   onOptionCancelPress,
   onOptionSelect,
@@ -65,7 +67,7 @@ export default function FillBlank({
       )}
 
       <Card color="lavender" className={styles.promptCard}>
-        <p className={styles.kicker}>Fill in the blank</p>
+        {!hideTextUi && <p className={styles.kicker}>Fill in the blank</p>}
         <h2 className={styles.question}>
           {renderPrompt(question.questionText)}
         </h2>

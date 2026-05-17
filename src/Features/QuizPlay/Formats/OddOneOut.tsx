@@ -13,6 +13,7 @@ interface OddOneOutProps {
   pressedValue: string | null;
   selectedValue: string | null;
   locked: boolean;
+  hideTextUi?: boolean;
   onOptionPress: (value: string) => void;
   onOptionCancelPress: (value: string) => void;
   onOptionSelect: (value: string) => void;
@@ -24,6 +25,7 @@ export default function OddOneOut({
   pressedValue,
   selectedValue,
   locked,
+  hideTextUi = false,
   onOptionPress,
   onOptionCancelPress,
   onOptionSelect,
@@ -65,7 +67,7 @@ export default function OddOneOut({
       )}
 
       <Card color="sage" className={styles.promptCard}>
-        <p className={styles.kicker}>Odd one out</p>
+        {!hideTextUi && <p className={styles.kicker}>Odd one out</p>}
         <h2 className={styles.question}>{question.questionText}</h2>
       </Card>
 

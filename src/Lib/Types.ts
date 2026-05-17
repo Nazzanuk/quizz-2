@@ -268,6 +268,7 @@ export interface PlayerProfile {
   lastPlayedAt: string | null;
   preferredMode: HostMode;
   hostVoiceEnabled: boolean;
+  hideTextUi: boolean;
   selectedHost: HostPersona;
   categories: Record<string, PlayerCategoryProfile>;
   quizzes: Record<string, PlayerQuizProfile>;

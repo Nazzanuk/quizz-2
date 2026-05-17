@@ -10,6 +10,7 @@ interface PlayProgressProps {
   streak: number;
   milestone: QuizMilestone;
   answerPhase: QuizAnswerPhase;
+  hideTextUi?: boolean;
 }
 
 export default function PlayProgress({
@@ -19,10 +20,21 @@ export default function PlayProgress({
   streak,
   milestone,
   answerPhase,
+  hideTextUi = false,
 }: PlayProgressProps) {
   const pct = total > 0 ? ((current + 1) / total) * 100 : 0;
   const scoreHot = answerPhase === 'revealed-correct';
   const streakActive = streak > 0;
+
+  if (hideTextUi) {
+    return (
+      <div className={`${styles.container} ${styles.minimalContainer}`}>
+        <div className={styles.track}>
+          <div className={styles.fill} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

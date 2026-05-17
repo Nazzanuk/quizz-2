@@ -4,6 +4,7 @@ import { getHapticEnabled, setHapticEnabled } from '@/Features/Shared/Haptic';
 import {
   getPlayerProfile,
   setPlayerHostMode,
+  setPlayerHideTextUi,
   setPlayerHostVoiceEnabled,
 } from '@/Lib/PlayerProfile';
 import type { HostMode } from '@/Lib/Types';
@@ -41,6 +42,18 @@ export const hostVoiceEnabledAtom = atom(
   (_get, set, value: boolean) => {
     setPlayerHostVoiceEnabled(value);
     set(baseHostVoiceEnabledAtom, value);
+  },
+);
+
+const baseHideTextUiAtom = atom(
+  typeof window !== 'undefined' ? getPlayerProfile().hideTextUi : false,
+);
+
+export const hideTextUiAtom = atom(
+  (get) => get(baseHideTextUiAtom),
+  (_get, set, value: boolean) => {
+    setPlayerHideTextUi(value);
+    set(baseHideTextUiAtom, value);
   },
 );
 

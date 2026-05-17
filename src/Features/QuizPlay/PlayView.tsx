@@ -29,7 +29,7 @@ import {
   questionFormatsAtom,
   isPlayableQuestion,
 } from '@/State/PlayAtoms';
-import { hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
+import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
@@ -74,6 +74,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const initPlay = useSetAtom(initPlayAtom);
   const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
+  const hideTextUi = useAtomValue(hideTextUiAtom);
   const [previousBest, setPreviousBest] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
@@ -121,6 +122,22 @@ export default function PlayView({ quizId }: PlayViewProps) {
       callback();
     }, delayMs);
     uiTimersRef.current.push(id);
+  }, []);
+
+  const showHostCue = useCallback((nextCue: HostCue, freezeSameId = false) => {
+    setHostCue((currentCue) => {
+      if (!currentCue) return nextCue;
+      if (freezeSameId && currentCue.id === nextCue.id) return currentCue;
+      if (
+        currentCue.id === nextCue.id
+        && currentCue.text === nextCue.text
+        && currentCue.kind === nextCue.kind
+        && currentCue.audioPrefetch === nextCue.audioPrefetch
+      ) {
+        return currentCue;
+      }
+      return nextCue;
+    });
   }, []);
 
   const resetRunState = useCallback(() => {
@@ -210,12 +227,12 @@ export default function PlayView({ quizId }: PlayViewProps) {
     });
     const line = [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
-    setHostCue({
+    showHostCue({
       id: `${runIdRef.current}:question:${current.id}:${idx}`,
       text: line,
       kind: idx === 0 && hostIntro ? 'intro' : 'question',
       audioPrefetch: idx === 0 && HOST_MODE_CONFIG[hostMode].enableVoicePrefetch,
-    });
+    }, true);
   }, [
     answerPhase,
     current,
@@ -226,18 +243,19 @@ export default function PlayView({ quizId }: PlayViewProps) {
     questionOrder.length,
     questionStats,
     showResult,
+    showHostCue,
     streak,
   ]);
 
   useEffect(() => {
     if (!showResult || !recap) return;
-    setHostCue({
+    showHostCue({
       id: `${runIdRef.current}:recap`,
       text: recap,
       kind: 'recap',
       audioPrefetch: HOST_MODE_CONFIG[hostMode].enableVoicePrefetch,
     });
-  }, [hostMode, recap, showResult]);
+  }, [hostMode, recap, showHostCue, showResult]);
 
   const commitAnswer = useCallback(
     (event: AnswerCommit) => {
@@ -295,7 +313,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
         previousWasWrong,
       });
 
-      setHostCue({
+      showHostCue({
         id: `${runIdRef.current}:answer:${questionId}:${idx}`,
         text: reaction,
         kind: 'answer',
@@ -407,6 +425,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       quiz,
       quizId,
       scheduleUi,
+      showHostCue,
       setAnswers,
       setIdx,
       setShowResult,
@@ -429,13 +448,13 @@ export default function PlayView({ quizId }: PlayViewProps) {
     return (
       <AppShell>
         <BlobField />
-        <div className={styles.content}>
-          <HostStage
-            cue={hostCue}
-            mode={hostMode}
-            hostPersona={HOST_PERSONA}
-            voiceEnabled={hostVoiceEnabled}
-          />
+      <div className={styles.content}>
+        <HostStage
+          cue={hostCue}
+          mode={hostMode}
+          hostPersona={HOST_PERSONA}
+          voiceEnabled={hostVoiceEnabled}
+        />
           <ResultsView
             correct={score.correct}
             total={score.total}
@@ -476,15 +495,16 @@ export default function PlayView({ quizId }: PlayViewProps) {
   return (
     <AppShell>
       <BlobField />
-      <div className={styles.content}>
+      <div className={`${styles.content} ${styles.liveContent} ${hideTextUi ? styles.liveContentMinimal : ''}`}>
         <HostStage
           cue={hostCue}
           mode={hostMode}
           hostPersona={HOST_PERSONA}
           voiceEnabled={hostVoiceEnabled}
+          hideTextUi={hideTextUi}
           category={current.category}
           difficulty={current.difficulty}
-          showConfidencePrompt={showConfidencePrompt}
+          showConfidencePrompt={!hideTextUi && showConfidencePrompt}
           confidence={confidenceByQuestion[current.id] ?? null}
           onConfidenceChange={(value) =>
             setConfidenceByQuestion((state) => ({ ...state, [current.id]: value }))}
@@ -496,6 +516,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
           streak={streak}
           milestone={milestone}
           answerPhase={answerPhase}
+          hideTextUi={hideTextUi}
         />
         <ActiveQuestion
           key={`${current.id}-${format}`}
@@ -503,6 +524,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
           questions={questions}
           format={format}
           answerPhase={answerPhase}
+          hideTextUi={hideTextUi}
           setAnswerPhase={setAnswerPhase}
           onAnswer={commitAnswer}
         />
@@ -516,6 +538,7 @@ interface ActiveQuestionProps {
   questions: Question[];
   format: QuizFormat;
   answerPhase: QuizAnswerPhase;
+  hideTextUi: boolean;
   setAnswerPhase: (phase: QuizAnswerPhase) => void;
   onAnswer: (event: AnswerCommit) => void;
 }
@@ -525,6 +548,7 @@ function ActiveQuestion({
   questions,
   format,
   answerPhase,
+  hideTextUi,
   setAnswerPhase,
   onAnswer,
 }: ActiveQuestionProps) {
@@ -615,6 +639,7 @@ function ActiveQuestion({
         seconds={PLAY_TIMER_SECONDS[format]}
         phase={answerPhase}
         paused={interactionLocked}
+        hideTextUi={hideTextUi}
         onExpire={handleTimeout}
       />
       <div className={styles.questionWrap}>
@@ -626,6 +651,7 @@ function ActiveQuestion({
           pressedValue={pressedValue}
           selectedValue={selectedValue}
           locked={interactionLocked}
+          hideTextUi={hideTextUi}
           onOptionPress={handleOptionPress}
           onOptionCancelPress={handleOptionCancelPress}
           onOptionSelect={handleOptionSelect}

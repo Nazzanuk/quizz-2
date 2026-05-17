@@ -3,9 +3,8 @@ import { NextResponse } from 'next/server';
 // ElevenLabs "v3" is the `eleven_v3` model ID. The public TTS REST endpoints
 // remain under `/v1/text-to-speech/...` per the official docs.
 const DEFAULT_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? 'eleven_v3';
-// Official ElevenLabs quickstart example voice: "George"
-const DEFAULT_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? 'JBFqnCBsd6RMkjVDRZzb';
-const PUB_HOST_VOICE_ID = process.env.ELEVENLABS_VOICE_ID_SARCASTIC_PUB_HOST ?? DEFAULT_VOICE_ID;
+// Hardcoded so a bad deploy-time env override cannot break the host voice.
+const HOST_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
@@ -15,13 +14,12 @@ export async function POST(req: Request) {
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = resolveVoiceId(body.hostPersona);
-  if (!apiKey || !voiceId) {
+  if (!apiKey) {
     return NextResponse.json({ error: 'voice unavailable' }, { status: 503 });
   }
 
   const upstream = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${HOST_VOICE_ID}/stream`,
     {
       method: 'POST',
       headers: {
@@ -56,9 +54,4 @@ export async function POST(req: Request) {
         : 'no-store',
     },
   });
-}
-
-function resolveVoiceId(hostPersona: unknown): string {
-  if (hostPersona === 'sarcastic_pub_host') return PUB_HOST_VOICE_ID;
-  return DEFAULT_VOICE_ID;
 }

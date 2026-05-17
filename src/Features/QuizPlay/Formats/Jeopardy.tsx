@@ -14,6 +14,7 @@ interface JeopardyProps {
   pressedValue: string | null;
   selectedValue: string | null;
   locked: boolean;
+  hideTextUi?: boolean;
   onOptionPress: (value: string) => void;
   onOptionCancelPress: (value: string) => void;
   onOptionSelect: (value: string) => void;
@@ -26,6 +27,7 @@ export default function Jeopardy({
   pressedValue,
   selectedValue,
   locked,
+  hideTextUi = false,
   onOptionPress,
   onOptionCancelPress,
   onOptionSelect,
@@ -73,12 +75,12 @@ export default function Jeopardy({
           <SafeImage src={question.imageUrl} alt="" className={styles.image} />
         )}
         <div className={styles.answerBody}>
-          <p className={styles.label}>The answer is:</p>
+          {!hideTextUi && <p className={styles.label}>The answer is:</p>}
           <h2 className={styles.answerText}>{question.answerText}</h2>
         </div>
       </Card>
 
-      <p className={styles.prompt}>What is the question?</p>
+      {!hideTextUi && <p className={styles.prompt}>What is the question?</p>}
 
       <div className={styles.options}>
         {options.map((opt) => {

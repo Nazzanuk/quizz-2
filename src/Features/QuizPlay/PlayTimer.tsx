@@ -9,6 +9,7 @@ interface PlayTimerProps {
   phase: QuizAnswerPhase;
   paused?: boolean;
   onExpire: () => void;
+  hideTextUi?: boolean;
 }
 
 export default function PlayTimer({
@@ -16,6 +17,7 @@ export default function PlayTimer({
   phase,
   paused = false,
   onExpire,
+  hideTextUi = false,
 }: PlayTimerProps) {
   const [remainingMs, setRemainingMs] = useState(seconds * 1000);
   const remainingMsRef = useRef(remainingMs);
@@ -62,10 +64,12 @@ export default function PlayTimer({
 
   return (
     <div className={`${styles.container} ${isTimedOut ? styles.containerTimedOut : ''}`}>
-      <div className={styles.row}>
-        <span className={styles.label}>{isTimedOut ? 'Round' : 'Time'}</span>
-        <span className={valueClass}>{isTimedOut ? "Time's up" : `${secondsLeft}s`}</span>
-      </div>
+      {!hideTextUi && (
+        <div className={styles.row}>
+          <span className={styles.label}>{isTimedOut ? 'Round' : 'Time'}</span>
+          <span className={valueClass}>{isTimedOut ? "Time's up" : `${secondsLeft}s`}</span>
+        </div>
+      )}
       <div
         className={styles.track}
         role="progressbar"

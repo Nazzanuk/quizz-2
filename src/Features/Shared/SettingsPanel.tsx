@@ -7,6 +7,7 @@ import {
   soundMutedAtom,
   hapticEnabledAtom,
   hostModeAtom,
+  hideTextUiAtom,
   hostVoiceEnabledAtom,
 } from '@/State/SettingsAtoms';
 import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
@@ -23,6 +24,7 @@ export default function SettingsPanel() {
   const [muted, setMuted] = useAtom(soundMutedAtom);
   const [hapticOn, setHapticOn] = useAtom(hapticEnabledAtom);
   const [hostVoiceEnabled, setHostVoiceEnabled] = useAtom(hostVoiceEnabledAtom);
+  const [hideTextUi, setHideTextUi] = useAtom(hideTextUiAtom);
   const [hostMode, setHostMode] = useAtom(hostModeAtom);
   const audioIssues = useAudioIssues();
   const [closing, setClosing] = useState(false);
@@ -83,6 +85,12 @@ export default function SettingsPanel() {
     }
   };
 
+  const toggleHideTextUi = () => {
+    const next = !hideTextUi;
+    setHideTextUi(next);
+    if (next) haptic('tap');
+  };
+
   return (
     <div
       className={`${styles.backdrop} ${closing ? styles.backdropClosing : ''}`}
@@ -135,6 +143,20 @@ export default function SettingsPanel() {
             <span className={styles.rowSub}>ElevenLabs narration for intros, recaps, and bigger beats</span>
           </div>
           <span className={`${styles.toggle} ${hostVoiceEnabled ? styles.toggleOn : ''}`}>
+            <span className={styles.toggleKnob} />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={styles.row}
+          onClick={toggleHideTextUi}
+        >
+          <div className={styles.rowText}>
+            <span className={styles.rowLabel}>Hide text UI</span>
+            <span className={styles.rowSub}>Quiz play only. Keeps the screen focused on the prompt and answers.</span>
+          </div>
+          <span className={`${styles.toggle} ${hideTextUi ? styles.toggleOn : ''}`}>
             <span className={styles.toggleKnob} />
           </span>
         </button>

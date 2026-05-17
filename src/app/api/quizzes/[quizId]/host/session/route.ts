@@ -123,6 +123,7 @@ function getFallbackProfile(mode: HostMode, hostPersona: HostPersona): PlayerPro
     lastPlayedAt: null,
     preferredMode: mode,
     hostVoiceEnabled: false,
+    hideTextUi: false,
     selectedHost: hostPersona,
     categories: {},
     quizzes: {},
