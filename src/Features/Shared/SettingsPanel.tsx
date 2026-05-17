@@ -12,9 +12,11 @@ import {
 import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { playSound, primeAudio } from './Sound';
 import { haptic } from './Haptic';
+import { notifyHostAudioInteraction, playHostVoicePreview } from '@/Features/QuizPlay/HostVoice';
 import styles from './SettingsPanel.module.css';
 
 const EXIT_DURATION_MS = 240;
+const HOST_PERSONA = 'sarcastic_pub_host' as const;
 
 export default function SettingsPanel() {
   const [open, setOpen] = useAtom(settingsOpenAtom);
@@ -24,6 +26,7 @@ export default function SettingsPanel() {
   const [hostMode, setHostMode] = useAtom(hostModeAtom);
   const audioIssues = useAudioIssues();
   const [closing, setClosing] = useState(false);
+  const [testingVoice, setTestingVoice] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -60,8 +63,24 @@ export default function SettingsPanel() {
 
   const toggleHostVoice = () => {
     const next = !hostVoiceEnabled;
+    primeAudio();
+    notifyHostAudioInteraction();
     setHostVoiceEnabled(next);
-    if (next) haptic('tap');
+    if (next) {
+      haptic('tap');
+    }
+  };
+
+  const testHostVoice = async () => {
+    if (testingVoice) return;
+    setTestingVoice(true);
+    primeAudio();
+    notifyHostAudioInteraction();
+    try {
+      await playHostVoicePreview(HOST_PERSONA);
+    } finally {
+      setTestingVoice(false);
+    }
   };
 
   return (
@@ -119,6 +138,22 @@ export default function SettingsPanel() {
             <span className={styles.toggleKnob} />
           </span>
         </button>
+
+        {hostVoiceEnabled && (
+          <button
+            type="button"
+            className={styles.voiceTest}
+            onClick={testHostVoice}
+            disabled={testingVoice}
+          >
+            <span className={styles.voiceTestLabel}>
+              {testingVoice ? 'Testing host voice…' : 'Test host voice'}
+            </span>
+            <span className={styles.voiceTestSub}>
+              Plays a short line locally so you can verify voice output.
+            </span>
+          </button>
+        )}
 
         <div className={styles.modeSection}>
           <div className={styles.rowText}>
