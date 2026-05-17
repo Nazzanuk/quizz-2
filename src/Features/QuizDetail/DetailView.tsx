@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSetAtom } from 'jotai';
+import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { deleteQuiz, updateQuiz, getResultsSummary, generateMoreQuestions } from '@/Lib/Api/Client';
-import { confirmDialogAtom } from '@/State/UiAtoms';
+import { confirmDialogAtom, addToastAtom } from '@/State/UiAtoms';
+import { haptic } from '@/Features/Shared/Haptic';
 import type { ResultsSummary } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
@@ -24,10 +25,10 @@ export default function DetailView({ quizId }: DetailViewProps) {
   const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions } = useQuiz(quizId, { poll: true });
   const [editing, setEditing] = useState(false);
   const [stats, setStats] = useState<ResultsSummary | null>(null);
-  const [copied, setCopied] = useState(false);
   const [addingQuestions, setAddingQuestions] = useState(false);
-  const router = useRouter();
+  const { navigate } = useTransitionRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);
+  const addToast = useSetAtom(addToastAtom);
 
   useEffect(() => {
     getResultsSummary(quizId)
@@ -42,7 +43,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
       confirmLabel: 'Delete',
       onConfirm: async () => {
         await deleteQuiz(quizId);
-        router.push('/');
+        navigate('/');
       },
     });
   };
@@ -55,8 +56,8 @@ export default function DetailView({ quizId }: DetailViewProps) {
   const handleShare = async () => {
     const url = `${window.location.origin}/quiz/${quizId}/play`;
     await navigator.clipboard.writeText(url).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    addToast({ message: 'Link copied', type: 'success' });
+    haptic('tap');
   };
 
   const handleAddQuestions = async () => {
@@ -103,7 +104,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
                 </span>
               )}
               <button className={styles.shareBtn} onClick={handleShare}>
-                {copied ? 'Copied!' : 'Share link'}
+                Share link
               </button>
             </div>
           </>

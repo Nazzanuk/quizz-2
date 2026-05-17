@@ -1,6 +1,8 @@
 'use client';
 
-import type { ButtonHTMLAttributes } from 'react';
+import type { ButtonHTMLAttributes, MouseEvent } from 'react';
+import { playSound, primeAudio } from './Sound';
+import { haptic } from './Haptic';
 import styles from './Button.module.css';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -14,6 +16,7 @@ export default function Button({
   variant = 'primary',
   fullWidth = false,
   className,
+  onClick,
   children,
   ...props
 }: ButtonProps) {
@@ -24,8 +27,15 @@ export default function Button({
     className ?? '',
   ].join(' ');
 
+  const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
+    primeAudio();
+    playSound('tap');
+    haptic('tap');
+    onClick?.(e);
+  };
+
   return (
-    <button className={classes} {...props}>
+    <button className={classes} onClick={handleClick} {...props}>
       {children}
     </button>
   );

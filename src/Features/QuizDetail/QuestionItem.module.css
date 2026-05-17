@@ -50,9 +50,11 @@
   transition: color 0.15s ease, background 0.15s ease;
 }
 
-.editBtn:hover {
-  color: var(--text-dark);
-  background: rgba(0, 0, 0, 0.06);
+@media (hover: hover) {
+  .editBtn:hover {
+    color: var(--text-dark);
+    background: rgba(0, 0, 0, 0.06);
+  }
 }
 
 .editField {
@@ -111,8 +113,10 @@
   transition: color 0.15s ease;
 }
 
-.cancelBtn:hover {
-  color: var(--text-dark);
+@media (hover: hover) {
+  .cancelBtn:hover {
+    color: var(--text-dark);
+  }
 }
 
 .optionThumbs {

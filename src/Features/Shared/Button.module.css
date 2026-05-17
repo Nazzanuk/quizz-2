@@ -29,19 +29,9 @@
   color: var(--text-dark);
 }
 
-.primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px -4px rgba(255, 183, 178, 0.5);
-}
-
 .secondary {
   background: var(--sage);
   color: var(--text-dark);
-}
-
-.secondary:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
 }
 
 .ghost {
@@ -49,9 +39,21 @@
   color: var(--text-muted);
 }
 
-.ghost:hover {
-  background: var(--sage);
-  color: var(--text-dark);
+@media (hover: hover) {
+  .primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px -4px rgba(255, 183, 178, 0.5);
+  }
+
+  .secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .ghost:hover {
+    background: var(--sage);
+    color: var(--text-dark);
+  }
 }
 
 .full {

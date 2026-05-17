@@ -25,9 +25,25 @@
   animation: panelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.overlayClosing {
+  animation: fadeOut 0.18s ease both;
+}
+
+.panelClosing {
+  animation: panelOut 0.18s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
 @keyframes panelIn {
   from { opacity: 0; transform: scale(0.94) translateY(8px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes fadeOut {
+  to { opacity: 0; }
+}
+
+@keyframes panelOut {
+  to { opacity: 0; transform: scale(0.96) translateY(6px); }
 }
 
 .title {

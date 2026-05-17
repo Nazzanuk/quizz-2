@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import type { Question } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 import SafeImage from '@/Features/Shared/SafeImage';
+import { playSound, primeAudio } from '@/Features/Shared/Sound';
+import { haptic } from '@/Features/Shared/Haptic';
 import styles from './MultipleChoice.module.css';
 
 interface MultipleChoiceProps {
@@ -27,8 +29,12 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
 
   const handleSelect = (text: string) => {
     if (selected) return;
+    primeAudio();
     setSelected(text);
-    setTimeout(() => onAnswer(text === question.answerText), 800);
+    const correct = text === question.answerText;
+    playSound(correct ? 'correct' : 'wrong');
+    haptic(correct ? 'correct' : 'wrong');
+    setTimeout(() => onAnswer(correct), 800);
   };
 
   const stateClass = (text: string) => {

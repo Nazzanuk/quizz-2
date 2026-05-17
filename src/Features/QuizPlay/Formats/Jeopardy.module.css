@@ -70,6 +70,12 @@
   transform: scale(0.98);
 }
 
+@media (hover: hover) {
+  .option:hover:not(:disabled) {
+    background: var(--lavender);
+  }
+}
+
 .correct {
   background: #c6f0c6;
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAtom } from 'jotai';
+import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { createTopicAtom, createMaterialAtom } from '@/State/QuizAtoms';
 import { generateQuiz } from '@/Lib/Api/Client';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
@@ -17,7 +17,7 @@ import GeneratingState from './GeneratingState';
 import styles from './CreateView.module.css';
 
 export default function CreateView() {
-  const router = useRouter();
+  const { navigate } = useTransitionRouter();
   const [topic, setTopic] = useAtom(createTopicAtom);
   const [material, setMaterial] = useAtom(createMaterialAtom);
   const [count, setCount] = useState(DEFAULT_QUESTION_COUNT);
@@ -38,7 +38,7 @@ export default function CreateView() {
       });
       setTopic('');
       setMaterial('');
-      router.push(`/quiz/${quiz.id}`);
+      navigate(`/quiz/${quiz.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed');
       setGenerating(false);

@@ -5,6 +5,8 @@ import type { Question } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
 import SafeImage from '@/Features/Shared/SafeImage';
+import { playSound, primeAudio } from '@/Features/Shared/Sound';
+import { haptic } from '@/Features/Shared/Haptic';
 import styles from './Jeopardy.module.css';
 
 interface JeopardyProps {
@@ -25,8 +27,12 @@ export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyP
 
   const handleSelect = (opt: string) => {
     if (selected) return;
+    primeAudio();
     setSelected(opt);
-    setTimeout(() => onAnswer(opt === question.questionText), 800);
+    const correct = opt === question.questionText;
+    playSound(correct ? 'correct' : 'wrong');
+    haptic(correct ? 'correct' : 'wrong');
+    setTimeout(() => onAnswer(correct), 800);
   };
 
   return (

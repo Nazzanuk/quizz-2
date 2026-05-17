@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import Provider from '@/State/Provider';
 import Toast from '@/Features/Shared/Toast';
 import ConfirmDialog from '@/Features/Shared/ConfirmDialog';
+import SettingsPanel from '@/Features/Shared/SettingsPanel';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -15,6 +16,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
   themeColor: '#FFB7B2',
 };
 
@@ -30,6 +32,7 @@ export default function RootLayout({
           {children}
           <Toast />
           <ConfirmDialog />
+          <SettingsPanel />
         </Provider>
       </body>
     </html>

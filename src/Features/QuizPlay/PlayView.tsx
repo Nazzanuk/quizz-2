@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { getResultsSummary, saveResult } from '@/Lib/Api/Client';
+import { playSound } from '@/Features/Shared/Sound';
+import { haptic } from '@/Features/Shared/Haptic';
 import {
   currentIndexAtom,
   userAnswersAtom,
@@ -61,12 +63,18 @@ export default function PlayView({ quizId }: PlayViewProps) {
         const perQuestion: Record<string, string> = {};
         next.forEach((v, k) => { perQuestion[k] = v; });
         saveResult(quizId, { correct: correctCount, total: next.size, perQuestion }).catch(() => {});
-        setTimeout(() => setShowResult(true), 400);
+        const pct = next.size > 0 ? Math.round((correctCount / next.size) * 100) : 0;
+        const isNewBest = previousBest !== null && pct > previousBest;
+        setTimeout(() => {
+          playSound(isNewBest ? 'newBest' : 'complete');
+          haptic('success');
+          setShowResult(true);
+        }, 400);
       } else {
         setTimeout(() => setIdx(idx + 1), 400);
       }
     },
-    [idx, questionOrder, answers, setAnswers, setIdx, setShowResult, quizId],
+    [idx, questionOrder, answers, setAnswers, setIdx, setShowResult, quizId, previousBest],
   );
 
   if (!quiz || (questions.length > 0 && questionOrder.length === 0)) {

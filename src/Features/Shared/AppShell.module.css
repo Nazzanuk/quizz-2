@@ -13,11 +13,12 @@
   z-index: 10;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0.75rem var(--content-pad);
   padding-top: calc(0.75rem + env(safe-area-inset-top));
 }
 
-.backButton {
+.iconButton {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -28,11 +29,12 @@
   background: var(--sage);
   color: var(--text-dark);
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.backButton:active {
+.iconButton:active {
   opacity: 0.7;
+  transform: scale(0.94);
 }
 
 .main {

@@ -54,9 +54,11 @@
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.editToggle:hover {
-  background: var(--text-dark);
-  color: #fff;
+@media (hover: hover) {
+  .editToggle:hover {
+    background: var(--text-dark);
+    color: #fff;
+  }
 }
 
 .editToggleActive {
@@ -90,8 +92,10 @@
   transition: color 0.15s ease;
 }
 
-.shareBtn:hover {
-  color: var(--text-dark);
+@media (hover: hover) {
+  .shareBtn:hover {
+    color: var(--text-dark);
+  }
 }
 
 .editActions {
@@ -118,9 +122,11 @@
   width: 100%;
 }
 
-.addBtn:hover:not(:disabled) {
-  color: var(--text-dark);
-  border-color: var(--text-dark);
+@media (hover: hover) {
+  .addBtn:hover:not(:disabled) {
+    color: var(--text-dark);
+    border-color: var(--text-dark);
+  }
 }
 
 .addBtn:disabled {

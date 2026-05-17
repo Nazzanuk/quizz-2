@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
+import { useCountUp } from '@/Features/Shared/useCountUp';
 import styles from './ResultsView.module.css';
 
 interface ResultsViewProps {
@@ -25,15 +26,18 @@ export default function ResultsView({
   onPracticeWeak,
 }: ResultsViewProps) {
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+  const animatedPct = useCountUp(pct, 900);
   const isNewBest = previousBest !== null && pct > previousBest;
 
   return (
     <Card color="lavender" className={styles.card}>
-      <p className={styles.score}>{pct}%</p>
+      <p className={`${styles.score} ${isNewBest ? styles.scoreNewBest : ''}`}>
+        {animatedPct}%
+      </p>
       <p className={styles.detail}>{correct} out of {total} correct</p>
 
       {previousBest !== null && (
-        <p className={styles.best}>
+        <p className={`${styles.best} ${isNewBest ? styles.bestNew : ''}`}>
           {isNewBest ? `New best! (was ${previousBest}%)` : `Best: ${previousBest}%`}
         </p>
       )}
