@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { currentQuizAtom, currentQuestionsAtom, isLoadingAtom } from '@/State/QuizAtoms';
 import { fetchQuiz } from '@/Lib/Api/Client';
@@ -69,22 +69,22 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     };
   }, [id, poll]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const patchQuiz = (data: Partial<Quiz>) => {
+  const patchQuiz = useCallback((data: Partial<Quiz>) => {
     setQuiz((prev) => (prev ? { ...prev, ...data } : prev));
-  };
+  }, [setQuiz]);
 
-  const patchQuestion = (questionId: string, data: Partial<Question>) => {
+  const patchQuestion = useCallback((questionId: string, data: Partial<Question>) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === questionId ? { ...q, ...data } : q)),
     );
-  };
+  }, [setQuestions]);
 
-  const addQuestions = (newQuestions: Question[]) => {
+  const addQuestions = useCallback((newQuestions: Question[]) => {
     setQuestions((prev) => [...prev, ...newQuestions]);
     setQuiz((prev) =>
       prev ? { ...prev, questionCount: prev.questionCount + newQuestions.length } : prev,
     );
-  };
+  }, [setQuestions, setQuiz]);
 
   return { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions };
 }
