@@ -65,7 +65,9 @@ export async function POST(req: Request) {
   const imageTopic = topic ?? generated.title;
   generateCoverImage(imageTopic)
     .then((url) => updateQuiz(quizId, { coverImageUrl: url }))
-    .catch(() => {});
+    .catch((err) =>
+      console.warn(`[quiz/${quizId}] cover image failed:`, err instanceof Error ? err.message : err),
+    );
 
   generated.questions.forEach((q, i) => {
     const row = questionRows[i];
@@ -73,7 +75,9 @@ export async function POST(req: Request) {
     if (q.imageDescription) {
       generateQuestionImage(q.imageDescription)
         .then((url) => updateQuestionImage(row.id, url))
-        .catch(() => {});
+        .catch((err) =>
+          console.warn(`[quiz/${quizId}] question image failed for "${truncate(q.questionText, 60)}":`, err instanceof Error ? err.message : err),
+        );
     }
 
     if (q.optionImageDescriptions?.some(d => d)) {
@@ -83,14 +87,21 @@ export async function POST(req: Request) {
         ),
       )
         .then((urls) => {
-          // Only store if every slot has a URL — partial sets cause broken image grids
+          // Only store if every slot has a URL — partial sets cause broken image grids.
+          // ImageGen retries internally with a sanitized fallback before giving up.
           if (urls.every((u) => u != null)) {
             updateQuestionOptionImages(row.id, urls as string[]);
+          } else {
+            const missing = urls.filter((u) => u == null).length;
+            console.warn(`[quiz/${quizId}] option images for "${truncate(q.questionText, 60)}": ${missing}/4 failed — falling back to text options`);
           }
-        })
-        .catch(() => {});
+        });
     }
   });
 
   return NextResponse.json(quiz, { status: 201 });
+}
+
+function truncate(s: string, n: number): string {
+  return s.length <= n ? s : `${s.slice(0, n)}…`;
 }

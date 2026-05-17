@@ -92,8 +92,7 @@ function buildPrompt(opts: {
     source,
     formatInstructions,
     'Generate a short, descriptive title and a one-sentence description.',
-    'For each question, set imageDescription to a concise visual description ONLY when an image of the subject would genuinely help answer the question (e.g. a landmark, artwork, flag, species, map location). Set to null otherwise.',
-    'For MCQ questions where the answer options are visual things (flags, landmarks, species, artworks, people, etc.), set optionImageDescriptions to an array of 4 concise image descriptions — one per option, in the same order as options. Each entry describes what to show for that option. Set optionImageDescriptions to null for questions where text options suffice.',
+    IMAGE_DESCRIPTION_RULES,
     'Return valid JSON matching the schema.',
   ];
 
@@ -105,6 +104,26 @@ function buildPrompt(opts: {
 
   return parts.join('\n\n');
 }
+
+const IMAGE_DESCRIPTION_RULES = [
+  'Image descriptions are sent to an image-generation model that REJECTS prompts naming real people, brand names, trademarked logos, copyrighted characters, or specific copyrighted artworks. Failed prompts mean no image — so every description must be safe.',
+  '',
+  'Rules for imageDescription and optionImageDescriptions:',
+  '- Describe the subject by its VISUAL ATTRIBUTES, never by name. Use era, materials, posture, setting, colors, distinctive features.',
+  '- Examples of safe rewrites:',
+  '  • "Eiffel Tower" → "tall wrought-iron lattice tower at dusk, Parisian skyline"',
+  '  • "Mona Lisa" → "16th-century Italian oil portrait of a seated woman with an enigmatic smile, dark landscape behind"',
+  '  • "Albert Einstein" → "elderly man with wild white hair and a thick moustache, early 20th century, contemplative expression"',
+  '  • "Coca-Cola bottle" → "curvy glass soft-drink bottle with a deep red label, mid-century styling"',
+  '  • "Mickey Mouse" → AVOID ENTIRELY — pick a different question rather than describe trademarked characters.',
+  '- Skip the image (set to null) when the subject is a fictional character, branded product, living public figure, or anything you cannot describe safely.',
+  '- Skip the image when the question can be answered fully from text alone (e.g. abstract concepts, math, dates without a visual subject).',
+  '- The image accompanies the QUESTION, not the literal answer phrase. It depicts the subject in a way that supports the question without trivially spelling out the answer in pixels (no captions, no text in the image).',
+  '',
+  'imageDescription: a single concise visual description (or null). Use when a recognizable subject genuinely helps.',
+  '',
+  'optionImageDescriptions: only for MCQ questions where the four answer options are visually distinct subjects (flags, landmarks, species, artworks, anatomical parts, etc). Provide an array of 4 descriptions in the same order as options. Each must follow the visual-attribute rules above. Each image must be unambiguous and isolated on a plain background so it can stand alone in a 2×2 grid. Set to null when text options suffice.',
+].join('\n');
 
 const FORMAT_PROMPTS: Record<QuizFormat, string> = {
   mcq: 'Each question has exactly 4 options. The first option must be the correct answer. Include the correct answer in answerText.',
