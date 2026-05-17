@@ -22,7 +22,7 @@ const SOUNDS: SoundSpec[] = [
   {
     name: 'tap',
     prompt: 'Juicy tactile mobile game tap. Soft rounded click with a tiny pop, clean and satisfying, very short, no harsh attack.',
-    durationSeconds: 0.35,
+    durationSeconds: 0.5,
     promptInfluence: 0.55,
   },
   {
