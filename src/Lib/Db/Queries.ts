@@ -51,6 +51,7 @@ type InsertQuestion = {
   options?: string[] | null;
   optionImages?: (string | null)[] | null;
   imageUrl?: string | null;
+  imagePrompt?: string | null;
   format: QuizFormat;
   order: number;
 };
@@ -63,6 +64,7 @@ export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
       options: q.options ? JSON.stringify(q.options) : null,
       optionImages: q.optionImages ? JSON.stringify(q.optionImages) : null,
       imageUrl: q.imageUrl ?? null,
+      imagePrompt: q.imagePrompt ?? null,
     })),
   );
 }
@@ -85,12 +87,20 @@ export async function deleteQuiz(id: string): Promise<void> {
 
 export async function updateQuestion(
   id: string,
-  data: { questionText?: string; answerText?: string; options?: string[] | null },
+  data: {
+    questionText?: string;
+    answerText?: string;
+    options?: string[] | null;
+    imagePrompt?: string | null;
+    imageUrl?: string | null;
+  },
 ): Promise<Question | undefined> {
   const set: Partial<typeof questions.$inferInsert> = {};
   if (data.questionText !== undefined) set.questionText = data.questionText;
   if (data.answerText !== undefined) set.answerText = data.answerText;
   if (data.options !== undefined) set.options = data.options ? JSON.stringify(data.options) : null;
+  if (data.imagePrompt !== undefined) set.imagePrompt = data.imagePrompt;
+  if (data.imageUrl !== undefined) set.imageUrl = data.imageUrl;
 
   const [row] = await db
     .update(questions)
@@ -166,6 +176,7 @@ function parseQuestion(row: typeof questions.$inferSelect): Question {
     options: row.options ? JSON.parse(row.options) : null,
     optionImages: row.optionImages ? JSON.parse(row.optionImages) : null,
     imageUrl: row.imageUrl ?? null,
+    imagePrompt: row.imagePrompt ?? null,
     format: normalizeQuizFormat(row.format),
   } as Question;
 }

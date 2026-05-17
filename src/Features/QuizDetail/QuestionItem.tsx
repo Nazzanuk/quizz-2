@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { Question } from '@/Lib/Types';
-import { updateQuestion } from '@/Lib/Api/Client';
+import { regenerateQuestionImage, updateQuestion } from '@/Lib/Api/Client';
 import Card from '@/Features/Shared/Card';
 import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './QuestionItem.module.css';
@@ -28,27 +28,38 @@ export default function QuestionItem({
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(question.questionText);
   const [answer, setAnswer] = useState(question.answerText);
+  const [imagePrompt, setImagePrompt] = useState(question.imagePrompt ?? question.questionText);
   const [saving, setSaving] = useState(false);
+  const [regeneratingImage, setRegeneratingImage] = useState(false);
+  const [imageError, setImageError] = useState('');
 
   const handleSave = async () => {
     const t = text.trim();
     const a = answer.trim();
+    const prompt = imagePrompt.trim();
     if (!t || !a) return;
-    if (t === question.questionText && a === question.answerText) {
+    if (
+      t === question.questionText
+      && a === question.answerText
+      && prompt === (question.imagePrompt ?? question.questionText)
+    ) {
       setIsEditing(false);
       return;
     }
 
     setSaving(true);
+    setImageError('');
     const options = question.options ? [a, ...question.options.slice(1)] : undefined;
     await updateQuestion(quizId, question.id, {
       questionText: t,
       answerText: a,
+      imagePrompt: prompt || null,
       ...(options ? { options } : {}),
     });
     onUpdate(question.id, {
       questionText: t,
       answerText: a,
+      imagePrompt: prompt || null,
       ...(options ? { options } : {}),
     });
     setSaving(false);
@@ -58,19 +69,52 @@ export default function QuestionItem({
   const handleCancel = () => {
     setText(question.questionText);
     setAnswer(question.answerText);
+    setImagePrompt(question.imagePrompt ?? question.questionText);
+    setImageError('');
     setIsEditing(false);
   };
 
   const handleStartEdit = () => {
     setText(question.questionText);
     setAnswer(question.answerText);
+    setImagePrompt(question.imagePrompt ?? question.questionText);
+    setImageError('');
     setIsEditing(true);
+  };
+
+  const handleRegenerateImage = async () => {
+    const prompt = imagePrompt.trim();
+    if (!prompt) {
+      setImageError('Add an image prompt first.');
+      return;
+    }
+
+    setRegeneratingImage(true);
+    setImageError('');
+    try {
+      const updated = await regenerateQuestionImage(quizId, question.id, prompt);
+      onUpdate(question.id, updated);
+      setImagePrompt(updated.imagePrompt ?? prompt);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Image regeneration failed');
+    } finally {
+      setRegeneratingImage(false);
+    }
   };
 
   if (isEditing) {
     return (
       <Card color={color} className={styles.card}>
         <p className={styles.number}>Q{index + 1}</p>
+        {(question.imageUrl || regeneratingImage) && (
+          <div className={styles.editImageWrap}>
+            {question.imageUrl ? (
+              <SafeImage src={question.imageUrl} alt="" className={styles.questionImg} />
+            ) : (
+              <div className={`${styles.questionImg} ${styles.skeleton}`} />
+            )}
+          </div>
+        )}
         <textarea
           className={styles.editField}
           value={text}
@@ -85,11 +129,33 @@ export default function QuestionItem({
           onChange={e => setAnswer(e.target.value)}
           placeholder="Answer"
         />
+        <label className={styles.editLabel} htmlFor={`image-prompt-${question.id}`}>
+          Image prompt
+        </label>
+        <textarea
+          id={`image-prompt-${question.id}`}
+          className={styles.editField}
+          value={imagePrompt}
+          onChange={e => setImagePrompt(e.target.value)}
+          placeholder="Describe the image you want generated for this question"
+          rows={3}
+        />
+        <div className={styles.imageActions}>
+          <button
+            className={styles.imageBtn}
+            onClick={handleRegenerateImage}
+            disabled={regeneratingImage || !imagePrompt.trim()}
+            type="button"
+          >
+            {regeneratingImage ? 'Regenerating image…' : question.imageUrl ? 'Regenerate image' : 'Generate image'}
+          </button>
+          {imageError && <p className={styles.imageError}>{imageError}</p>}
+        </div>
         <div className={styles.editActions}>
           <button
             className={styles.saveBtn}
             onClick={handleSave}
-            disabled={saving || !text.trim() || !answer.trim()}
+            disabled={saving || regeneratingImage || !text.trim() || !answer.trim()}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>

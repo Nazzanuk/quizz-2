@@ -28,6 +28,7 @@ export async function runMigrations(): Promise<void> {
     options TEXT,
     option_images TEXT,
     image_url TEXT,
+    image_prompt TEXT,
     format TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
@@ -51,6 +52,7 @@ export async function runMigrations(): Promise<void> {
   for (const stmt of [
     sql`ALTER TABLE questions ADD COLUMN image_url TEXT`,
     sql`ALTER TABLE questions ADD COLUMN option_images TEXT`,
+    sql`ALTER TABLE questions ADD COLUMN image_prompt TEXT`,
   ]) {
     try {
       await db.run(stmt);

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { getQuiz, getQuestions, updateQuiz, deleteQuiz } from '@/Lib/Db/Queries';
+import { runMigrations } from '@/Lib/Db/Migrate';
 
 interface Params {
   params: Promise<{ quizId: string }>;
 }
 
 export async function GET(_req: Request, { params }: Params) {
+  await runMigrations();
   const { quizId } = await params;
   const quiz = await getQuiz(quizId);
 
@@ -18,6 +20,7 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  await runMigrations();
   const { quizId } = await params;
   const body = await req.json();
   const updated = await updateQuiz(quizId, body);
@@ -30,6 +33,7 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(_req: Request, { params }: Params) {
+  await runMigrations();
   const { quizId } = await params;
   await deleteQuiz(quizId);
   return NextResponse.json({ ok: true });

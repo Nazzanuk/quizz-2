@@ -51,11 +51,27 @@ export function deleteQuiz(id: string): Promise<void> {
 export function updateQuestion(
   quizId: string,
   questionId: string,
-  data: { questionText?: string; answerText?: string; options?: string[] },
+  data: {
+    questionText?: string;
+    answerText?: string;
+    options?: string[];
+    imagePrompt?: string | null;
+  },
 ): Promise<Question> {
   return request(`/quizzes/${quizId}/questions/${questionId}`, {
     method: 'PUT',
     body: JSON.stringify(data),
+  });
+}
+
+export function regenerateQuestionImage(
+  quizId: string,
+  questionId: string,
+  imagePrompt: string,
+): Promise<Question> {
+  return request(`/quizzes/${quizId}/questions/${questionId}/image`, {
+    method: 'POST',
+    body: JSON.stringify({ imagePrompt }),
   });
 }
 

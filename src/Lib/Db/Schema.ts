@@ -23,6 +23,7 @@ export const questions = sqliteTable('questions', {
   options: text('options'),
   optionImages: text('option_images'),
   imageUrl: text('image_url'),
+  imagePrompt: text('image_prompt'),
   format: text('format').notNull(),
   order: integer('order').notNull(),
 });

@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { updateQuestion } from '@/Lib/Db/Queries';
+import { runMigrations } from '@/Lib/Db/Migrate';
 
 interface Params {
   params: Promise<{ quizId: string; questionId: string }>;
 }
 
 export async function PUT(req: Request, { params }: Params) {
+  await runMigrations();
   const { questionId } = await params;
   const body = await req.json();
   const updated = await updateQuestion(questionId, body);

@@ -59,6 +59,7 @@ export interface Question {
   options: string[] | null;
   optionImages: (string | null)[] | null;
   imageUrl: string | null;
+  imagePrompt: string | null;
   format: QuizFormat;
   order: number;
 }

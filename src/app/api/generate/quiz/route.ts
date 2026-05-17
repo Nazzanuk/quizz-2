@@ -54,6 +54,7 @@ export async function POST(req: Request) {
     options: q.options,
     optionImages: null as null, // written only after ALL option images succeed
     imageUrl: null as string | null,
+    imagePrompt: q.imageDescription ?? null,
     format: q.format,
     order: i,
   }));

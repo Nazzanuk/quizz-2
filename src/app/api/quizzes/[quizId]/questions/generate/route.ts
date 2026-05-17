@@ -42,6 +42,7 @@ export async function POST(req: Request, { params }: Params) {
     options: q.options,
     optionImages: null as null,
     imageUrl: null as string | null,
+    imagePrompt: q.imageDescription ?? null,
     format: q.format,
     order: maxOrder + 1 + i,
   }));
