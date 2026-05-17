@@ -22,7 +22,7 @@ const SOUNDS: SoundSpec[] = [
   {
     name: 'tap',
     prompt: 'Soft, short UI tap sound. Single subtle click. Minimal, clean.',
-    durationSeconds: 0.3,
+    durationSeconds: 0.5,
     promptInfluence: 0.4,
   },
   {
