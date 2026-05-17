@@ -45,10 +45,7 @@ export default function Flashcard({ question, onAnswer }: FlashcardProps) {
             disabled={revealed}
             aria-label="Reveal answer"
           >
-            <Card color="sage" className={`${styles.cardSurface} ${question.imageUrl ? styles.cardWithImage : ''}`}>
-              {question.imageUrl && (
-                <SafeImage src={question.imageUrl} alt="" className={styles.image} />
-              )}
+            <Card color="sage" className={styles.cardSurface}>
               <div className={styles.cardBody}>
                 <h2 className={styles.question}>{question.questionText}</h2>
                 <p className={styles.hint}>Tap to reveal</p>
