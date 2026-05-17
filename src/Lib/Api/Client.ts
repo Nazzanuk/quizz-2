@@ -1,4 +1,4 @@
-import type { Quiz, Question, QuizWithQuestions, GenerateQuizRequest } from '../Types';
+import type { Quiz, Question, QuizWithQuestions, GenerateQuizRequest, ResultsSummary } from '../Types';
 
 const BASE = '/api';
 
@@ -70,5 +70,26 @@ export function generateImage(quizId: string, topic: string): Promise<void> {
   return request('/generate/image', {
     method: 'POST',
     body: JSON.stringify({ quizId, topic }),
+  });
+}
+
+export function getResultsSummary(quizId: string): Promise<ResultsSummary> {
+  return request(`/quizzes/${quizId}/results`);
+}
+
+export function saveResult(
+  quizId: string,
+  data: { correct: number; total: number; perQuestion: Record<string, string> },
+): Promise<void> {
+  return request(`/quizzes/${quizId}/results`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function generateMoreQuestions(quizId: string, count: number): Promise<Question[]> {
+  return request(`/quizzes/${quizId}/questions/generate`, {
+    method: 'POST',
+    body: JSON.stringify({ count }),
   });
 }

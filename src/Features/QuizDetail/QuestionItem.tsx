@@ -12,6 +12,7 @@ interface QuestionItemProps {
   index: number;
   quizId: string;
   editing: boolean;
+  imagesPending: boolean;
   onUpdate: (questionId: string, data: Partial<Question>) => void;
 }
 
@@ -20,6 +21,7 @@ export default function QuestionItem({
   index,
   quizId,
   editing,
+  imagesPending,
   onUpdate,
 }: QuestionItemProps) {
   const color = index % 2 === 0 ? 'sage' : 'lavender';
@@ -99,9 +101,11 @@ export default function QuestionItem({
 
   return (
     <Card color={color} className={styles.card}>
-      {question.imageUrl && (
+      {question.imageUrl ? (
         <SafeImage src={question.imageUrl} alt="" className={styles.questionImg} />
-      )}
+      ) : imagesPending ? (
+        <div className={`${styles.questionImg} ${styles.skeleton}`} />
+      ) : null}
       <div className={styles.cardTop}>
         <p className={styles.number}>Q{index + 1}</p>
         {editing && (
@@ -118,7 +122,7 @@ export default function QuestionItem({
       </div>
       <p className={styles.text}>{question.questionText}</p>
       <p className={styles.answer}>{question.answerText}</p>
-      {question.optionImages && (
+      {question.optionImages ? (
         <div className={styles.optionThumbs}>
           {question.optionImages.map((url, i) =>
             url ? (
@@ -132,7 +136,13 @@ export default function QuestionItem({
             ) : null,
           )}
         </div>
-      )}
+      ) : imagesPending ? (
+        <div className={styles.optionThumbs}>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={`${styles.optionThumb} ${styles.skeleton}`} />
+          ))}
+        </div>
+      ) : null}
     </Card>
   );
 }

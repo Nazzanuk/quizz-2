@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { currentQuizAtom, currentQuestionsAtom, isLoadingAtom } from '@/State/QuizAtoms';
 import { fetchQuiz } from '@/Lib/Api/Client';
@@ -22,6 +22,7 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
   const [quiz, setQuiz] = useAtom(currentQuizAtom);
   const [questions, setQuestions] = useAtom(currentQuestionsAtom);
   const setLoading = useSetAtom(isLoadingAtom);
+  const [imagesPending, setImagesPending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,7 +53,10 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
       const settled = staleCount >= STALE_POLLS_TO_STOP;
 
       if (!overBudget && !settled) {
+        setImagesPending(true);
         timer = setTimeout(tick, POLL_INTERVAL_MS);
+      } else {
+        setImagesPending(false);
       }
     };
 
@@ -60,6 +64,7 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
 
     return () => {
       cancelled = true;
+      setImagesPending(false);
       if (timer) clearTimeout(timer);
     };
   }, [id, poll]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -74,5 +79,12 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     );
   };
 
-  return { quiz, questions, patchQuiz, patchQuestion };
+  const addQuestions = (newQuestions: Question[]) => {
+    setQuestions((prev) => [...prev, ...newQuestions]);
+    setQuiz((prev) =>
+      prev ? { ...prev, questionCount: prev.questionCount + newQuestions.length } : prev,
+    );
+  };
+
+  return { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions };
 }

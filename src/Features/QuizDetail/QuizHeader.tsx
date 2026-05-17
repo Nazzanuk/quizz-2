@@ -9,10 +9,11 @@ import styles from './QuizHeader.module.css';
 interface QuizHeaderProps {
   quiz: Quiz;
   editing: boolean;
+  imagesPending: boolean;
   onSave: (data: { title: string; description: string | null }) => Promise<void>;
 }
 
-export default function QuizHeader({ quiz, editing, onSave }: QuizHeaderProps) {
+export default function QuizHeader({ quiz, editing, imagesPending, onSave }: QuizHeaderProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
   const [title, setTitle] = useState(quiz.title);
   const [desc, setDesc] = useState(quiz.description ?? '');
@@ -34,14 +35,16 @@ export default function QuizHeader({ quiz, editing, onSave }: QuizHeaderProps) {
 
   return (
     <header className={styles.header}>
-      {quiz.coverImageUrl && (
+      {quiz.coverImageUrl ? (
         <SafeImage
           src={quiz.coverImageUrl}
           alt=""
           className={`${styles.cover} ${imgLoaded ? styles.coverLoaded : ''}`}
           onLoad={() => setImgLoaded(true)}
         />
-      )}
+      ) : imagesPending ? (
+        <div className={`${styles.cover} ${styles.coverSkeleton}`} />
+      ) : null}
 
       {editing ? (
         <input

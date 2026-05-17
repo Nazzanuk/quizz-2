@@ -32,6 +32,21 @@ export interface QuizWithQuestions extends Quiz {
   questions: Question[];
 }
 
+export interface QuizResult {
+  id: string;
+  quizId: string;
+  correct: number;
+  total: number;
+  perQuestion: Record<string, string>;
+  createdAt: string;
+}
+
+export interface ResultsSummary {
+  count: number;
+  best: number | null;
+  last: number | null;
+}
+
 export interface GenerateQuizRequest {
   topic?: string;
   material?: string;
@@ -43,3 +58,4 @@ export interface GenerateImageRequest {
   quizId: string;
   topic: string;
 }
+

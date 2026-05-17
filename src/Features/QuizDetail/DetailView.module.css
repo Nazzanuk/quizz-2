@@ -64,10 +64,71 @@
   color: #fff;
 }
 
-.deleteWrap {
-  margin-top: 2.5rem;
+.metaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -1.25rem;
+  margin-bottom: 2rem;
+  min-height: 1.5rem;
+}
+
+.statsText {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.shareBtn {
+  background: none;
+  border: none;
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s ease;
+}
+
+.shareBtn:hover {
+  color: var(--text-dark);
+}
+
+.editActions {
+  margin-top: 2rem;
   padding-top: 1.5rem;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.addBtn {
+  background: none;
+  border: 1.5px dashed rgba(0, 0, 0, 0.2);
+  color: var(--text-muted);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1.5rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+  width: 100%;
+}
+
+.addBtn:hover:not(:disabled) {
+  color: var(--text-dark);
+  border-color: var(--text-dark);
+}
+
+.addBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.deleteWrap {
   display: flex;
   justify-content: center;
 }

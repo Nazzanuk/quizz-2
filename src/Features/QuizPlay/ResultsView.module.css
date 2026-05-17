@@ -19,6 +19,12 @@
 .detail {
   font-size: 1rem;
   color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.best {
+  font-size: 0.85rem;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 

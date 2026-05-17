@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
+import { getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import {
   currentIndexAtom,
   userAnswersAtom,
@@ -33,8 +34,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionOrder = useAtomValue(questionOrderAtom);
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
+  const [previousBest, setPreviousBest] = useState<number | null>(null);
 
-  // Initialise (shuffle + assign formats) once questions arrive
+  useEffect(() => {
+    getResultsSummary(quizId)
+      .then((s) => setPreviousBest(s.best))
+      .catch(() => {});
+  }, [quizId]);
+
   useEffect(() => {
     if (questions.length > 0 && questionOrder.length === 0) {
       initPlay(questions);
@@ -50,12 +57,16 @@ export default function PlayView({ quizId }: PlayViewProps) {
       setAnswers(next);
 
       if (idx + 1 >= questionOrder.length) {
+        const correctCount = [...next.values()].filter((v) => v === '__correct__').length;
+        const perQuestion: Record<string, string> = {};
+        next.forEach((v, k) => { perQuestion[k] = v; });
+        saveResult(quizId, { correct: correctCount, total: next.size, perQuestion }).catch(() => {});
         setTimeout(() => setShowResult(true), 400);
       } else {
         setTimeout(() => setIdx(idx + 1), 400);
       }
     },
-    [idx, questionOrder, answers, setAnswers, setIdx, setShowResult],
+    [idx, questionOrder, answers, setAnswers, setIdx, setShowResult, quizId],
   );
 
   if (!quiz || (questions.length > 0 && questionOrder.length === 0)) {
@@ -67,6 +78,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   }
 
   if (showResult) {
+    const wrongQuestions = questions.filter((q) => answers.get(q.id) === '__wrong__');
     return (
       <AppShell>
         <BlobField />
@@ -75,7 +87,10 @@ export default function PlayView({ quizId }: PlayViewProps) {
             correct={score.correct}
             total={score.total}
             quizId={quizId}
+            previousBest={previousBest}
+            wrongCount={wrongQuestions.length}
             onRetry={() => initPlay(questions)}
+            onPracticeWeak={wrongQuestions.length > 0 ? () => initPlay(wrongQuestions) : undefined}
           />
         </div>
       </AppShell>

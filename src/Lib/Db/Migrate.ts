@@ -13,6 +13,15 @@ export async function runMigrations(): Promise<void> {
     mime_type TEXT NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_results (
+    id TEXT PRIMARY KEY,
+    quiz_id TEXT NOT NULL,
+    correct INTEGER NOT NULL,
+    total INTEGER NOT NULL,
+    per_question TEXT NOT NULL,
+    created_at TEXT NOT NULL
+  )`);
+
   for (const stmt of [
     sql`ALTER TABLE questions ADD COLUMN image_url TEXT`,
     sql`ALTER TABLE questions ADD COLUMN option_images TEXT`,

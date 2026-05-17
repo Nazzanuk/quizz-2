@@ -58,6 +58,7 @@ export async function generateQuiz(opts: {
   material?: string;
   format: QuizFormat;
   count: number;
+  existingQuestions?: string[];
 }): Promise<GeneratedQuiz> {
   const model = genAI.getGenerativeModel({
     model: 'gemini-3-flash-preview',
@@ -78,6 +79,7 @@ function buildPrompt(opts: {
   material?: string;
   format: QuizFormat;
   count: number;
+  existingQuestions?: string[];
 }): string {
   const source = opts.material
     ? `Based on the following material:\n\n${opts.material}`
@@ -85,7 +87,7 @@ function buildPrompt(opts: {
 
   const formatInstructions = FORMAT_PROMPTS[opts.format];
 
-  return [
+  const parts = [
     `Generate a quiz with exactly ${opts.count} questions.`,
     source,
     formatInstructions,
@@ -93,7 +95,15 @@ function buildPrompt(opts: {
     'For each question, set imageDescription to a concise visual description ONLY when an image of the subject would genuinely help answer the question (e.g. a landmark, artwork, flag, species, map location). Set to null otherwise.',
     'For MCQ questions where the answer options are visual things (flags, landmarks, species, artworks, people, etc.), set optionImageDescriptions to an array of 4 concise image descriptions — one per option, in the same order as options. Each entry describes what to show for that option. Set optionImageDescriptions to null for questions where text options suffice.',
     'Return valid JSON matching the schema.',
-  ].join('\n\n');
+  ];
+
+  if (opts.existingQuestions?.length) {
+    parts.push(
+      `Do not duplicate any of these existing questions:\n${opts.existingQuestions.join('\n')}`,
+    );
+  }
+
+  return parts.join('\n\n');
 }
 
 const FORMAT_PROMPTS: Record<QuizFormat, string> = {

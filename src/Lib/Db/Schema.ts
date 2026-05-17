@@ -32,3 +32,12 @@ export const images = sqliteTable('images', {
   data: text('data').notNull(),
   mimeType: text('mime_type').notNull(),
 });
+
+export const quizResults = sqliteTable('quiz_results', {
+  id: text('id').primaryKey(),
+  quizId: text('quiz_id').notNull(),
+  correct: integer('correct').notNull(),
+  total: integer('total').notNull(),
+  perQuestion: text('per_question').notNull(),
+  createdAt: text('created_at').notNull(),
+});

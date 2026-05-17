@@ -1,7 +1,7 @@
 import { eq, desc } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images } from './Schema';
-import type { Quiz, Question, QuizFormat } from '../Types';
+import { quizzes, questions, images, quizResults } from './Schema';
+import type { Quiz, Question, QuizFormat, ResultsSummary } from '../Types';
 import { nowISO } from '../Utils';
 
 export async function listQuizzes(): Promise<Quiz[]> {
@@ -69,7 +69,7 @@ export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
 
 export async function updateQuiz(
   id: string,
-  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl'>>,
+  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl' | 'questionCount'>>,
 ): Promise<Quiz | undefined> {
   const [row] = await db
     .update(quizzes)
@@ -115,6 +115,40 @@ export async function updateQuestionOptionImages(
     .update(questions)
     .set({ optionImages: JSON.stringify(optionImages) })
     .where(eq(questions.id, id));
+}
+
+export async function insertQuizResult(data: {
+  id: string;
+  quizId: string;
+  correct: number;
+  total: number;
+  perQuestion: Record<string, string>;
+}): Promise<void> {
+  await db.insert(quizResults).values({
+    ...data,
+    perQuestion: JSON.stringify(data.perQuestion),
+    createdAt: nowISO(),
+  });
+}
+
+export async function getResultsSummary(quizId: string): Promise<ResultsSummary> {
+  const rows = await db
+    .select()
+    .from(quizResults)
+    .where(eq(quizResults.quizId, quizId))
+    .orderBy(desc(quizResults.createdAt));
+
+  if (rows.length === 0) return { count: 0, best: null, last: null };
+
+  const last = rows[0];
+  const bestRow = rows.reduce((acc, r) =>
+    r.correct / r.total > acc.correct / acc.total ? r : acc, rows[0]);
+
+  return {
+    count: rows.length,
+    best: bestRow.total > 0 ? Math.round((bestRow.correct / bestRow.total) * 100) : 0,
+    last: last.total > 0 ? Math.round((last.correct / last.total) * 100) : 0,
+  };
 }
 
 export async function insertImage(id: string, data: string, mimeType: string): Promise<void> {
