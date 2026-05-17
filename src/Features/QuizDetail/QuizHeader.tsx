@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Quiz } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import SafeImage from '@/Features/Shared/SafeImage';
@@ -15,23 +15,6 @@ interface QuizHeaderProps {
 
 export default function QuizHeader({ quiz, editing, imagesPending, onSave }: QuizHeaderProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [title, setTitle] = useState(quiz.title);
-  const [desc, setDesc] = useState(quiz.description ?? '');
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    setTitle(quiz.title);
-    setDesc(quiz.description ?? '');
-  }, [quiz.id]);
-
-  const handleBlur = async () => {
-    const t = title.trim();
-    if (!t) return;
-    if (t === quiz.title && desc.trim() === (quiz.description ?? '')) return;
-    setSaving(true);
-    await onSave({ title: t, description: desc.trim() || null });
-    setSaving(false);
-  };
 
   return (
     <header className={styles.header}>
@@ -47,34 +30,64 @@ export default function QuizHeader({ quiz, editing, imagesPending, onSave }: Qui
       ) : null}
 
       {editing ? (
-        <input
-          className={styles.titleInput}
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          onBlur={handleBlur}
-          placeholder="Quiz title"
-        />
+        <EditableHeaderFields key={quiz.id} quiz={quiz} onSave={onSave} />
       ) : (
         <h1 className={styles.title}>{quiz.title}</h1>
       )}
 
-      {editing ? (
-        <textarea
-          className={styles.descInput}
-          value={desc}
-          onChange={e => setDesc(e.target.value)}
-          onBlur={handleBlur}
-          placeholder="Add a description…"
-          rows={2}
-        />
-      ) : (
-        quiz.description && <p className={styles.desc}>{quiz.description}</p>
-      )}
-
       <p className={styles.meta}>
         {quiz.questionCount} questions · {formatDate(quiz.createdAt)}
-        {saving && <span className={styles.saving}> · saving…</span>}
       </p>
     </header>
+  );
+}
+
+interface EditableHeaderFieldsProps {
+  quiz: Quiz;
+  onSave: (data: { title: string; description: string | null }) => Promise<void>;
+}
+
+function EditableHeaderFields({ quiz, onSave }: EditableHeaderFieldsProps) {
+  const [title, setTitle] = useState(quiz.title);
+  const [desc, setDesc] = useState(quiz.description ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const handleBlur = async () => {
+    const trimmedTitle = title.trim();
+    const trimmedDesc = desc.trim();
+
+    if (!trimmedTitle) return;
+    if (trimmedTitle === quiz.title && trimmedDesc === (quiz.description ?? '')) return;
+
+    setSaving(true);
+    await onSave({ title: trimmedTitle, description: trimmedDesc || null });
+    setSaving(false);
+  };
+
+  return (
+    <>
+      <input
+        className={styles.titleInput}
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        onBlur={handleBlur}
+        placeholder="Quiz title"
+      />
+
+      <textarea
+        className={styles.descInput}
+        value={desc}
+        onChange={e => setDesc(e.target.value)}
+        onBlur={handleBlur}
+        placeholder="Add a description…"
+        rows={2}
+      />
+
+      {saving && (
+        <p className={styles.meta}>
+          <span className={styles.saving}>saving…</span>
+        </p>
+      )}
+    </>
   );
 }

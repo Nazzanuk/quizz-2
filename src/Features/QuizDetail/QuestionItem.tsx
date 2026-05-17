@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Question } from '@/Lib/Types';
 import { updateQuestion } from '@/Lib/Api/Client';
 import Card from '@/Features/Shared/Card';
@@ -29,10 +29,6 @@ export default function QuestionItem({
   const [text, setText] = useState(question.questionText);
   const [answer, setAnswer] = useState(question.answerText);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (!editing) setIsEditing(false);
-  }, [editing]);
 
   const handleSave = async () => {
     const t = text.trim();
@@ -63,6 +59,12 @@ export default function QuestionItem({
     setText(question.questionText);
     setAnswer(question.answerText);
     setIsEditing(false);
+  };
+
+  const handleStartEdit = () => {
+    setText(question.questionText);
+    setAnswer(question.answerText);
+    setIsEditing(true);
   };
 
   if (isEditing) {
@@ -111,7 +113,7 @@ export default function QuestionItem({
         {editing && (
           <button
             className={styles.editBtn}
-            onClick={() => setIsEditing(true)}
+            onClick={handleStartEdit}
             aria-label="Edit question"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">

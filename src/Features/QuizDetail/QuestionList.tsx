@@ -21,7 +21,7 @@ export default function QuestionList({ questions, quizId, editing, imagesPending
   return (
     <div className={styles.list}>
       {questions.map((q, i) => (
-        <ScrollReveal key={q.id} delay={i * 0.06}>
+        <ScrollReveal key={`${q.id}-${editing ? 'edit' : 'view'}`} delay={i * 0.06}>
           <QuestionItem
             question={q}
             index={i}

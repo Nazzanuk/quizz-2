@@ -4,16 +4,14 @@ export function useCountUp(target: number, duration = 900): number {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      setValue(target);
-      return;
-    }
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setValue(target);
-      return;
+    let raf = 0;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion || duration <= 0) {
+      raf = requestAnimationFrame(() => setValue(target));
+      return () => cancelAnimationFrame(raf);
     }
 
-    let raf = 0;
     const start = performance.now();
 
     const tick = (now: number) => {

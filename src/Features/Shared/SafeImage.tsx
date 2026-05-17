@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @next/next/no-img-element */
 
 import { useState } from 'react';
 import type { ImgHTMLAttributes } from 'react';
@@ -11,6 +12,7 @@ export default function SafeImage({ onError, ...props }: SafeImageProps) {
   return (
     <img
       {...props}
+      alt={props.alt ?? ''}
       onError={(e) => {
         setFailed(true);
         onError?.(e);
