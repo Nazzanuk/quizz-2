@@ -56,6 +56,7 @@ export function updateQuestion(
     answerText?: string;
     options?: string[];
     imagePrompt?: string | null;
+    imageUrl?: string | null;
   },
 ): Promise<Question> {
   return request(`/quizzes/${quizId}/questions/${questionId}`, {

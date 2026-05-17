@@ -31,6 +31,7 @@ export default function QuestionItem({
   const [imagePrompt, setImagePrompt] = useState(question.imagePrompt ?? question.questionText);
   const [saving, setSaving] = useState(false);
   const [regeneratingImage, setRegeneratingImage] = useState(false);
+  const [removingImage, setRemovingImage] = useState(false);
   const [imageError, setImageError] = useState('');
 
   const handleSave = async () => {
@@ -102,13 +103,28 @@ export default function QuestionItem({
     }
   };
 
+  const handleRemoveImage = async () => {
+    if (!question.imageUrl) return;
+
+    setRemovingImage(true);
+    setImageError('');
+    try {
+      const updated = await updateQuestion(quizId, question.id, { imageUrl: null });
+      onUpdate(question.id, updated);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Removing image failed');
+    } finally {
+      setRemovingImage(false);
+    }
+  };
+
   if (isEditing) {
     return (
       <Card color={color} className={styles.card}>
         <p className={styles.number}>Q{index + 1}</p>
-        {(question.imageUrl || regeneratingImage) && (
+        {(question.imageUrl || regeneratingImage || removingImage) && (
           <div className={styles.editImageWrap}>
-            {question.imageUrl ? (
+            {question.imageUrl && !removingImage ? (
               <SafeImage src={question.imageUrl} alt="" className={styles.questionImg} />
             ) : (
               <div className={`${styles.questionImg} ${styles.skeleton}`} />
@@ -141,21 +157,33 @@ export default function QuestionItem({
           rows={3}
         />
         <div className={styles.imageActions}>
-          <button
-            className={styles.imageBtn}
-            onClick={handleRegenerateImage}
-            disabled={regeneratingImage || !imagePrompt.trim()}
-            type="button"
-          >
-            {regeneratingImage ? 'Regenerating image…' : question.imageUrl ? 'Regenerate image' : 'Generate image'}
-          </button>
+          <div className={styles.imageActionRow}>
+            <button
+              className={styles.imageBtn}
+              onClick={handleRegenerateImage}
+              disabled={regeneratingImage || removingImage || !imagePrompt.trim()}
+              type="button"
+            >
+              {regeneratingImage ? 'Regenerating image…' : question.imageUrl ? 'Regenerate image' : 'Generate image'}
+            </button>
+            {question.imageUrl && (
+              <button
+                className={styles.imageRemoveBtn}
+                onClick={handleRemoveImage}
+                disabled={regeneratingImage || removingImage}
+                type="button"
+              >
+                {removingImage ? 'Removing image…' : 'Remove image'}
+              </button>
+            )}
+          </div>
           {imageError && <p className={styles.imageError}>{imageError}</p>}
         </div>
         <div className={styles.editActions}>
           <button
             className={styles.saveBtn}
             onClick={handleSave}
-            disabled={saving || regeneratingImage || !text.trim() || !answer.trim()}
+            disabled={saving || regeneratingImage || removingImage || !text.trim() || !answer.trim()}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>

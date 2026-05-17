@@ -125,6 +125,12 @@
   margin-bottom: 0.45rem;
 }
 
+.imageActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .imageBtn {
   background: rgba(255, 255, 255, 0.74);
   color: var(--text-dark);
@@ -142,6 +148,27 @@
 }
 
 .imageBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.imageRemoveBtn {
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--danger-strong);
+  border: 1px solid rgba(203, 93, 81, 0.18);
+  font-family: var(--font-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow), var(--shadow-inset);
+  transition:
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) var(--ease-snappy);
+}
+
+.imageRemoveBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -190,6 +217,7 @@
 }
 
 @media (hover: hover) {
+  .imageRemoveBtn:hover:not(:disabled),
   .imageBtn:hover:not(:disabled),
   .saveBtn:hover:not(:disabled),
   .cancelBtn:hover {
