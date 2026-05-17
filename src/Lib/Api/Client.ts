@@ -1,4 +1,15 @@
-import type { Quiz, Question, QuizWithQuestions, GenerateQuizRequest, ResultsSummary } from '../Types';
+import type {
+  GenerateQuizRequest,
+  HostRecapRequest,
+  HostRecapResponse,
+  HostSessionResponse,
+  PlayerProfile,
+  Question,
+  Quiz,
+  QuizWithQuestions,
+  ResultsSummary,
+  SaveResultRequest,
+} from '../Types';
 
 const BASE = '/api';
 
@@ -96,9 +107,33 @@ export function getResultsSummary(quizId: string): Promise<ResultsSummary> {
 
 export function saveResult(
   quizId: string,
-  data: { correct: number; total: number; perQuestion: Record<string, string> },
+  data: SaveResultRequest,
 ): Promise<void> {
   return request(`/quizzes/${quizId}/results`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function fetchHostSession(
+  quizId: string,
+  data: {
+    mode: SaveResultRequest['mode'];
+    hostPersona: SaveResultRequest['hostPersona'];
+    profile: PlayerProfile;
+  },
+): Promise<HostSessionResponse> {
+  return request(`/quizzes/${quizId}/host/session`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function generateHostRecap(
+  quizId: string,
+  data: HostRecapRequest,
+): Promise<HostRecapResponse> {
+  return request(`/quizzes/${quizId}/host/recap`, {
     method: 'POST',
     body: JSON.stringify(data),
   });

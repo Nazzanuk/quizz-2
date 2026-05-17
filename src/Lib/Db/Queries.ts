@@ -1,7 +1,20 @@
-import { eq, desc } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults } from './Schema';
-import { normalizeQuizFormat, type Quiz, type Question, type QuizFormat, type ResultsSummary } from '../Types';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts } from './Schema';
+import {
+  normalizeQuestionDifficulty,
+  normalizeQuizFormat,
+  type HostMode,
+  type HostPersona,
+  type Question,
+  type QuestionAggregateStats,
+  type QuestionDifficulty,
+  type Quiz,
+  type QuizAggregateStats,
+  type QuizFormat,
+  type ResultsSummary,
+  type SaveResultAttemptInput,
+} from '../Types';
 import { nowISO } from '../Utils';
 
 export async function listQuizzes(): Promise<Quiz[]> {
@@ -53,6 +66,11 @@ type InsertQuestion = {
   imageUrl?: string | null;
   imagePrompt?: string | null;
   format: QuizFormat;
+  category?: string | null;
+  difficulty?: QuestionDifficulty | null;
+  explanation?: string | null;
+  factText?: string | null;
+  tags?: string[] | null;
   order: number;
 };
 
@@ -65,6 +83,11 @@ export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
       optionImages: q.optionImages ? JSON.stringify(q.optionImages) : null,
       imageUrl: q.imageUrl ?? null,
       imagePrompt: q.imagePrompt ?? null,
+      category: q.category ?? null,
+      difficulty: q.difficulty ?? null,
+      explanation: q.explanation ?? null,
+      factText: q.factText ?? null,
+      tags: q.tags ? JSON.stringify(q.tags) : null,
     })),
   );
 }
@@ -110,6 +133,31 @@ export async function updateQuestion(
   return row ? parseQuestion(row) : undefined;
 }
 
+export async function updateQuestionHostMetadata(
+  id: string,
+  data: {
+    category?: string | null;
+    difficulty?: QuestionDifficulty | null;
+    explanation?: string | null;
+    factText?: string | null;
+    tags?: string[] | null;
+  },
+): Promise<Question | undefined> {
+  const set: Partial<typeof questions.$inferInsert> = {};
+  if (data.category !== undefined) set.category = data.category;
+  if (data.difficulty !== undefined) set.difficulty = data.difficulty;
+  if (data.explanation !== undefined) set.explanation = data.explanation;
+  if (data.factText !== undefined) set.factText = data.factText;
+  if (data.tags !== undefined) set.tags = data.tags ? JSON.stringify(data.tags) : null;
+
+  const [row] = await db
+    .update(questions)
+    .set(set)
+    .where(eq(questions.id, id))
+    .returning();
+  return row ? parseQuestion(row) : undefined;
+}
+
 export async function updateQuestionImage(
   id: string,
   imageUrl: string,
@@ -141,6 +189,55 @@ export async function insertQuizResult(data: {
   });
 }
 
+export async function insertQuizRun(data: {
+  id: string;
+  quizId: string;
+  mode: HostMode;
+  hostPersona: HostPersona;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  elapsedMs: number;
+  recap: string | null;
+  attempts: SaveResultAttemptInput[];
+}): Promise<void> {
+  const createdAt = nowISO();
+  await db.insert(quizRuns).values({
+    id: data.id,
+    quizId: data.quizId,
+    mode: data.mode,
+    hostPersona: data.hostPersona,
+    correct: data.correct,
+    total: data.total,
+    bestStreak: data.bestStreak,
+    elapsedMs: data.elapsedMs,
+    recap: data.recap,
+    createdAt,
+  });
+
+  if (data.attempts.length === 0) return;
+
+  await db.insert(questionAttempts).values(
+    data.attempts.map((attempt) => ({
+      id: crypto.randomUUID(),
+      runId: data.id,
+      quizId: data.quizId,
+      questionId: attempt.questionId,
+      orderIndex: attempt.orderIndex,
+      selectedAnswer: attempt.selectedAnswer,
+      confidence: attempt.confidence,
+      correct: attempt.correct ? 1 : 0,
+      timedOut: attempt.timedOut ? 1 : 0,
+      responseMs: attempt.responseMs,
+      streakBefore: attempt.streakBefore,
+      streakAfter: attempt.streakAfter,
+      wasFinalQuestion: attempt.wasFinalQuestion ? 1 : 0,
+      hostMode: data.mode,
+      createdAt,
+    })),
+  );
+}
+
 export async function getResultsSummary(quizId: string): Promise<ResultsSummary> {
   const rows = await db
     .select()
@@ -161,6 +258,74 @@ export async function getResultsSummary(quizId: string): Promise<ResultsSummary>
   };
 }
 
+export async function getQuestionAggregateStats(
+  quizId: string,
+  questionIds: string[],
+): Promise<Record<string, QuestionAggregateStats>> {
+  if (questionIds.length === 0) return {};
+
+  const rows = await db
+    .select()
+    .from(questionAttempts)
+    .where(inArray(questionAttempts.questionId, questionIds));
+
+  const stats: Record<string, QuestionAggregateStats> = {};
+  for (const questionId of questionIds) {
+    const attempts = rows.filter((row) =>
+      row.quizId === quizId && row.questionId === questionId);
+    if (attempts.length === 0) {
+      stats[questionId] = {
+        attempts: 0,
+        correctPct: null,
+        averageResponseMs: null,
+        fastestResponseMs: null,
+      };
+      continue;
+    }
+
+    const correctCount = attempts.filter((row) => row.correct === 1).length;
+    const totalResponseMs = attempts.reduce((sum, row) => sum + row.responseMs, 0);
+    const fastestResponseMs = attempts.reduce(
+      (best, row) => Math.min(best, row.responseMs),
+      Number.POSITIVE_INFINITY,
+    );
+
+    stats[questionId] = {
+      attempts: attempts.length,
+      correctPct: Math.round((correctCount / attempts.length) * 100),
+      averageResponseMs: Math.round(totalResponseMs / attempts.length),
+      fastestResponseMs: Number.isFinite(fastestResponseMs) ? fastestResponseMs : null,
+    };
+  }
+
+  return stats;
+}
+
+export async function getQuizAggregateStats(quizId: string): Promise<QuizAggregateStats> {
+  const rows = await db
+    .select()
+    .from(quizRuns)
+    .where(eq(quizRuns.quizId, quizId));
+
+  if (rows.length === 0) {
+    return { plays: 0, bestPct: null, averagePct: null };
+  }
+
+  let totalPct = 0;
+  let bestPct = 0;
+  for (const row of rows) {
+    const pct = row.total > 0 ? Math.round((row.correct / row.total) * 100) : 0;
+    totalPct += pct;
+    bestPct = Math.max(bestPct, pct);
+  }
+
+  return {
+    plays: rows.length,
+    bestPct,
+    averagePct: Math.round(totalPct / rows.length),
+  };
+}
+
 export async function insertImage(id: string, data: string, mimeType: string): Promise<void> {
   await db.insert(images).values({ id, data, mimeType });
 }
@@ -178,5 +343,10 @@ function parseQuestion(row: typeof questions.$inferSelect): Question {
     imageUrl: row.imageUrl ?? null,
     imagePrompt: row.imagePrompt ?? null,
     format: normalizeQuizFormat(row.format),
+    category: row.category ?? null,
+    difficulty: normalizeQuestionDifficulty(row.difficulty),
+    explanation: row.explanation ?? null,
+    factText: row.factText ?? null,
+    tags: row.tags ? JSON.parse(row.tags) : null,
   } as Question;
 }

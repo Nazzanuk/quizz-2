@@ -3,11 +3,19 @@ import {
   SchemaType,
   type Schema,
 } from '@google/generative-ai';
-import { normalizeQuizFormat, type QuizFormat } from '../Types';
+import {
+  normalizeQuestionDifficulty,
+  normalizeQuizFormat,
+  type HostMode,
+  type PlayerProfile,
+  type Question,
+  type QuestionDifficulty,
+  type QuizFormat,
+} from '../Types';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
-const responseSchema: Schema = {
+const quizResponseSchema: Schema = {
   type: SchemaType.OBJECT,
   properties: {
     title: { type: SchemaType.STRING },
@@ -33,12 +41,63 @@ const responseSchema: Schema = {
             items: { type: SchemaType.STRING, nullable: true },
             nullable: true,
           },
+          category: { type: SchemaType.STRING },
+          difficulty: { type: SchemaType.STRING },
+          explanation: { type: SchemaType.STRING },
+          factText: { type: SchemaType.STRING },
+          tags: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
         },
-        required: ['format', 'questionText', 'answerText', 'options'],
+        required: [
+          'format',
+          'questionText',
+          'answerText',
+          'options',
+          'category',
+          'difficulty',
+          'explanation',
+          'factText',
+          'tags',
+        ],
       },
     },
   },
   required: ['title', 'description', 'questions'],
+};
+
+const metadataResponseSchema: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    questions: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          id: { type: SchemaType.STRING },
+          category: { type: SchemaType.STRING },
+          difficulty: { type: SchemaType.STRING },
+          explanation: { type: SchemaType.STRING },
+          factText: { type: SchemaType.STRING },
+          tags: {
+            type: SchemaType.ARRAY,
+            items: { type: SchemaType.STRING },
+          },
+        },
+        required: ['id', 'category', 'difficulty', 'explanation', 'factText', 'tags'],
+      },
+    },
+  },
+  required: ['questions'],
+};
+
+const lineResponseSchema: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    text: { type: SchemaType.STRING },
+  },
+  required: ['text'],
 };
 
 type GeneratedQuestionFormat = Exclude<QuizFormat, 'jeopardy'>;
@@ -53,7 +112,21 @@ export interface GeneratedQuiz {
     options: string[];
     imageDescription: string | null;
     optionImageDescriptions: (string | null)[] | null;
+    category: string;
+    difficulty: QuestionDifficulty | null;
+    explanation: string;
+    factText: string;
+    tags: string[];
   }[];
+}
+
+export interface GeneratedQuestionMetadata {
+  id: string;
+  category: string;
+  difficulty: QuestionDifficulty | null;
+  explanation: string;
+  factText: string;
+  tags: string[];
 }
 
 export async function generateQuiz(opts: {
@@ -62,18 +135,88 @@ export async function generateQuiz(opts: {
   count: number;
   existingQuestions?: string[];
 }): Promise<GeneratedQuiz> {
-  const model = genAI.getGenerativeModel({
+  const model = getJsonModel(quizResponseSchema);
+  const prompt = buildPrompt(opts);
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  return parseGeneratedQuiz(text);
+}
+
+export async function generateQuestionMetadata(opts: {
+  topic?: string | null;
+  title?: string | null;
+  questions: Question[];
+}): Promise<GeneratedQuestionMetadata[]> {
+  const model = getJsonModel(metadataResponseSchema);
+  const result = await model.generateContent(buildMetadataPrompt(opts));
+  const text = result.response.text();
+  const parsed = JSON.parse(text) as {
+    questions: Array<{
+      id: string;
+      category: string;
+      difficulty: string;
+      explanation: string;
+      factText: string;
+      tags: string[];
+    }>;
+  };
+
+  return parsed.questions.map((item) => ({
+    id: item.id,
+    category: item.category,
+    difficulty: normalizeQuestionDifficulty(item.difficulty),
+    explanation: item.explanation,
+    factText: item.factText,
+    tags: item.tags ?? [],
+  }));
+}
+
+export async function generateHostSessionIntro(opts: {
+  title: string;
+  topic?: string | null;
+  count: number;
+  mode: HostMode;
+  profile: PlayerProfile;
+  categories: string[];
+  hardCount: number;
+}): Promise<string> {
+  const model = getJsonModel(lineResponseSchema);
+  const result = await model.generateContent(buildHostIntroPrompt(opts));
+  const text = result.response.text();
+  return parseLine(text);
+}
+
+export async function generateHostRecap(opts: {
+  title: string;
+  topic?: string | null;
+  mode: HostMode;
+  score: number;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  wrongCount: number;
+  fastestAnswerMs: number | null;
+  averageAnswerMs: number | null;
+  previousBest: number | null;
+  isNewBest: boolean;
+  strengths: string[];
+  weaknesses: string[];
+  profile: PlayerProfile;
+}): Promise<string> {
+  const model = getJsonModel(lineResponseSchema);
+  const result = await model.generateContent(buildHostRecapPrompt(opts));
+  const text = result.response.text();
+  return parseLine(text);
+}
+
+function getJsonModel(responseSchema: Schema) {
+  return genAI.getGenerativeModel({
     model: 'gemini-3-flash-preview',
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema,
     },
   });
-
-  const prompt = buildPrompt(opts);
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  return parseGeneratedQuiz(text);
 }
 
 function buildPrompt(opts: {
@@ -90,6 +233,7 @@ function buildPrompt(opts: {
     `Generate a quiz with exactly ${opts.count} questions.`,
     source,
     FORMAT_INSTRUCTIONS,
+    HOST_METADATA_INSTRUCTIONS,
     'Generate a short, descriptive title and a one-sentence description.',
     IMAGE_DESCRIPTION_RULES,
     'Return valid JSON matching the schema.',
@@ -139,6 +283,107 @@ const FORMAT_INSTRUCTIONS = [
   '- Do not use the jeopardy format in generated output. Jeopardy is handled separately at play time.',
 ].join('\n');
 
+const HOST_METADATA_INSTRUCTIONS = [
+  'For every question also provide host-support metadata.',
+  '- category: a concise category label like Geography, Film, Space, Biology, Football, Literature.',
+  '- difficulty: one of easy, medium, hard.',
+  '- explanation: 1 short sentence that clearly explains why the answer is correct.',
+  '- factText: 1 short, vivid fact or comparison the host can say after the reveal.',
+  '- tags: 2 to 4 short lowercase tags that capture subtopics or themes.',
+  '- explanation and factText must be safe for all audiences, concise, and readable aloud.',
+].join('\n');
+
+function buildMetadataPrompt(opts: {
+  topic?: string | null;
+  title?: string | null;
+  questions: Question[];
+}): string {
+  const context = [
+    opts.title ? `Quiz title: ${opts.title}` : '',
+    opts.topic ? `Quiz topic: ${opts.topic}` : '',
+  ].filter(Boolean).join('\n');
+
+  const questionsBlock = opts.questions.map((question) => (
+    [
+      `id: ${question.id}`,
+      `question: ${question.questionText}`,
+      `answer: ${question.answerText}`,
+      `options: ${(question.options ?? []).join(' | ')}`,
+    ].join('\n')
+  )).join('\n\n');
+
+  return [
+    'You are enriching quiz questions for a sarcastic but educational pub-quiz host.',
+    context,
+    'For each question, return its id plus category, difficulty, explanation, factText, and tags.',
+    'Difficulty must be one of easy, medium, hard.',
+    'Explanation should be factual and direct. factText should be memorable and spoken-friendly.',
+    'Do not change or restate the question ids.',
+    questionsBlock,
+  ].filter(Boolean).join('\n\n');
+}
+
+function buildHostIntroPrompt(opts: {
+  title: string;
+  topic?: string | null;
+  count: number;
+  mode: HostMode;
+  profile: PlayerProfile;
+  categories: string[];
+  hardCount: number;
+}): string {
+  return [
+    'Write one short opening line for a quiz round in the voice of a sarcastic British pub quiz host.',
+    'Keep it to 1-2 sentences and under 45 words.',
+    `Quiz title: ${opts.title}`,
+    opts.topic ? `Topic: ${opts.topic}` : '',
+    `Question count: ${opts.count}`,
+    `Mode: ${opts.mode}`,
+    `Likely categories: ${opts.categories.join(', ') || 'mixed bag'}`,
+    `Hard question count: ${opts.hardCount}`,
+    `Player total runs: ${opts.profile.totalRuns}`,
+    `Player best score: ${opts.profile.bestPct ?? 'none yet'}%`,
+    'Mention the theme or difficulty profile when useful. Keep the tone sharp, playful, and confident.',
+  ].filter(Boolean).join('\n');
+}
+
+function buildHostRecapPrompt(opts: {
+  title: string;
+  topic?: string | null;
+  mode: HostMode;
+  score: number;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  wrongCount: number;
+  fastestAnswerMs: number | null;
+  averageAnswerMs: number | null;
+  previousBest: number | null;
+  isNewBest: boolean;
+  strengths: string[];
+  weaknesses: string[];
+  profile: PlayerProfile;
+}): string {
+  return [
+    'Write one short personalized recap in the voice of a sarcastic British pub quiz host.',
+    'Keep it to 2 sentences max and under 65 words.',
+    `Quiz title: ${opts.title}`,
+    opts.topic ? `Topic: ${opts.topic}` : '',
+    `Mode: ${opts.mode}`,
+    `Score: ${opts.correct}/${opts.total} (${opts.score}%)`,
+    `Best streak: ${opts.bestStreak}`,
+    `Wrong answers: ${opts.wrongCount}`,
+    `Fastest answer ms: ${opts.fastestAnswerMs ?? 'unknown'}`,
+    `Average answer ms: ${opts.averageAnswerMs ?? 'unknown'}`,
+    `Previous best: ${opts.previousBest ?? 'none'}%`,
+    `Is new best: ${opts.isNewBest ? 'yes' : 'no'}`,
+    `Strengths: ${opts.strengths.join(', ') || 'none obvious'}`,
+    `Weaknesses: ${opts.weaknesses.join(', ') || 'none obvious'}`,
+    `Player total runs: ${opts.profile.totalRuns}`,
+    'Make it feel like a mini performance review, witty but not mean, and mention a comeback, wobble, pace, or streak when possible.',
+  ].filter(Boolean).join('\n');
+}
+
 function parseGeneratedQuiz(text: string): GeneratedQuiz {
   const parsed = JSON.parse(text) as {
     title: string;
@@ -150,6 +395,11 @@ function parseGeneratedQuiz(text: string): GeneratedQuiz {
       options: string[];
       imageDescription?: string | null;
       optionImageDescriptions?: (string | null)[] | null;
+      category: string;
+      difficulty: string;
+      explanation: string;
+      factText: string;
+      tags: string[];
     }>;
   };
 
@@ -163,8 +413,18 @@ function parseGeneratedQuiz(text: string): GeneratedQuiz {
       options: question.options,
       imageDescription: question.imageDescription ?? null,
       optionImageDescriptions: question.optionImageDescriptions ?? null,
+      category: question.category,
+      difficulty: normalizeQuestionDifficulty(question.difficulty),
+      explanation: question.explanation,
+      factText: question.factText,
+      tags: question.tags ?? [],
     })),
   };
+}
+
+function parseLine(text: string): string {
+  const parsed = JSON.parse(text) as { text: string };
+  return parsed.text.trim();
 }
 
 function normalizeGeneratedQuestionFormat(value: string): GeneratedQuestionFormat {

@@ -25,6 +25,11 @@ export const questions = sqliteTable('questions', {
   imageUrl: text('image_url'),
   imagePrompt: text('image_prompt'),
   format: text('format').notNull(),
+  category: text('category'),
+  difficulty: text('difficulty'),
+  explanation: text('explanation'),
+  factText: text('fact_text'),
+  tags: text('tags'),
   order: integer('order').notNull(),
 });
 
@@ -40,5 +45,38 @@ export const quizResults = sqliteTable('quiz_results', {
   correct: integer('correct').notNull(),
   total: integer('total').notNull(),
   perQuestion: text('per_question').notNull(),
+  createdAt: text('created_at').notNull(),
+});
+
+export const quizRuns = sqliteTable('quiz_runs', {
+  id: text('id').primaryKey(),
+  quizId: text('quiz_id').notNull(),
+  mode: text('mode').notNull(),
+  hostPersona: text('host_persona').notNull(),
+  correct: integer('correct').notNull(),
+  total: integer('total').notNull(),
+  bestStreak: integer('best_streak').notNull(),
+  elapsedMs: integer('elapsed_ms').notNull(),
+  recap: text('recap'),
+  createdAt: text('created_at').notNull(),
+});
+
+export const questionAttempts = sqliteTable('question_attempts', {
+  id: text('id').primaryKey(),
+  runId: text('run_id')
+    .notNull()
+    .references(() => quizRuns.id, { onDelete: 'cascade' }),
+  quizId: text('quiz_id').notNull(),
+  questionId: text('question_id').notNull(),
+  orderIndex: integer('order_index').notNull(),
+  selectedAnswer: text('selected_answer'),
+  confidence: text('confidence'),
+  correct: integer('correct').notNull(),
+  timedOut: integer('timed_out').notNull(),
+  responseMs: integer('response_ms').notNull(),
+  streakBefore: integer('streak_before').notNull(),
+  streakAfter: integer('streak_after').notNull(),
+  wasFinalQuestion: integer('was_final_question').notNull(),
+  hostMode: text('host_mode').notNull(),
   createdAt: text('created_at').notNull(),
 });

@@ -1,12 +1,22 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useAtom, useSetAtom, useAtomValue } from 'jotai';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import Link from 'next/link';
-import { PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
+import { HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
+import { fetchHostSession, generateHostRecap, getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
-import type { Question, QuizAnswerPhase, QuizFormat, QuizMilestone } from '@/Lib/Types';
-import { getResultsSummary, saveResult } from '@/Lib/Api/Client';
+import { recordPlayerRun, getPlayerProfile } from '@/Lib/PlayerProfile';
+import type {
+  HostConfidenceLevel,
+  PlayerProfile,
+  Question,
+  QuestionAggregateStats,
+  QuizAnswerPhase,
+  QuizFormat,
+  QuizMilestone,
+  SaveResultAttemptInput,
+} from '@/Lib/Types';
 import { playSound, primeAudio } from '@/Features/Shared/Sound';
 import { haptic } from '@/Features/Shared/Haptic';
 import {
@@ -19,6 +29,7 @@ import {
   questionFormatsAtom,
   isPlayableQuestion,
 } from '@/State/PlayAtoms';
+import { hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
@@ -26,14 +37,33 @@ import PlayProgress from './PlayProgress';
 import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
 import PlayTimer from './PlayTimer';
+import HostStage, { type HostCue } from './HostStage';
+import {
+  averageResponseMs,
+  buildAnswerReaction,
+  buildQuestionOpener,
+  fastestResponseMs,
+  getRunInsights,
+  shouldPromptConfidence,
+} from './HostScript';
 import styles from './PlayView.module.css';
 
 interface PlayViewProps {
   quizId: string;
 }
 
+interface AnswerCommit {
+  correct: boolean;
+  phase: QuizAnswerPhase;
+  responseMs: number;
+  selectedAnswer: string | null;
+  timedOut: boolean;
+}
+
+const HOST_PERSONA = 'sarcastic_pub_host' as const;
+
 export default function PlayView({ quizId }: PlayViewProps) {
-  const { quiz, questions } = useQuiz(quizId);
+  const { quiz, questions, patchQuestion } = useQuiz(quizId);
   const [idx, setIdx] = useAtom(currentIndexAtom);
   const [answers, setAnswers] = useAtom(userAnswersAtom);
   const [showResult, setShowResult] = useAtom(showResultAtom);
@@ -41,17 +71,35 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionOrder = useAtomValue(questionOrderAtom);
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
+  const hostMode = useAtomValue(hostModeAtom);
+  const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
   const [previousBest, setPreviousBest] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
   const [answerPhase, setAnswerPhase] = useState<QuizAnswerPhase>('idle');
   const [milestone, setMilestone] = useState<QuizMilestone>('none');
+  const [hostCue, setHostCue] = useState<HostCue | null>(null);
+  const [hostIntro, setHostIntro] = useState('');
+  const [questionStats, setQuestionStats] = useState<Record<string, QuestionAggregateStats>>({});
+  const [playerProfile, setPlayerProfile] = useState<PlayerProfile>(() => getPlayerProfile());
+  const [confidenceByQuestion, setConfidenceByQuestion] = useState<Record<string, HostConfidenceLevel | null>>({});
+  const [previousWasWrong, setPreviousWasWrong] = useState(false);
+  const [recap, setRecap] = useState('');
+  const [runSeed, setRunSeed] = useState(0);
   const uiTimersRef = useRef<number[]>([]);
   const milestoneTimerRef = useRef<number | null>(null);
+  const runIdRef = useRef(crypto.randomUUID());
+  const runStartedAtRef = useRef(0);
+  const attemptsRef = useRef<SaveResultAttemptInput[]>([]);
+
+  const questionById = useMemo(
+    () => new Map(questions.map((question) => [question.id, question])),
+    [questions],
+  );
 
   useEffect(() => {
     getResultsSummary(quizId)
-      .then((s) => setPreviousBest(s.best))
+      .then((summary) => setPreviousBest(summary.best))
       .catch(() => {});
   }, [quizId]);
 
@@ -80,6 +128,17 @@ export default function PlayView({ quizId }: PlayViewProps) {
     setMilestone('none');
     setStreak(0);
     setBestStreak(0);
+    setHostCue(null);
+    setHostIntro('');
+    setQuestionStats({});
+    setPlayerProfile(getPlayerProfile());
+    setConfidenceByQuestion({});
+    setPreviousWasWrong(false);
+    setRecap('');
+    attemptsRef.current = [];
+    runIdRef.current = crypto.randomUUID();
+    runStartedAtRef.current = Date.now();
+    setRunSeed((value) => value + 1);
   }, [clearUiTimers]);
 
   const startRun = useCallback((items: Question[]) => {
@@ -89,30 +148,116 @@ export default function PlayView({ quizId }: PlayViewProps) {
 
   useEffect(() => {
     if (questions.length > 0 && questionOrder.length === 0) {
-      initPlay(questions);
+      const id = window.setTimeout(() => startRun(questions), 0);
+      return () => window.clearTimeout(id);
     }
-  }, [questions.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    return undefined;
+  }, [questionOrder.length, questions, startRun]);
+
+  useEffect(() => {
+    if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
+
+    let cancelled = false;
+    const profile = getPlayerProfile();
+
+    fetchHostSession(quizId, {
+      mode: hostMode,
+      hostPersona: HOST_PERSONA,
+      profile,
+    })
+      .then((session) => {
+        if (cancelled) return;
+        session.questions.forEach((question) => patchQuestion(question.id, question));
+        setHostIntro(session.intro);
+        setQuestionStats(session.questionStats);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setHostIntro('Right then. Ten questions. No hiding. Let’s see if your brain is awake.');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [patchQuestion, questionOrder.length, quiz, quizId, runSeed, hostMode]);
+
+  const currentId = questionOrder[idx];
+  const current = currentId ? questionById.get(currentId) : undefined;
+  const format = currentId ? (questionFormats.get(currentId) ?? 'mcq') : 'mcq';
+  const showConfidencePrompt = current
+    ? shouldPromptConfidence({
+      question: current,
+      index: idx,
+      total: questionOrder.length,
+      streak,
+      previousWasWrong,
+    })
+    : false;
+
+  useEffect(() => {
+    if (!current || showResult || answerPhase !== 'idle') return;
+
+    const opener = buildQuestionOpener({
+      question: current,
+      index: idx,
+      total: questionOrder.length,
+      streak,
+      mode: hostMode,
+      stats: questionStats[current.id],
+      profile: playerProfile,
+    });
+    const line = [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
+
+    setHostCue({
+      id: `${runIdRef.current}:question:${current.id}:${idx}`,
+      text: line,
+      kind: idx === 0 && hostIntro ? 'intro' : 'question',
+      audioPrefetch: idx === 0 && HOST_MODE_CONFIG[hostMode].enableVoicePrefetch,
+    });
+  }, [
+    answerPhase,
+    current,
+    hostIntro,
+    hostMode,
+    idx,
+    playerProfile,
+    questionOrder.length,
+    questionStats,
+    showResult,
+    streak,
+  ]);
+
+  useEffect(() => {
+    if (!showResult || !recap) return;
+    setHostCue({
+      id: `${runIdRef.current}:recap`,
+      text: recap,
+      kind: 'recap',
+      audioPrefetch: HOST_MODE_CONFIG[hostMode].enableVoicePrefetch,
+    });
+  }, [hostMode, recap, showResult]);
 
   const commitAnswer = useCallback(
-    (correct: boolean, phase: QuizAnswerPhase) => {
-      const qId = questionOrder[idx];
-      if (!qId) return;
+    (event: AnswerCommit) => {
+      const questionId = questionOrder[idx];
+      const question = questionId ? questionById.get(questionId) : undefined;
+      if (!questionId || !question) return;
 
-      setAnswerPhase(phase);
+      setAnswerPhase(event.phase);
 
-      const next = new Map(answers);
-      next.set(qId, correct ? '__correct__' : '__wrong__');
-      setAnswers(next);
+      const nextAnswers = new Map(answers);
+      nextAnswers.set(questionId, event.correct ? '__correct__' : '__wrong__');
+      setAnswers(nextAnswers);
 
-      const nextStreak = correct ? streak + 1 : 0;
-      const nextBestStreak = correct ? Math.max(bestStreak, nextStreak) : bestStreak;
-      const nextMilestone = correct ? (STREAK_MILESTONES[nextStreak] ?? 'none') : 'none';
-      const revealHoldMs = phase === 'timed-out'
-        ? PLAY_TIMINGS.timeoutRevealHoldMs
-        : PLAY_TIMINGS.answerRevealHoldMs;
+      const streakBefore = streak;
+      const nextStreak = event.correct ? streak + 1 : 0;
+      const nextBestStreak = event.correct ? Math.max(bestStreak, nextStreak) : bestStreak;
+      const nextMilestone = event.correct ? (STREAK_MILESTONES[nextStreak] ?? 'none') : 'none';
 
       setStreak(nextStreak);
       setBestStreak(nextBestStreak);
+      setPreviousWasWrong(!event.correct);
 
       if (nextMilestone !== 'none') {
         setMilestone(nextMilestone);
@@ -121,37 +266,144 @@ export default function PlayView({ quizId }: PlayViewProps) {
           setMilestone('none');
           milestoneTimerRef.current = null;
         }, PLAY_TIMINGS.milestonePulseMs);
-      } else if (!correct) {
+      } else if (!event.correct) {
         setMilestone('none');
       }
 
+      const confidence = confidenceByQuestion[questionId] ?? null;
+      const attempt: SaveResultAttemptInput = {
+        questionId,
+        orderIndex: idx,
+        selectedAnswer: event.selectedAnswer,
+        confidence,
+        correct: event.correct,
+        timedOut: event.timedOut,
+        responseMs: event.responseMs,
+        streakBefore,
+        streakAfter: nextStreak,
+        wasFinalQuestion: idx + 1 >= questionOrder.length,
+      };
+      const nextAttempts = [...attemptsRef.current, attempt];
+      attemptsRef.current = nextAttempts;
+
+      const reaction = buildAnswerReaction({
+        question,
+        attempt,
+        mode: hostMode,
+        stats: questionStats[questionId],
+        previousWasWrong,
+      });
+
+      setHostCue({
+        id: `${runIdRef.current}:answer:${questionId}:${idx}`,
+        text: reaction,
+        kind: 'answer',
+      });
+
+      const beatDelayMs = Math.max(
+        event.timedOut ? PLAY_TIMINGS.timeoutRevealHoldMs : PLAY_TIMINGS.answerRevealHoldMs,
+        HOST_MODE_CONFIG[hostMode].answerBeatMs,
+      );
+
       if (idx + 1 >= questionOrder.length) {
-        const correctCount = [...next.values()].filter((v) => v === '__correct__').length;
+        const correctCount = [...nextAnswers.values()].filter((value) => value === '__correct__').length;
         const perQuestion: Record<string, string> = {};
-        next.forEach((value, key) => { perQuestion[key] = value; });
-        saveResult(quizId, { correct: correctCount, total: next.size, perQuestion }).catch(() => {});
-        const pct = next.size > 0 ? Math.round((correctCount / next.size) * 100) : 0;
+        nextAnswers.forEach((value, key) => {
+          perQuestion[key] = value;
+        });
+        const pct = nextAnswers.size > 0 ? Math.round((correctCount / nextAnswers.size) * 100) : 0;
         const isNewBest = previousBest !== null && pct > previousBest;
+        const runInsights = getRunInsights({ questions, attempts: nextAttempts });
+        const fallbackRecap = buildFallbackRecap({
+          correct: correctCount,
+          total: nextAnswers.size,
+          bestStreak: nextBestStreak,
+          fastestMs: fastestResponseMs(nextAttempts),
+          averageMs: averageResponseMs(nextAttempts),
+          strengths: runInsights.strengths,
+          weaknesses: runInsights.weaknesses,
+        });
+        setRecap(fallbackRecap);
+
+        void generateHostRecap(quizId, {
+          mode: hostMode,
+          hostPersona: HOST_PERSONA,
+          summary: {
+            correct: correctCount,
+            total: nextAnswers.size,
+            bestStreak: nextBestStreak,
+            wrongCount: nextAnswers.size - correctCount,
+            fastestAnswerMs: fastestResponseMs(nextAttempts),
+            averageAnswerMs: averageResponseMs(nextAttempts),
+            previousBest,
+            isNewBest,
+            quizBest: previousBest,
+            quizPlays: 0,
+          },
+          profile: playerProfile,
+          quiz: {
+            id: quizId,
+            title: quiz?.title ?? 'Quiz',
+            topic: quiz?.topic ?? null,
+          },
+          strengths: runInsights.strengths,
+          weaknesses: runInsights.weaknesses,
+        })
+          .then((response) => setRecap(response.recap))
+          .catch(() => {});
 
         scheduleUi(() => {
+          const elapsedMs = Date.now() - runStartedAtRef.current;
+          void saveResult(quizId, {
+            runId: runIdRef.current,
+            mode: hostMode,
+            hostPersona: HOST_PERSONA,
+            correct: correctCount,
+            total: nextAnswers.size,
+            bestStreak: nextBestStreak,
+            elapsedMs,
+            recap: fallbackRecap,
+            perQuestion,
+            attempts: nextAttempts,
+          }).catch(() => {});
+
+          const updatedProfile = recordPlayerRun(getPlayerProfile(), {
+            quizId,
+            questions,
+            correct: correctCount,
+            total: nextAnswers.size,
+            bestStreak: nextBestStreak,
+            recap: fallbackRecap,
+            attempts: nextAttempts,
+          });
+          setPlayerProfile(updatedProfile);
+
           setAnswerPhase('idle');
           playSound(isNewBest ? 'newBest' : 'complete');
           haptic('success');
           setShowResult(true);
-        }, revealHoldMs);
+        }, beatDelayMs);
       } else {
         scheduleUi(() => {
           setAnswerPhase('idle');
           setIdx(idx + 1);
-        }, revealHoldMs);
+        }, beatDelayMs);
       }
     },
     [
       answers,
       bestStreak,
+      confidenceByQuestion,
+      hostMode,
       idx,
+      playerProfile,
       previousBest,
+      previousWasWrong,
+      questionById,
       questionOrder,
+      questionStats,
+      questions,
+      quiz,
       quizId,
       scheduleUi,
       setAnswers,
@@ -172,11 +424,17 @@ export default function PlayView({ quizId }: PlayViewProps) {
   }
 
   if (showResult) {
-    const wrongQuestions = questions.filter((q) => answers.get(q.id) === '__wrong__');
+    const wrongQuestions = questions.filter((question) => answers.get(question.id) === '__wrong__');
     return (
       <AppShell>
         <BlobField />
         <div className={styles.content}>
+          <HostStage
+            cue={hostCue}
+            mode={hostMode}
+            hostPersona={HOST_PERSONA}
+            voiceEnabled={hostVoiceEnabled}
+          />
           <ResultsView
             correct={score.correct}
             total={score.total}
@@ -184,6 +442,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
             previousBest={previousBest}
             bestStreak={bestStreak}
             wrongCount={wrongQuestions.length}
+            recap={recap}
             onRetry={() => startRun(questions)}
             onPracticeWeak={wrongQuestions.length > 0 ? () => startRun(wrongQuestions) : undefined}
           />
@@ -211,16 +470,24 @@ export default function PlayView({ quizId }: PlayViewProps) {
     );
   }
 
-  const currentId = questionOrder[idx];
-  const current = questions.find((q) => q.id === currentId);
-  const format = questionFormats.get(currentId) ?? 'mcq';
-
   if (!current) return null;
 
   return (
     <AppShell>
       <BlobField />
       <div className={styles.content}>
+        <HostStage
+          cue={hostCue}
+          mode={hostMode}
+          hostPersona={HOST_PERSONA}
+          voiceEnabled={hostVoiceEnabled}
+          category={current.category}
+          difficulty={current.difficulty}
+          showConfidencePrompt={showConfidencePrompt}
+          confidence={confidenceByQuestion[current.id] ?? null}
+          onConfidenceChange={(value) =>
+            setConfidenceByQuestion((state) => ({ ...state, [current.id]: value }))}
+        />
         <PlayProgress
           current={idx}
           total={questionOrder.length}
@@ -249,7 +516,7 @@ interface ActiveQuestionProps {
   format: QuizFormat;
   answerPhase: QuizAnswerPhase;
   setAnswerPhase: (phase: QuizAnswerPhase) => void;
-  onAnswer: (correct: boolean, phase: QuizAnswerPhase) => void;
+  onAnswer: (event: AnswerCommit) => void;
 }
 
 function ActiveQuestion({
@@ -264,10 +531,14 @@ function ActiveQuestion({
   const [pressedValue, setPressedValue] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const transitionIdsRef = useRef<number[]>([]);
+  const questionStartedAtRef = useRef(0);
   const correctValue = format === 'jeopardy' ? current.questionText : current.answerText;
 
-  useEffect(() => () => {
-    transitionIdsRef.current.forEach((id) => window.clearTimeout(id));
+  useEffect(() => {
+    questionStartedAtRef.current = Date.now();
+    return () => {
+      transitionIdsRef.current.forEach((id) => window.clearTimeout(id));
+    };
   }, []);
 
   const schedule = useCallback((callback: () => void, delayMs: number) => {
@@ -301,6 +572,7 @@ function ActiveQuestion({
     setAnswerPhase('selected');
 
     const correct = value === correctValue;
+    const responseMs = Date.now() - questionStartedAtRef.current;
     schedule(() => {
       const revealPhase: QuizAnswerPhase = correct
         ? 'revealed-correct'
@@ -308,7 +580,13 @@ function ActiveQuestion({
       setAnswerPhase(revealPhase);
       playSound(correct ? 'correct' : 'wrong');
       haptic(correct ? 'correct' : 'wrong');
-      onAnswer(correct, revealPhase);
+      onAnswer({
+        correct,
+        phase: revealPhase,
+        responseMs,
+        selectedAnswer: value,
+        timedOut: false,
+      });
     }, PLAY_TIMINGS.answerRevealDelayMs);
   }, [correctValue, interactionLocked, onAnswer, schedule, setAnswerPhase]);
 
@@ -319,8 +597,14 @@ function ActiveQuestion({
     playSound('wrong');
     haptic('wrong');
     setAnswerPhase('timed-out');
-    onAnswer(false, 'timed-out');
-  }, [interactionLocked, onAnswer, setAnswerPhase]);
+    onAnswer({
+      correct: false,
+      phase: 'timed-out',
+      responseMs: PLAY_TIMER_SECONDS[format] * 1000,
+      selectedAnswer: null,
+      timedOut: true,
+    });
+  }, [format, interactionLocked, onAnswer, setAnswerPhase]);
 
   return (
     <>
@@ -346,4 +630,39 @@ function ActiveQuestion({
       </div>
     </>
   );
+}
+
+function buildFallbackRecap(args: {
+  correct: number;
+  total: number;
+  bestStreak: number;
+  fastestMs: number | null;
+  averageMs: number | null;
+  strengths: string[];
+  weaknesses: string[];
+}): string {
+  const parts = [
+    `${args.correct} out of ${args.total}.`,
+    args.bestStreak >= 3
+      ? `Strong streak of ${args.bestStreak} before things got theatrical.`
+      : 'No huge streaks, but you kept the wheels attached.',
+    args.fastestMs !== null
+      ? `Fastest answer ${formatMs(args.fastestMs)}.`
+      : '',
+    args.strengths.length > 0
+      ? `You looked sharp on ${args.strengths.join(' and ')}.`
+      : '',
+    args.weaknesses.length > 0
+      ? `${args.weaknesses.join(' and ')} still need a quiet word.`
+      : '',
+    args.averageMs !== null && args.averageMs <= 2200
+      ? 'The pace suggested confidence, recklessness, or both.'
+      : '',
+  ].filter(Boolean);
+
+  return parts.slice(0, 3).join(' ');
+}
+
+function formatMs(value: number): string {
+  return `${(value / 1000).toFixed(1)}s`;
 }

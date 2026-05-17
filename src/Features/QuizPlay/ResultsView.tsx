@@ -15,6 +15,7 @@ interface ResultsViewProps {
   previousBest: number | null;
   bestStreak: number;
   wrongCount: number;
+  recap?: string;
   onRetry: () => void;
   onPracticeWeak?: () => void;
 }
@@ -26,6 +27,7 @@ export default function ResultsView({
   previousBest,
   bestStreak,
   wrongCount,
+  recap,
   onRetry,
   onPracticeWeak,
 }: ResultsViewProps) {
@@ -75,6 +77,9 @@ export default function ResultsView({
 
       <div className={`${styles.summary} ${showSummary ? styles.sectionVisible : ''}`}>
         <p className={styles.detail}>{correct} out of {total} correct</p>
+        {recap && (
+          <p className={styles.recap}>{recap}</p>
+        )}
       </div>
 
       <div className={`${styles.details} ${showDetails ? styles.sectionVisible : ''}`}>

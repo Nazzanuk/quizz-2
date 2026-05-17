@@ -44,6 +44,11 @@ export async function POST(req: Request, { params }: Params) {
     imageUrl: null as string | null,
     imagePrompt: q.imageDescription ?? null,
     format: q.format,
+    category: q.category,
+    difficulty: q.difficulty,
+    explanation: q.explanation,
+    factText: q.factText,
+    tags: q.tags,
     order: maxOrder + 1 + i,
   }));
 

@@ -1,0 +1,66 @@
+import { NextResponse } from 'next/server';
+import { generateHostRecap } from '@/Lib/Ai/Gemini';
+import { getQuiz } from '@/Lib/Db/Queries';
+import { runMigrations } from '@/Lib/Db/Migrate';
+import {
+  normalizeHostMode,
+  normalizeHostPersona,
+  type HostRecapRequest,
+  type PlayerProfile,
+} from '@/Lib/Types';
+
+interface Params {
+  params: Promise<{ quizId: string }>;
+}
+
+export async function POST(req: Request, { params }: Params) {
+  await runMigrations();
+  const { quizId } = await params;
+  const quiz = await getQuiz(quizId);
+  if (!quiz) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
+
+  const body = await req.json() as HostRecapRequest;
+  const profile = body.profile ?? getFallbackProfile();
+  const recap = await generateHostRecap({
+    title: quiz.title,
+    topic: quiz.topic,
+    mode: normalizeHostMode(body.mode),
+    score: body.summary.total > 0 ? Math.round((body.summary.correct / body.summary.total) * 100) : 0,
+    correct: body.summary.correct,
+    total: body.summary.total,
+    bestStreak: body.summary.bestStreak,
+    wrongCount: body.summary.wrongCount,
+    fastestAnswerMs: body.summary.fastestAnswerMs,
+    averageAnswerMs: body.summary.averageAnswerMs,
+    previousBest: body.summary.previousBest,
+    isNewBest: body.summary.isNewBest,
+    strengths: body.strengths,
+    weaknesses: body.weaknesses,
+    profile: {
+      ...profile,
+      selectedHost: normalizeHostPersona(body.hostPersona),
+    },
+  });
+
+  return NextResponse.json({ recap });
+}
+
+function getFallbackProfile(): PlayerProfile {
+  return {
+    totalRuns: 0,
+    totalQuestions: 0,
+    totalCorrect: 0,
+    bestPct: null,
+    bestStreak: 0,
+    fastestMs: null,
+    lastPlayedAt: null,
+    preferredMode: 'default',
+    hostVoiceEnabled: false,
+    selectedHost: 'sarcastic_pub_host',
+    categories: {},
+    quizzes: {},
+    recentRecaps: [],
+  };
+}

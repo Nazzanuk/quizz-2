@@ -98,6 +98,17 @@
   margin-bottom: 1rem;
 }
 
+.recap {
+  padding: 0.95rem 1rem;
+  border-radius: 1.3rem;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow), var(--shadow-inset);
+  text-align: left;
+  color: var(--text-dark);
+  line-height: 1.55;
+}
+
 .best {
   font-size: 0.85rem;
   color: var(--text-muted);

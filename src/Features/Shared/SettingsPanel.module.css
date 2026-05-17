@@ -134,6 +134,42 @@
   transform: scale(0.98);
 }
 
+.modeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.85rem 0.5rem 0.25rem;
+}
+
+.modePills {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.modePill {
+  flex: 1;
+  min-height: 44px;
+  border: 1px solid rgba(41, 37, 36, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--text-dark);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--ease-spring),
+    box-shadow var(--motion-fast) ease,
+    background var(--motion-fast) ease;
+}
+
+.modePill:active {
+  transform: translateY(1px);
+}
+
+.modePillActive {
+  background: linear-gradient(180deg, #ffc8b8 0%, var(--peach) 100%);
+  box-shadow: var(--shadow), var(--shadow-inset);
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

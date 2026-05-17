@@ -1,4 +1,4 @@
-import type { QuizFormat, QuizMilestone } from './Types';
+import type { HostMode, QuizFormat, QuizMilestone } from './Types';
 
 export const FORMAT_LABELS: Record<QuizFormat, string> = {
   mcq: 'Multiple choice',
@@ -23,6 +23,26 @@ export const PLAY_TIMINGS = {
   resultsDetailsDelayMs: 320,
   resultsActionsDelayMs: 520,
 } as const;
+
+export const HOST_MODE_CONFIG: Record<HostMode, {
+  answerBeatMs: number;
+  showFactDrops: boolean;
+  enableQuestionOpeners: boolean;
+  enableVoicePrefetch: boolean;
+}> = {
+  default: {
+    answerBeatMs: 1800,
+    showFactDrops: true,
+    enableQuestionOpeners: true,
+    enableVoicePrefetch: true,
+  },
+  quick: {
+    answerBeatMs: 950,
+    showFactDrops: false,
+    enableQuestionOpeners: true,
+    enableVoicePrefetch: false,
+  },
+};
 
 export const STREAK_MILESTONES: Record<number, QuizMilestone> = {
   3: 'streak3',
