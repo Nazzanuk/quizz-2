@@ -58,7 +58,7 @@
 
 .main {
   flex: 1;
-  padding: 0.85rem var(--content-pad);
+  padding: calc(3.9rem + env(safe-area-inset-top)) var(--content-pad) 0.85rem;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   position: relative;
   z-index: 1;
@@ -71,6 +71,6 @@
   }
 
   .main {
-    padding-top: 0.65rem;
+    padding-top: calc(3.5rem + env(safe-area-inset-top));
   }
 }
