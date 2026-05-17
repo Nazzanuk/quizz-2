@@ -8,7 +8,7 @@ import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import ScrollReveal from '@/Features/Shared/ScrollReveal';
 import Button from '@/Features/Shared/Button';
-import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
+import Card from '@/Features/Shared/Card';
 import QuizList from './QuizList';
 import EmptyState from './EmptyState';
 import styles from './HomeView.module.css';
@@ -41,9 +41,7 @@ export default function HomeView() {
 
       <section className={styles.list}>
         {isLoading && quizzes.length === 0 ? (
-          <div className={styles.center}>
-            <LoadingSpinner />
-          </div>
+          <HomeLoadingState />
         ) : quizzes.length === 0 ? (
           <EmptyState />
         ) : (
@@ -51,5 +49,26 @@ export default function HomeView() {
         )}
       </section>
     </AppShell>
+  );
+}
+
+function HomeLoadingState() {
+  return (
+    <div className={styles.loadingList} aria-hidden="true">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <Card
+          key={index}
+          color={index % 2 === 0 ? 'sage' : 'lavender'}
+          className={styles.loadingCard}
+        >
+          <div className={`uiSkeleton ${styles.loadingCover}`} />
+          <div className={styles.loadingBody}>
+            <div className={`uiSkeleton ${styles.loadingTitle}`} />
+            <div className={`uiSkeleton ${styles.loadingMeta}`} />
+          </div>
+          <div className={`uiSkeleton ${styles.loadingPlay}`} />
+        </Card>
+      ))}
+    </div>
   );
 }

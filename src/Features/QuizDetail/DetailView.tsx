@@ -12,7 +12,7 @@ import type { ResultsSummary } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
-import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
+import Card from '@/Features/Shared/Card';
 import QuizHeader from './QuizHeader';
 import QuestionList from './QuestionList';
 import styles from './DetailView.module.css';
@@ -75,7 +75,8 @@ export default function DetailView({ quizId }: DetailViewProps) {
   if (!quiz) {
     return (
       <AppShell>
-        <div className={styles.center}><LoadingSpinner /></div>
+        <BlobField />
+        <DetailLoadingState />
       </AppShell>
     );
   }
@@ -147,5 +148,41 @@ export default function DetailView({ quizId }: DetailViewProps) {
         )}
       </div>
     </AppShell>
+  );
+}
+
+function DetailLoadingState() {
+  return (
+    <div className={styles.loadingContent} aria-hidden="true">
+      <div className={`uiSkeleton ${styles.loadingCover}`} />
+      <div className={`uiSkeleton ${styles.loadingTitle}`} />
+      <div className={`uiSkeleton ${styles.loadingDesc}`} />
+      <div className={styles.loadingMetaRow}>
+        <div className={`uiSkeleton ${styles.loadingMeta}`} />
+        <div className={`uiSkeleton ${styles.loadingPill}`} />
+      </div>
+      <div className={`uiSkeleton ${styles.loadingAction}`} />
+      <div className={styles.loadingQuestionsHeader}>
+        <div className={`uiSkeleton ${styles.loadingQuestionsTitle}`} />
+        <div className={`uiSkeleton ${styles.loadingEditToggle}`} />
+      </div>
+      <div className={styles.loadingQuestionList}>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card
+            key={index}
+            color={index % 2 === 0 ? 'sage' : 'lavender'}
+            className={styles.loadingQuestionCard}
+          >
+            <div className={`uiSkeleton ${styles.loadingQuestionImage}`} />
+            <div className={styles.loadingQuestionTop}>
+              <div className={`uiSkeleton ${styles.loadingQuestionNumber}`} />
+            </div>
+            <div className={`uiSkeleton ${styles.loadingQuestionLineLg}`} />
+            <div className={`uiSkeleton ${styles.loadingQuestionLineMd}`} />
+            <div className={`uiSkeleton ${styles.loadingQuestionAnswer}`} />
+          </Card>
+        ))}
+      </div>
+    </div>
   );
 }

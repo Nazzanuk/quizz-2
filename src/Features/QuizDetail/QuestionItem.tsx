@@ -199,7 +199,7 @@ export default function QuestionItem({
     <Card color={color} className={styles.card}>
       {question.imageUrl ? (
         <SafeImage src={question.imageUrl} alt="" className={styles.questionImg} />
-      ) : imagesPending ? (
+      ) : imagesPending && question.imagePrompt ? (
         <div className={`${styles.questionImg} ${styles.skeleton}`} />
       ) : null}
       <div className={styles.cardTop}>
@@ -231,12 +231,6 @@ export default function QuestionItem({
               />
             ) : null,
           )}
-        </div>
-      ) : imagesPending ? (
-        <div className={styles.optionThumbs}>
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className={`${styles.optionThumb} ${styles.skeleton}`} />
-          ))}
         </div>
       ) : null}
     </Card>

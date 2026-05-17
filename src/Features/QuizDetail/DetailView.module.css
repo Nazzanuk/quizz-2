@@ -10,6 +10,134 @@
   padding: 4rem 0;
 }
 
+.loadingContent {
+  position: relative;
+  z-index: 1;
+  padding-top: 2rem;
+}
+
+.loadingCover {
+  width: 100%;
+  height: 210px;
+  border-radius: calc(var(--radius-lg) - 0.4rem);
+  margin-bottom: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--shadow-lg);
+}
+
+.loadingTitle {
+  width: min(78%, 22rem);
+  height: clamp(2.1rem, 6vw, 3rem);
+  border-radius: 1rem;
+  margin-bottom: 0.8rem;
+}
+
+.loadingDesc {
+  width: min(62%, 20rem);
+  height: 1rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.loadingMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.loadingMeta {
+  width: 10rem;
+  height: 0.85rem;
+  border-radius: 999px;
+}
+
+.loadingPill {
+  width: 8rem;
+  height: 1.5rem;
+  border-radius: 999px;
+}
+
+.loadingAction {
+  width: 100%;
+  height: 3.4rem;
+  border-radius: 999px;
+  margin-bottom: 1.6rem;
+}
+
+.loadingQuestionsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1.35rem 0 1rem;
+  gap: 1rem;
+}
+
+.loadingQuestionsTitle {
+  width: 7.5rem;
+  height: 1.25rem;
+  border-radius: 999px;
+}
+
+.loadingEditToggle {
+  width: 4.8rem;
+  height: 2rem;
+  border-radius: 999px;
+}
+
+.loadingQuestionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loadingQuestionCard {
+  padding: 1.25rem 1.35rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: var(--shadow), var(--shadow-inset);
+}
+
+.loadingQuestionImage {
+  width: calc(100% + 2.7rem);
+  height: 168px;
+  margin: -1.25rem -1.35rem 1rem;
+}
+
+.loadingQuestionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.55rem;
+}
+
+.loadingQuestionNumber {
+  width: 2.4rem;
+  height: 0.8rem;
+  border-radius: 999px;
+}
+
+.loadingQuestionLineLg {
+  width: 88%;
+  height: 1.05rem;
+  border-radius: 999px;
+  margin-bottom: 0.55rem;
+}
+
+.loadingQuestionLineMd {
+  width: 72%;
+  height: 1.05rem;
+  border-radius: 999px;
+  margin-bottom: 0.8rem;
+}
+
+.loadingQuestionAnswer {
+  width: 6.5rem;
+  height: 1.9rem;
+  border-radius: 999px;
+}
+
 .playLink {
   display: block;
   text-decoration: none;
