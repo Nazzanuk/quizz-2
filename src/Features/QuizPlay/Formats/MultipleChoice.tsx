@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Question, QuizAnswerPhase } from '@/Lib/Types';
-import { shuffleArray } from '@/Lib/Utils';
+import { shuffleArraySeeded } from '@/Lib/Utils';
 import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './MultipleChoice.module.css';
 
@@ -32,7 +32,7 @@ export default function MultipleChoice({
       text,
       imageUrl: question.optionImages?.[i] ?? null,
     }));
-    return shuffleArray(raw);
+    return shuffleArraySeeded(raw, `mcq-options:${question.id}`);
   }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Only enter image mode when every slot has a URL — no partial or skeleton states

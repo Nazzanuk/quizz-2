@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo } from 'react';
 import type { Question, QuizAnswerPhase } from '@/Lib/Types';
-import { shuffleArray } from '@/Lib/Utils';
+import { shuffleArraySeeded } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
 import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './FillBlank.module.css';
@@ -29,7 +29,7 @@ export default function FillBlank({
   onOptionSelect,
 }: FillBlankProps) {
   const options = useMemo(
-    () => shuffleArray(question.options ?? []),
+    () => shuffleArraySeeded(question.options ?? [], `fill-blank-options:${question.id}`),
     [question.id], // eslint-disable-line react-hooks/exhaustive-deps
   );
 

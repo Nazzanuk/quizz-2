@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import type { Question, QuizAnswerPhase } from '@/Lib/Types';
-import { shuffleArray } from '@/Lib/Utils';
+import { shuffleArraySeeded } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
 import SafeImage from '@/Features/Shared/SafeImage';
 import styles from './Jeopardy.module.css';
@@ -31,10 +31,14 @@ export default function Jeopardy({
   onOptionSelect,
 }: JeopardyProps) {
   const options = useMemo(() => {
-    const distractors = shuffleArray(
+    const distractors = shuffleArraySeeded(
       allQuestions.filter((q) => q.id !== question.id).map((q) => q.questionText),
+      `jeopardy-distractors:${question.id}`,
     ).slice(0, 3);
-    return shuffleArray([question.questionText, ...distractors]);
+    return shuffleArraySeeded(
+      [question.questionText, ...distractors],
+      `jeopardy-options:${question.id}`,
+    );
   }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const stateClass = (opt: string) => {
