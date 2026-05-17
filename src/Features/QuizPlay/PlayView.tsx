@@ -25,6 +25,7 @@ import {
   showResultAtom,
   scoreAtom,
   initPlayAtom,
+  resetPlayAtom,
   questionOrderAtom,
   questionFormatsAtom,
   isPlayableQuestion,
@@ -72,6 +73,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionOrder = useAtomValue(questionOrderAtom);
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
+  const resetPlay = useSetAtom(resetPlayAtom);
   const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
   const hideTextUi = useAtomValue(hideTextUiAtom);
@@ -164,13 +166,22 @@ export default function PlayView({ quizId }: PlayViewProps) {
     initPlay(items);
   }, [initPlay, resetRunState]);
 
+  useEffect(() => () => {
+    resetPlay();
+  }, [quizId, resetPlay]);
+
+  const hasPlayableQuestions = questions.some(isPlayableQuestion);
+  const playSessionReady = questionOrder.length > 0
+    && idx < questionOrder.length
+    && questionOrder.every((questionId) => questionById.has(questionId));
+
   useEffect(() => {
-    if (questions.length > 0 && questionOrder.length === 0) {
+    if (hasPlayableQuestions && !playSessionReady) {
       const id = window.setTimeout(() => startRun(questions), 0);
       return () => window.clearTimeout(id);
     }
     return undefined;
-  }, [questionOrder.length, questions, startRun]);
+  }, [hasPlayableQuestions, playSessionReady, questions, startRun]);
 
   useEffect(() => {
     if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
@@ -433,9 +444,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
     ],
   );
 
-  const hasPlayableQuestions = questions.some(isPlayableQuestion);
-
-  if (!quiz || (hasPlayableQuestions && questionOrder.length === 0)) {
+  if (!quiz || (hasPlayableQuestions && !playSessionReady)) {
     return (
       <AppShell>
         <div className={styles.center}><LoadingSpinner /></div>
@@ -490,7 +499,13 @@ export default function PlayView({ quizId }: PlayViewProps) {
     );
   }
 
-  if (!current) return null;
+  if (!current) {
+    return (
+      <AppShell>
+        <div className={styles.center}><LoadingSpinner /></div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>

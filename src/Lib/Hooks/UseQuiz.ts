@@ -19,10 +19,12 @@ function imageSnapshot(data: QuizWithQuestions): string {
 
 export function useQuiz(id: string, options: { poll?: boolean } = {}) {
   const { poll = false } = options;
-  const [quiz, setQuiz] = useAtom(currentQuizAtom);
-  const [questions, setQuestions] = useAtom(currentQuestionsAtom);
+  const [storedQuiz, setQuiz] = useAtom(currentQuizAtom);
+  const [storedQuestions, setQuestions] = useAtom(currentQuestionsAtom);
   const setLoading = useSetAtom(isLoadingAtom);
   const [imagesPending, setImagesPending] = useState(false);
+  const quiz = storedQuiz?.id === id ? storedQuiz : null;
+  const questions = quiz ? storedQuestions : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -32,6 +34,8 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     let staleCount = 0;
 
     setLoading(true);
+    setQuiz(null);
+    setQuestions([]);
 
     const tick = async () => {
       const data = await fetchQuiz(id);
