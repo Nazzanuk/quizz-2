@@ -1,7 +1,7 @@
 import { eq, desc } from 'drizzle-orm';
 import { db } from './Client';
 import { quizzes, questions, images, quizResults } from './Schema';
-import type { Quiz, Question, QuizFormat, ResultsSummary } from '../Types';
+import { normalizeQuizFormat, type Quiz, type Question, type QuizFormat, type ResultsSummary } from '../Types';
 import { nowISO } from '../Utils';
 
 export async function listQuizzes(): Promise<Quiz[]> {
@@ -166,5 +166,6 @@ function parseQuestion(row: typeof questions.$inferSelect): Question {
     options: row.options ? JSON.parse(row.options) : null,
     optionImages: row.optionImages ? JSON.parse(row.optionImages) : null,
     imageUrl: row.imageUrl ?? null,
+    format: normalizeQuizFormat(row.format),
   } as Question;
 }

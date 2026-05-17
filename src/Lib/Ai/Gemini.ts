@@ -3,7 +3,7 @@ import {
   SchemaType,
   type Schema,
 } from '@google/generative-ai';
-import type { QuizFormat } from '../Types';
+import { normalizeQuizFormat, type QuizFormat } from '../Types';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
 
@@ -17,12 +17,12 @@ const responseSchema: Schema = {
       items: {
         type: SchemaType.OBJECT,
         properties: {
+          format: { type: SchemaType.STRING },
           questionText: { type: SchemaType.STRING },
           answerText: { type: SchemaType.STRING },
           options: {
             type: SchemaType.ARRAY,
             items: { type: SchemaType.STRING },
-            nullable: true,
           },
           imageDescription: {
             type: SchemaType.STRING,
@@ -34,20 +34,23 @@ const responseSchema: Schema = {
             nullable: true,
           },
         },
-        required: ['questionText', 'answerText'],
+        required: ['format', 'questionText', 'answerText', 'options'],
       },
     },
   },
   required: ['title', 'description', 'questions'],
 };
 
+type GeneratedQuestionFormat = Exclude<QuizFormat, 'jeopardy'>;
+
 export interface GeneratedQuiz {
   title: string;
   description: string;
   questions: {
+    format: GeneratedQuestionFormat;
     questionText: string;
     answerText: string;
-    options: string[] | null;
+    options: string[];
     imageDescription: string | null;
     optionImageDescriptions: (string | null)[] | null;
   }[];
@@ -56,7 +59,6 @@ export interface GeneratedQuiz {
 export async function generateQuiz(opts: {
   topic?: string;
   material?: string;
-  format: QuizFormat;
   count: number;
   existingQuestions?: string[];
 }): Promise<GeneratedQuiz> {
@@ -71,13 +73,12 @@ export async function generateQuiz(opts: {
   const prompt = buildPrompt(opts);
   const result = await model.generateContent(prompt);
   const text = result.response.text();
-  return JSON.parse(text) as GeneratedQuiz;
+  return parseGeneratedQuiz(text);
 }
 
 function buildPrompt(opts: {
   topic?: string;
   material?: string;
-  format: QuizFormat;
   count: number;
   existingQuestions?: string[];
 }): string {
@@ -85,12 +86,10 @@ function buildPrompt(opts: {
     ? `Based on the following material:\n\n${opts.material}`
     : `About the topic: ${opts.topic}`;
 
-  const formatInstructions = FORMAT_PROMPTS[opts.format];
-
   const parts = [
     `Generate a quiz with exactly ${opts.count} questions.`,
     source,
-    formatInstructions,
+    FORMAT_INSTRUCTIONS,
     'Generate a short, descriptive title and a one-sentence description.',
     IMAGE_DESCRIPTION_RULES,
     'Return valid JSON matching the schema.',
@@ -122,11 +121,54 @@ const IMAGE_DESCRIPTION_RULES = [
   '',
   'imageDescription: a single concise visual description (or null). Use when a recognizable subject genuinely helps.',
   '',
-  'optionImageDescriptions: only for MCQ questions where the four answer options are visually distinct subjects (flags, landmarks, species, artworks, anatomical parts, etc). Provide an array of 4 descriptions in the same order as options. Each must follow the visual-attribute rules above. Each image must be unambiguous and isolated on a plain background so it can stand alone in a 2×2 grid. Set to null when text options suffice.',
+  'optionImageDescriptions: only for mcq questions where the four answer options are visually distinct subjects (flags, landmarks, species, artworks, anatomical parts, etc). Provide an array of 4 descriptions in the same order as options. Each must follow the visual-attribute rules above. Each image must be unambiguous and isolated on a plain background so it can stand alone in a 2×2 grid. Set to null for fill_blank and odd_one_out questions, and set to null when text options suffice.',
 ].join('\n');
 
-const FORMAT_PROMPTS: Record<QuizFormat, string> = {
-  mcq: 'Each question has exactly 4 options. The first option must be the correct answer. Include the correct answer in answerText.',
-  flashcard: 'Each questionText is a concept or term. answerText is the explanation or definition. options should be null.',
-  jeopardy: 'Each questionText is an answer/fact. answerText is the question it answers (phrased as "What is...?"). options should contain 3 distractor questions plus the correct one. The correct answerText must be first in options.',
-};
+const FORMAT_INSTRUCTIONS = [
+  'Use a mix of these question formats: mcq, fill_blank, and odd_one_out.',
+  'Distribute them as evenly as possible across the quiz. When the count is 3 or more, include at least one fill_blank or odd_one_out question.',
+  '',
+  'Format rules:',
+  '- mcq: questionText asks a standard question. options must contain exactly 4 choices. answerText is the correct choice, and the correct choice must be the first item in options.',
+  '- fill_blank: questionText must contain exactly one "___" blank replacing the missing word or short phrase. options must contain exactly 4 choices. answerText is the missing word or phrase, and it must be the first item in options.',
+  '- odd_one_out: questionText should clearly explain the shared theme, such as "Three of these are mammals. Which is the odd one out?" options must contain exactly 4 items. answerText is the item that does not belong, and it must be the first item in options.',
+  '',
+  'General rules:',
+  '- Every question must have exactly 4 options.',
+  '- Keep distractors plausible, concise, and distinct.',
+  '- Do not use the jeopardy format in generated output. Jeopardy is handled separately at play time.',
+].join('\n');
+
+function parseGeneratedQuiz(text: string): GeneratedQuiz {
+  const parsed = JSON.parse(text) as {
+    title: string;
+    description: string;
+    questions: Array<{
+      format: string;
+      questionText: string;
+      answerText: string;
+      options: string[];
+      imageDescription?: string | null;
+      optionImageDescriptions?: (string | null)[] | null;
+    }>;
+  };
+
+  return {
+    title: parsed.title,
+    description: parsed.description,
+    questions: parsed.questions.map((question) => ({
+      format: normalizeGeneratedQuestionFormat(question.format),
+      questionText: question.questionText,
+      answerText: question.answerText,
+      options: question.options,
+      imageDescription: question.imageDescription ?? null,
+      optionImageDescriptions: question.optionImageDescriptions ?? null,
+    })),
+  };
+}
+
+function normalizeGeneratedQuestionFormat(value: string): GeneratedQuestionFormat {
+  const format = normalizeQuizFormat(value);
+  if (format === 'fill_blank' || format === 'odd_one_out') return format;
+  return 'mcq';
+}

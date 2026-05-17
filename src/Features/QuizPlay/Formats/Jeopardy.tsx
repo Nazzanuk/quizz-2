@@ -12,10 +12,18 @@ import styles from './Jeopardy.module.css';
 interface JeopardyProps {
   question: Question;
   allQuestions: Question[];
+  timedOut?: boolean;
+  onAnswerStart?: () => boolean;
   onAnswer: (correct: boolean) => void;
 }
 
-export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyProps) {
+export default function Jeopardy({
+  question,
+  allQuestions,
+  timedOut = false,
+  onAnswerStart,
+  onAnswer,
+}: JeopardyProps) {
   const [selected, setSelected] = useState<string | null>(null);
 
   const options = useMemo(() => {
@@ -24,9 +32,11 @@ export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyP
     ).slice(0, 3);
     return shuffleArray([question.questionText, ...distractors]);
   }, [question.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const answered = timedOut || selected !== null;
 
   const handleSelect = (opt: string) => {
-    if (selected) return;
+    if (answered) return;
+    if (onAnswerStart && !onAnswerStart()) return;
     primeAudio();
     setSelected(opt);
     const correct = opt === question.questionText;
@@ -52,7 +62,9 @@ export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyP
       <div className={styles.options}>
         {options.map((opt) => {
           let cls = styles.option;
-          if (selected === opt) {
+          if (timedOut && opt === question.questionText) {
+            cls += ` ${styles.correct}`;
+          } else if (selected === opt) {
             cls += opt === question.questionText
               ? ` ${styles.correct}` : ` ${styles.wrong}`;
           } else if (selected && opt === question.questionText) {
@@ -63,7 +75,7 @@ export default function Jeopardy({ question, allQuestions, onAnswer }: JeopardyP
               key={opt}
               className={cls}
               onClick={() => handleSelect(opt)}
-              disabled={!!selected}
+              disabled={answered}
             >
               {opt}
             </button>

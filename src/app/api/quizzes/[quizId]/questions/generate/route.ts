@@ -30,7 +30,6 @@ export async function POST(req: Request, { params }: Params) {
   const generated = await generateQuiz({
     topic: quiz.topic ?? undefined,
     material: quiz.sourceMaterial ?? undefined,
-    format: 'mcq',
     count,
     existingQuestions: existingTexts,
   });
@@ -43,7 +42,7 @@ export async function POST(req: Request, { params }: Params) {
     options: q.options,
     optionImages: null as null,
     imageUrl: null as string | null,
-    format: 'mcq' as const,
+    format: q.format,
     order: maxOrder + 1 + i,
   }));
 

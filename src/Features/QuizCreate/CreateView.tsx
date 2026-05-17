@@ -33,7 +33,6 @@ export default function CreateView() {
       const quiz = await generateQuiz({
         topic: topic.trim() || undefined,
         material: material.trim() || undefined,
-        format: 'mcq',
         count,
       });
       setTopic('');

@@ -20,15 +20,29 @@ export const scoreAtom = atom((get) => {
   return { correct, total: answers.size };
 });
 
-// Formats available for random assignment — fillblank removed (too hard to type)
-const PLAY_FORMATS: QuizFormat[] = ['mcq', 'flashcard', 'jeopardy'];
+const RANDOMISED_MCQ_FORMATS: QuizFormat[] = ['mcq', 'jeopardy'];
+
+export function isPlayableQuestion(question: Question): boolean {
+  if (!Array.isArray(question.options) || question.options.length !== 4) return false;
+  return question.format === 'mcq'
+    || question.format === 'fill_blank'
+    || question.format === 'odd_one_out';
+}
+
+function getPlayFormat(question: Question): QuizFormat {
+  if (question.format === 'fill_blank' || question.format === 'odd_one_out') {
+    return question.format;
+  }
+
+  return RANDOMISED_MCQ_FORMATS[Math.floor(Math.random() * RANDOMISED_MCQ_FORMATS.length)];
+}
 
 export const initPlayAtom = atom(null, (_get, set, questions: Question[]) => {
-  const shuffled = shuffleArray([...questions]);
+  const shuffled = shuffleArray(questions.filter(isPlayableQuestion));
   const order = shuffled.map((q) => q.id);
   const formats = new Map<string, QuizFormat>();
   shuffled.forEach((q) => {
-    formats.set(q.id, PLAY_FORMATS[Math.floor(Math.random() * PLAY_FORMATS.length)]);
+    formats.set(q.id, getPlayFormat(q));
   });
   set(questionOrderAtom, order);
   set(questionFormatsAtom, formats);

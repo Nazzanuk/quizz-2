@@ -31,7 +31,6 @@ export async function POST(req: Request) {
   const generated = await generateQuiz({
     topic,
     material,
-    format: 'mcq',
     count: count ?? DEFAULT_QUESTION_COUNT,
   });
 
@@ -55,7 +54,7 @@ export async function POST(req: Request) {
     options: q.options,
     optionImages: null as null, // written only after ALL option images succeed
     imageUrl: null as string | null,
-    format: 'mcq' as const,
+    format: q.format,
     order: i,
   }));
 

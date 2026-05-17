@@ -7,6 +7,32 @@ export async function runMigrations(): Promise<void> {
   if (done) return;
   done = true;
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS quizzes (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    topic TEXT,
+    source_material TEXT,
+    cover_image_url TEXT,
+    format TEXT NOT NULL,
+    question_count INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  )`);
+
+  await db.run(sql`CREATE TABLE IF NOT EXISTS questions (
+    id TEXT PRIMARY KEY,
+    quiz_id TEXT NOT NULL,
+    question_text TEXT NOT NULL,
+    answer_text TEXT NOT NULL,
+    options TEXT,
+    option_images TEXT,
+    image_url TEXT,
+    format TEXT NOT NULL,
+    "order" INTEGER NOT NULL,
+    FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+  )`);
+
   await db.run(sql`CREATE TABLE IF NOT EXISTS images (
     id TEXT PRIMARY KEY,
     data TEXT NOT NULL,

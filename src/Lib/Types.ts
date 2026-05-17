@@ -1,7 +1,20 @@
-export type QuizFormat =
-  | 'mcq'
-  | 'flashcard'
-  | 'jeopardy';
+export const QUIZ_FORMATS = [
+  'mcq',
+  'fill_blank',
+  'odd_one_out',
+  'jeopardy',
+] as const;
+
+export type QuizFormat = (typeof QUIZ_FORMATS)[number];
+
+export function isQuizFormat(value: string): value is QuizFormat {
+  return (QUIZ_FORMATS as readonly string[]).includes(value);
+}
+
+export function normalizeQuizFormat(value: string | null | undefined): QuizFormat {
+  if (value && isQuizFormat(value)) return value;
+  return 'mcq';
+}
 
 export interface Quiz {
   id: string;
@@ -50,7 +63,6 @@ export interface ResultsSummary {
 export interface GenerateQuizRequest {
   topic?: string;
   material?: string;
-  format: QuizFormat;
   count?: number;
 }
 
@@ -58,4 +70,3 @@ export interface GenerateImageRequest {
   quizId: string;
   topic: string;
 }
-

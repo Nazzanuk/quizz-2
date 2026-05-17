@@ -10,10 +10,17 @@ import styles from './MultipleChoice.module.css';
 
 interface MultipleChoiceProps {
   question: Question;
+  timedOut?: boolean;
+  onAnswerStart?: () => boolean;
   onAnswer: (correct: boolean) => void;
 }
 
-export default function MultipleChoice({ question, onAnswer }: MultipleChoiceProps) {
+export default function MultipleChoice({
+  question,
+  timedOut = false,
+  onAnswerStart,
+  onAnswer,
+}: MultipleChoiceProps) {
   const [selected, setSelected] = useState<string | null>(null);
 
   const pairs = useMemo(() => {
@@ -26,9 +33,11 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
 
   // Only enter image mode when every slot has a URL — no partial or skeleton states
   const hasImages = question.optionImages?.every((url) => url != null) ?? false;
+  const answered = timedOut || selected !== null;
 
   const handleSelect = (text: string) => {
-    if (selected) return;
+    if (answered) return;
+    if (onAnswerStart && !onAnswerStart()) return;
     primeAudio();
     setSelected(text);
     const correct = text === question.answerText;
@@ -38,6 +47,7 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
   };
 
   const stateClass = (text: string) => {
+    if (timedOut) return text === question.answerText ? styles.correct : '';
     if (!selected) return '';
     if (selected === text) return text === question.answerText ? styles.correct : styles.wrong;
     if (text === question.answerText) return styles.correct;
@@ -57,7 +67,7 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
               key={text}
               className={`${styles.imageOption} ${stateClass(text)}`}
               onClick={() => handleSelect(text)}
-              disabled={!!selected}
+              disabled={answered}
             >
               <div className={styles.imageWrap}>
                 {imageUrl && (
@@ -84,7 +94,7 @@ export default function MultipleChoice({ question, onAnswer }: MultipleChoicePro
             key={text}
             className={`${styles.option} ${stateClass(text)}`}
             onClick={() => handleSelect(text)}
-            disabled={!!selected}
+            disabled={answered}
           >
             {text}
           </button>
