@@ -9,16 +9,19 @@
 }
 
 .header {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 10;
+  left: 50%;
+  width: min(100%, 500px);
+  transform: translateX(-50%);
+  z-index: 20;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem var(--content-pad);
-  padding-top: calc(0.75rem + env(safe-area-inset-top));
-  background: linear-gradient(180deg, rgba(255, 250, 241, 0.92), rgba(255, 250, 241, 0.46));
-  backdrop-filter: blur(18px);
+  padding: 0.75rem var(--content-pad) 0;
+  padding-top: calc(0.6rem + env(safe-area-inset-top));
+  background: transparent;
+  pointer-events: none;
 }
 
 .iconButton {
@@ -29,10 +32,12 @@
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(223, 240, 222, 0.95));
+  background: rgba(255, 255, 255, 0.42);
   color: var(--text-dark);
   cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 28px -22px rgba(41, 37, 36, 0.55);
   transition:
     transform var(--motion-fast) var(--ease-spring),
     box-shadow var(--motion-fast) ease,
@@ -42,7 +47,8 @@
 @media (hover: hover) {
   .iconButton:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    background: rgba(255, 255, 255, 0.58);
+    box-shadow: 0 16px 36px -22px rgba(41, 37, 36, 0.55);
   }
 }
 
@@ -52,9 +58,19 @@
 
 .main {
   flex: 1;
-  padding: 1.5rem var(--content-pad);
+  padding: 0.85rem var(--content-pad);
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   position: relative;
   z-index: 1;
   animation: fadeInUp 0.3s var(--ease-spring) both;
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+  }
+
+  .main {
+    padding-top: 0.65rem;
+  }
 }
