@@ -38,6 +38,7 @@ import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
 import PlayTimer from './PlayTimer';
 import HostStage, { type HostCue } from './HostStage';
+import { notifyHostAudioInteraction } from './HostVoice';
 import {
   averageResponseMs,
   buildAnswerReaction,
@@ -552,6 +553,7 @@ function ActiveQuestion({
   const handleOptionPress = useCallback((value: string) => {
     if (interactionLocked || answerPhase !== 'idle') return;
     primeAudio();
+    notifyHostAudioInteraction();
     setPressedValue(value);
     setAnswerPhase('pressed');
   }, [answerPhase, interactionLocked, setAnswerPhase]);
@@ -570,6 +572,7 @@ function ActiveQuestion({
     setPressedValue(null);
     setSelectedValue(value);
     setAnswerPhase('selected');
+    notifyHostAudioInteraction();
 
     const correct = value === correctValue;
     const responseMs = Date.now() - questionStartedAtRef.current;

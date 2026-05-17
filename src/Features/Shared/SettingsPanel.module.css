@@ -170,6 +170,43 @@
   box-shadow: var(--shadow), var(--shadow-inset);
 }
 
+.audioStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 0.5rem 0.2rem;
+}
+
+.audioStatusLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.audioStatusItem {
+  padding: 0.7rem 0.8rem;
+  border-radius: 1rem;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.audioStatusInfo {
+  background: rgba(255, 217, 140, 0.22);
+  color: #7b4d00;
+}
+
+.audioStatusWarning {
+  background: rgba(255, 184, 92, 0.2);
+  color: #8b5310;
+}
+
+.audioStatusError {
+  background: rgba(255, 138, 124, 0.18);
+  color: #8d372d;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

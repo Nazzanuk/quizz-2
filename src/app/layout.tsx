@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import Provider from '@/State/Provider';
 import Toast from '@/Features/Shared/Toast';
+import AudioAlerts from '@/Features/Shared/AudioAlerts';
 import ConfirmDialog from '@/Features/Shared/ConfirmDialog';
 import SettingsPanel from '@/Features/Shared/SettingsPanel';
 import './globals.css';
@@ -31,6 +32,7 @@ export default function RootLayout({
         <Provider>
           {children}
           <Toast />
+          <AudioAlerts />
           <ConfirmDialog />
           <SettingsPanel />
         </Provider>

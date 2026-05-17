@@ -9,6 +9,7 @@ import {
   hostModeAtom,
   hostVoiceEnabledAtom,
 } from '@/State/SettingsAtoms';
+import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { playSound, primeAudio } from './Sound';
 import { haptic } from './Haptic';
 import styles from './SettingsPanel.module.css';
@@ -21,6 +22,7 @@ export default function SettingsPanel() {
   const [hapticOn, setHapticOn] = useAtom(hapticEnabledAtom);
   const [hostVoiceEnabled, setHostVoiceEnabled] = useAtom(hostVoiceEnabledAtom);
   const [hostMode, setHostMode] = useAtom(hostModeAtom);
+  const audioIssues = useAudioIssues();
   const [closing, setClosing] = useState(false);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -140,6 +142,20 @@ export default function SettingsPanel() {
             </button>
           </div>
         </div>
+
+        {audioIssues.length > 0 && (
+          <div className={styles.audioStatus}>
+            <span className={styles.audioStatusLabel}>Audio status</span>
+            {audioIssues.map((issue) => (
+              <p
+                key={issue.code}
+                className={`${styles.audioStatusItem} ${styles[`audioStatus${issue.level[0].toUpperCase()}${issue.level.slice(1)}`]}`}
+              >
+                {issue.message}
+              </p>
+            ))}
+          </div>
+        )}
 
         <button type="button" className={styles.close} onClick={dismiss}>
           Done

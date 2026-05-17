@@ -3,6 +3,7 @@
 import type { ButtonHTMLAttributes, MouseEvent } from 'react';
 import { playSound, primeAudio } from './Sound';
 import { haptic } from './Haptic';
+import { notifyHostAudioInteraction } from '@/Features/QuizPlay/HostVoice';
 import styles from './Button.module.css';
 
 type Variant = 'primary' | 'secondary' | 'ghost';
@@ -29,6 +30,7 @@ export default function Button({
 
   const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
     primeAudio();
+    notifyHostAudioInteraction();
     playSound('tap');
     haptic('tap');
     onClick?.(e);

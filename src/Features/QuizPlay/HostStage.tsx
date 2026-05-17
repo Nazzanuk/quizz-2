@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { playHostVoice, stopHostVoice } from './HostVoice';
 import type {
   HostConfidenceLevel,
@@ -41,6 +42,8 @@ export default function HostStage({
   onConfidenceChange,
 }: HostStageProps) {
   const [dismissedId, setDismissedId] = useState<string | null>(null);
+  const voiceIssues = useAudioIssues('voice');
+  const topVoiceIssue = voiceIssues[0];
 
   useEffect(() => {
     if (!voiceEnabled || !cue || dismissedId === cue.id) return;
@@ -71,6 +74,11 @@ export default function HostStage({
       {!hidden ? (
         <div className={styles.body}>
           <p className={styles.line}>{cue.text}</p>
+          {topVoiceIssue && (
+            <p className={`${styles.audioIssue} ${styles[`audioIssue${topVoiceIssue.level[0].toUpperCase()}${topVoiceIssue.level.slice(1)}`]}`}>
+              {topVoiceIssue.message}
+            </p>
+          )}
           <button
             type="button"
             className={styles.skip}
@@ -85,6 +93,11 @@ export default function HostStage({
       ) : (
         <div className={styles.bodyHidden}>
           <p className={styles.placeholder}>Host standing by.</p>
+          {topVoiceIssue && (
+            <p className={`${styles.audioIssue} ${styles[`audioIssue${topVoiceIssue.level[0].toUpperCase()}${topVoiceIssue.level.slice(1)}`]}`}>
+              {topVoiceIssue.message}
+            </p>
+          )}
         </div>
       )}
 
