@@ -37,7 +37,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
   }, [quizId]);
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/quiz/${quizId}/play`;
+    const url = `${window.location.origin}/quiz/${quizId}`;
     await navigator.clipboard.writeText(url).catch(() => {});
     addToast({ message: 'Link copied', type: 'success' });
     haptic('tap');
