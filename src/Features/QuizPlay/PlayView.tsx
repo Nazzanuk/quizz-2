@@ -3,19 +3,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
-import { fetchHostSession, generateHostRecap, getResultsSummary, saveResult } from '@/Lib/Api/Client';
+import { fetchHostSession, fetchRun, getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { recordPlayerRun, getPlayerProfile } from '@/Lib/PlayerProfile';
 import type {
   HostConfidenceLevel,
   PlayerProfile,
+  QuestionAttempt,
   Question,
   QuestionAggregateStats,
   QuizAnswerPhase,
   QuizFormat,
   QuizMilestone,
   SaveResultAttemptInput,
+  HostMode,
 } from '@/Lib/Types';
 import { playSound, primeAudio } from '@/Features/Shared/Sound';
 import { haptic } from '@/Features/Shared/Haptic';
@@ -29,11 +32,13 @@ import {
   questionOrderAtom,
   questionFormatsAtom,
   isPlayableQuestion,
+  lastRunAtom,
 } from '@/State/PlayAtoms';
 import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
+import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import PlayProgress from './PlayProgress';
 import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
@@ -66,6 +71,9 @@ const HOST_PERSONA = 'sarcastic_pub_host' as const;
 
 export default function PlayView({ quizId }: PlayViewProps) {
   const { quiz, questions, patchQuestion } = useQuiz(quizId);
+  const searchParams = useSearchParams();
+  const practiceRunId = searchParams.get('practice');
+  const { navigate, replace } = useTransitionRouter();
   const [idx, setIdx] = useAtom(currentIndexAtom);
   const [answers, setAnswers] = useAtom(userAnswersAtom);
   const [showResult, setShowResult] = useAtom(showResultAtom);
@@ -74,6 +82,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
   const resetPlay = useSetAtom(resetPlayAtom);
+  const setLastRun = useSetAtom(lastRunAtom);
   const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
   const hideTextUi = useAtomValue(hideTextUiAtom);
@@ -89,12 +98,17 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const [confidenceByQuestion, setConfidenceByQuestion] = useState<Record<string, HostConfidenceLevel | null>>({});
   const [previousWasWrong, setPreviousWasWrong] = useState(false);
   const [recap, setRecap] = useState('');
+  const [practiceQuestionIds, setPracticeQuestionIds] = useState<{
+    runId: string;
+    ids: string[];
+  } | null>(null);
   const [runSeed, setRunSeed] = useState(0);
   const uiTimersRef = useRef<number[]>([]);
   const milestoneTimerRef = useRef<number | null>(null);
   const runIdRef = useRef(crypto.randomUUID());
   const runStartedAtRef = useRef(0);
   const attemptsRef = useRef<SaveResultAttemptInput[]>([]);
+  const activeRunKeyRef = useRef('');
 
   const questionById = useMemo(
     () => new Map(questions.map((question) => [question.id, question])),
@@ -170,18 +184,59 @@ export default function PlayView({ quizId }: PlayViewProps) {
     resetPlay();
   }, [quizId, resetPlay]);
 
-  const hasPlayableQuestions = questions.some(isPlayableQuestion);
+  useEffect(() => {
+    if (!practiceRunId) {
+      return;
+    }
+
+    let cancelled = false;
+    fetchRun(quizId, practiceRunId)
+      .then((data) => {
+        if (cancelled) return;
+        setPracticeQuestionIds({
+          runId: practiceRunId,
+          ids: data.attempts
+            .filter((attempt) => !attempt.correct)
+            .map((attempt) => attempt.questionId),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setPracticeQuestionIds({ runId: practiceRunId, ids: [] });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [practiceRunId, quizId]);
+
+  const practiceIds = practiceRunId && practiceQuestionIds?.runId === practiceRunId
+    ? practiceQuestionIds.ids
+    : null;
+  const playableQuestions = useMemo(() => {
+    if (!practiceRunId) return questions;
+    if (practiceIds === null) return [];
+    const ids = new Set(practiceIds);
+    return questions.filter((question) => ids.has(question.id));
+  }, [practiceIds, practiceRunId, questions]);
+
+  const practiceReady = !practiceRunId || practiceIds !== null;
+  const hasPlayableQuestions = playableQuestions.some(isPlayableQuestion);
   const playSessionReady = questionOrder.length > 0
     && idx < questionOrder.length
     && questionOrder.every((questionId) => questionById.has(questionId));
+  const runKey = useMemo(
+    () => `${quizId}:${practiceRunId ?? 'all'}:${playableQuestions.map((question) => question.id).join('|')}`,
+    [playableQuestions, practiceRunId, quizId],
+  );
 
   useEffect(() => {
-    if (hasPlayableQuestions && !playSessionReady) {
-      const id = window.setTimeout(() => startRun(questions), 0);
+    if (practiceReady && hasPlayableQuestions && activeRunKeyRef.current !== runKey) {
+      activeRunKeyRef.current = runKey;
+      const id = window.setTimeout(() => startRun(playableQuestions), 0);
       return () => window.clearTimeout(id);
     }
     return undefined;
-  }, [hasPlayableQuestions, playSessionReady, questions, startRun]);
+  }, [hasPlayableQuestions, playableQuestions, practiceReady, runKey, startRun]);
 
   useEffect(() => {
     if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
@@ -355,48 +410,21 @@ export default function PlayView({ quizId }: PlayViewProps) {
         });
         setRecap(fallbackRecap);
 
-        void generateHostRecap(quizId, {
-          mode: hostMode,
-          hostPersona: HOST_PERSONA,
-          summary: {
-            correct: correctCount,
-            total: nextAnswers.size,
-            bestStreak: nextBestStreak,
-            wrongCount: nextAnswers.size - correctCount,
-            fastestAnswerMs: fastestResponseMs(nextAttempts),
-            averageAnswerMs: averageResponseMs(nextAttempts),
-            previousBest,
-            isNewBest,
-            quizBest: previousBest,
-            quizPlays: 0,
-          },
-          profile: playerProfile,
-          quiz: {
-            id: quizId,
-            title: quiz?.title ?? 'Quiz',
-            topic: quiz?.topic ?? null,
-          },
-          strengths: runInsights.strengths,
-          weaknesses: runInsights.weaknesses,
-        })
-          .then((response) => setRecap(response.recap))
-          .catch(() => {});
-
-        scheduleUi(() => {
+        scheduleUi(async () => {
           const elapsedMs = Date.now() - runStartedAtRef.current;
-          void saveResult(quizId, {
-            runId: runIdRef.current,
-            mode: hostMode,
-            hostPersona: HOST_PERSONA,
-            correct: correctCount,
-            total: nextAnswers.size,
-            bestStreak: nextBestStreak,
-            elapsedMs,
-            recap: fallbackRecap,
-            perQuestion,
+          const runId = runIdRef.current;
+          const createdAt = new Date().toISOString();
+          const snapshotAttempts = toQuestionAttempts({
             attempts: nextAttempts,
-          }).catch(() => {});
-
+            runId,
+            quizId,
+            hostMode,
+            createdAt,
+          });
+          const questionByAttemptId = new Map(questions.map((item) => [item.id, item]));
+          const snapshotQuestions = nextAttempts
+            .map((attempt) => questionByAttemptId.get(attempt.questionId))
+            .filter((item) => item != null);
           const updatedProfile = recordPlayerRun(getPlayerProfile(), {
             quizId,
             questions,
@@ -408,10 +436,49 @@ export default function PlayView({ quizId }: PlayViewProps) {
           });
           setPlayerProfile(updatedProfile);
 
-          setAnswerPhase('idle');
-          playSound(isNewBest ? 'newBest' : 'complete');
-          haptic('success');
-          setShowResult(true);
+          try {
+            await saveResult(quizId, {
+              runId,
+              mode: hostMode,
+              hostPersona: HOST_PERSONA,
+              correct: correctCount,
+              total: nextAnswers.size,
+              bestStreak: nextBestStreak,
+              elapsedMs,
+              recap: fallbackRecap,
+              perQuestion,
+              attempts: nextAttempts,
+            });
+
+            setLastRun({
+              runId,
+              quizId,
+              mode: hostMode,
+              hostPersona: HOST_PERSONA,
+              correct: correctCount,
+              total: nextAnswers.size,
+              bestStreak: nextBestStreak,
+              wrongQuestionIds: nextAttempts
+                .filter((attempt) => !attempt.correct)
+                .map((attempt) => attempt.questionId),
+              recap: fallbackRecap,
+              previousBest,
+              elapsedMs,
+              createdAt,
+              attempts: snapshotAttempts,
+              questions: snapshotQuestions,
+            });
+
+            setAnswerPhase('idle');
+            playSound(isNewBest ? 'newBest' : 'complete');
+            haptic('success');
+            replace(`/quiz/${quizId}/results/${runId}`);
+          } catch {
+            setAnswerPhase('idle');
+            playSound(isNewBest ? 'newBest' : 'complete');
+            haptic('success');
+            setShowResult(true);
+          }
         }, beatDelayMs);
       } else {
         scheduleUi(() => {
@@ -426,25 +493,25 @@ export default function PlayView({ quizId }: PlayViewProps) {
       confidenceByQuestion,
       hostMode,
       idx,
-      playerProfile,
       previousBest,
       previousWasWrong,
       questionById,
       questionOrder,
       questionStats,
       questions,
-      quiz,
       quizId,
+      replace,
       scheduleUi,
       showHostCue,
       setAnswers,
       setIdx,
+      setLastRun,
       setShowResult,
       streak,
     ],
   );
 
-  if (!quiz || (hasPlayableQuestions && !playSessionReady)) {
+  if (!quiz || !practiceReady || (hasPlayableQuestions && !playSessionReady)) {
     return (
       <AppShell variant="focused">
         <div className={styles.center}><LoadingSpinner /></div>
@@ -467,13 +534,15 @@ export default function PlayView({ quizId }: PlayViewProps) {
           <ResultsView
             correct={score.correct}
             total={score.total}
-            quizId={quizId}
             previousBest={previousBest}
             bestStreak={bestStreak}
             wrongCount={wrongQuestions.length}
             recap={recap}
             onRetry={() => startRun(questions)}
-            onPracticeWeak={wrongQuestions.length > 0 ? () => startRun(wrongQuestions) : undefined}
+            onPracticeWeak={wrongQuestions.length > 0
+              ? () => navigate(`/quiz/${quizId}/play?practice=${runIdRef.current}`)
+              : undefined}
+            onBack={() => navigate(`/quiz/${quizId}`)}
           />
         </div>
       </AppShell>
@@ -486,9 +555,13 @@ export default function PlayView({ quizId }: PlayViewProps) {
         <BlobField />
         <div className={styles.content}>
           <div className={styles.retiredState}>
-            <h2 className={styles.retiredTitle}>This quiz uses a retired question mode.</h2>
+            <h2 className={styles.retiredTitle}>
+              {practiceRunId ? 'No weak spots in that run.' : 'This quiz uses a retired question mode.'}
+            </h2>
             <p className={styles.retiredBody}>
-              Flashcards are no longer playable here. Add fresh questions to bring this quiz back with the new formats.
+              {practiceRunId
+                ? 'Head back to the quiz or start a fresh full run.'
+                : 'Flashcards are no longer playable here. Add fresh questions to bring this quiz back with the new formats.'}
             </p>
             <Link href={`/quiz/${quizId}`} className={styles.retiredLink}>
               Back to quiz
@@ -674,6 +747,32 @@ function ActiveQuestion({
       </div>
     </>
   );
+}
+
+function toQuestionAttempts(args: {
+  attempts: SaveResultAttemptInput[];
+  runId: string;
+  quizId: string;
+  hostMode: HostMode;
+  createdAt: string;
+}): QuestionAttempt[] {
+  return args.attempts.map((attempt) => ({
+    id: `${args.runId}:${attempt.questionId}:${attempt.orderIndex}`,
+    runId: args.runId,
+    quizId: args.quizId,
+    questionId: attempt.questionId,
+    orderIndex: attempt.orderIndex,
+    selectedAnswer: attempt.selectedAnswer,
+    confidence: attempt.confidence,
+    correct: attempt.correct,
+    timedOut: attempt.timedOut,
+    responseMs: attempt.responseMs,
+    streakBefore: attempt.streakBefore,
+    streakAfter: attempt.streakAfter,
+    wasFinalQuestion: attempt.wasFinalQuestion,
+    hostMode: args.hostMode,
+    createdAt: args.createdAt,
+  }));
 }
 
 function buildFallbackRecap(args: {

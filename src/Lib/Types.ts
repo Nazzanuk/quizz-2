@@ -202,6 +202,8 @@ export interface QuizRunDetail {
 export interface LastRunSnapshot {
   runId: string;
   quizId: string;
+  mode: HostMode;
+  hostPersona: HostPersona;
   correct: number;
   total: number;
   bestStreak: number;
@@ -209,6 +211,7 @@ export interface LastRunSnapshot {
   recap: string | null;
   previousBest: number | null;
   elapsedMs: number;
+  createdAt: string;
   attempts: QuestionAttempt[];
   questions: Question[];
 }

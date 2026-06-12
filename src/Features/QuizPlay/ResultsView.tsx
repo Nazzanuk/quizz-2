@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { PLAY_TIMINGS } from '@/Lib/Constants';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
@@ -11,25 +10,25 @@ import styles from './ResultsView.module.css';
 interface ResultsViewProps {
   correct: number;
   total: number;
-  quizId: string;
   previousBest: number | null;
   bestStreak: number;
   wrongCount: number;
   recap?: string;
   onRetry: () => void;
   onPracticeWeak?: () => void;
+  onBack: () => void;
 }
 
 export default function ResultsView({
   correct,
   total,
-  quizId,
   previousBest,
   bestStreak,
   wrongCount,
   recap,
   onRetry,
   onPracticeWeak,
+  onBack,
 }: ResultsViewProps) {
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
   const animatedPct = useCountUp(pct, 900);
@@ -109,9 +108,7 @@ export default function ResultsView({
         <Button variant={onPracticeWeak ? 'ghost' : 'primary'} onClick={onRetry}>
           Try again
         </Button>
-        <Link href={`/quiz/${quizId}`}>
-          <Button variant="ghost">Back to quiz</Button>
-        </Link>
+        <Button variant="ghost" onClick={onBack}>Back to quiz</Button>
       </div>
     </Card>
   );
