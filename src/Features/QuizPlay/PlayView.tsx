@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import { useSearchParams } from 'next/navigation';
 import { HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
 import { fetchHostSession, fetchRun, getResultsSummary, saveResult } from '@/Lib/Api/Client';

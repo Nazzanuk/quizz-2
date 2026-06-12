@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import type { QuizRunWithTitle } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import styles from './RunHistory.module.css';

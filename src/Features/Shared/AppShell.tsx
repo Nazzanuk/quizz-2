@@ -15,7 +15,7 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, variant = 'tabs' }: AppShellProps) {
-  const { back, navigate } = useTransitionRouter();
+  const { back, navigate, replace } = useTransitionRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
   const setSettingsOpen = useSetAtom(settingsOpenAtom);
@@ -29,7 +29,7 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
       title: 'Leave this run?',
       message: 'Your current run will stop and any unanswered questions will be left behind.',
       confirmLabel: 'Leave',
-      onConfirm: () => navigate(exitHref),
+      onConfirm: () => replace(exitHref),
     });
   };
 

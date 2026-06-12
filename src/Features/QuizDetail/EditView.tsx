@@ -21,7 +21,7 @@ interface EditViewProps {
 export default function EditView({ quizId }: EditViewProps) {
   const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions } = useQuiz(quizId, { poll: true });
   const [addingQuestions, setAddingQuestions] = useState(false);
-  const { navigate } = useTransitionRouter();
+  const { navigate, back } = useTransitionRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);
 
   const handleDelete = () => {
@@ -79,7 +79,14 @@ export default function EditView({ quizId }: EditViewProps) {
           </h2>
           <button
             className={styles.editToggle}
-            onClick={() => navigate(`/quiz/${quizId}`)}
+            onClick={() => {
+              // Deep links land here with no in-app history to go back to
+              if (window.history.length > 1) {
+                back();
+              } else {
+                navigate(`/quiz/${quizId}`);
+              }
+            }}
           >
             Done
           </button>

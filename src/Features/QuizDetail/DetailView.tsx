@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
 import { fetchQuizRuns, getResultsSummary } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';

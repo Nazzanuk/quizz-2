@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import { useAtomValue } from 'jotai';
 import { filteredQuizListAtom, isLoadingAtom, quizListAtom } from '@/State/QuizAtoms';
 import { useQuizzes } from '@/Lib/Hooks/UseQuizzes';

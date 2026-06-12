@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import Button from '@/Features/Shared/Button';
 import styles from './ActionBar.module.css';
 

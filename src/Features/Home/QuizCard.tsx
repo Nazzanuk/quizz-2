@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import Link from '@/Features/Shared/TransitionLink';
 import type { Quiz } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import Card from '@/Features/Shared/Card';
