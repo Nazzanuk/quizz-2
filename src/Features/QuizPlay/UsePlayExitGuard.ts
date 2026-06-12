@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { confirmDialogAtom, playExitGuardAtom } from '@/State/UiAtoms';
-import { useTransitionRouter } from '@/Features/Shared/Navigate';
+import { settingsOpenAtom } from '@/State/SettingsAtoms';
+import { hasInAppHistory, useTransitionRouter } from '@/Features/Shared/Navigate';
 
 type PendingAction = (() => void) | 'silent';
 
@@ -20,10 +21,17 @@ type PendingAction = (() => void) | 'silent';
  */
 export function usePlayExitGuard({ enabled, quizId }: { enabled: boolean; quizId: string }) {
   const armedRef = useRef(false);
+  const idRef = useRef<string | null>(null);
+  if (idRef.current === null) idRef.current = crypto.randomUUID();
   const pendingRef = useRef<PendingAction | null>(null);
   const setConfirm = useSetAtom(confirmDialogAtom);
   const setRelease = useSetAtom(playExitGuardAtom);
-  const { replace } = useTransitionRouter();
+  const { back, replace } = useTransitionRouter();
+  const dialogOpen = useAtomValue(confirmDialogAtom) !== null;
+  const settingsOpen = useAtomValue(settingsOpenAtom);
+  const overlayOpen = dialogOpen || settingsOpen;
+  const overlayOpenRef = useRef(overlayOpen);
+  overlayOpenRef.current = overlayOpen;
 
   const release = useCallback((action: () => void) => {
     if (armedRef.current) {
@@ -35,11 +43,14 @@ export function usePlayExitGuard({ enabled, quizId }: { enabled: boolean; quizId
   }, []);
 
   useEffect(() => {
-    const handlePopstate = (event: PopStateEvent) => {
+    const handlePopstate = () => {
       if (!armedRef.current) return;
-      // Landing ON the sentinel means an overlay above it was popped
-      // (e.g. the confirm dialog's own history entry) — not our business.
-      if ((event.state as { playGuard?: boolean } | null)?.playGuard) return;
+      // Judge by the live history.state (popstate events from the Next.js
+      // router can carry stale state). If the current entry is still our
+      // sentinel, it wasn't popped. While an overlay is open, back belongs
+      // to that overlay's own history entry — not to us.
+      const current = window.history.state as { playGuard?: string } | null;
+      if (current?.playGuard === idRef.current) return;
       const pending = pendingRef.current;
       if (pending) {
         armedRef.current = false;
@@ -47,22 +58,31 @@ export function usePlayExitGuard({ enabled, quizId }: { enabled: boolean; quizId
         if (typeof pending === 'function') pending();
         return;
       }
+      if (overlayOpenRef.current) return;
       // User backed out mid-run: restore the sentinel and ask first.
-      window.history.pushState({ playGuard: true }, '');
+      window.history.pushState({ playGuard: idRef.current }, '');
       setConfirm({
         title: 'Leave this run?',
         message: 'Your current run will stop and any unanswered questions will be left behind.',
         confirmLabel: 'Leave',
-        onConfirm: () => release(() => replace(`/quiz/${quizId}`)),
+        // Return to wherever the user came from; replace() only on cold
+        // deep links, so back from there can't re-enter the dead run.
+        onConfirm: () => release(() => {
+          if (hasInAppHistory()) {
+            back();
+          } else {
+            replace(`/quiz/${quizId}`);
+          }
+        }),
       });
     };
     window.addEventListener('popstate', handlePopstate);
     return () => window.removeEventListener('popstate', handlePopstate);
-  }, [quizId, release, replace, setConfirm]);
+  }, [back, quizId, release, replace, setConfirm]);
 
   useEffect(() => {
     if (enabled && !armedRef.current) {
-      window.history.pushState({ playGuard: true }, '');
+      window.history.pushState({ playGuard: idRef.current }, '');
       armedRef.current = true;
     } else if (!enabled && armedRef.current) {
       pendingRef.current = 'silent';

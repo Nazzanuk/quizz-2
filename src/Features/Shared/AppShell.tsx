@@ -5,7 +5,7 @@ import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
 import { settingsOpenAtom } from '@/State/SettingsAtoms';
 import { confirmDialogAtom, playExitGuardAtom } from '@/State/UiAtoms';
-import { useTransitionRouter } from './Navigate';
+import { hasInAppHistory, useTransitionRouter } from './Navigate';
 import TabBar from './TabBar';
 import styles from './AppShell.module.css';
 
@@ -31,7 +31,15 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
       message: 'Your current run will stop and any unanswered questions will be left behind.',
       confirmLabel: 'Leave',
       onConfirm: () => {
-        const exit = () => replace(exitHref);
+        // Return to wherever the user came from; replace() only on cold
+        // deep links, so back from there can't re-enter the dead run.
+        const exit = () => {
+          if (hasInAppHistory()) {
+            back();
+          } else {
+            replace(exitHref);
+          }
+        };
         if (releaseExitGuard) {
           releaseExitGuard(exit);
         } else {

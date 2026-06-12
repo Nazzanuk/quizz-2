@@ -7,11 +7,20 @@ type ViewTransitionDocument = Document & {
   startViewTransition?: (cb: () => void) => unknown;
 };
 
+// Counts in-app pushes this page load, so exits can tell "there is an in-app
+// page behind us" (use back()) from a cold deep link (use replace()).
+let inAppPushCount = 0;
+
+export function hasInAppHistory(): boolean {
+  return inAppPushCount > 0;
+}
+
 export function useTransitionRouter() {
   const router = useRouter();
 
   const navigate = useCallback(
     (href: string) => {
+      inAppPushCount += 1;
       if (typeof document !== 'undefined') {
         const doc = document as ViewTransitionDocument;
         if (doc.startViewTransition) {
@@ -39,6 +48,7 @@ export function useTransitionRouter() {
   );
 
   const back = useCallback(() => {
+    inAppPushCount = Math.max(0, inAppPushCount - 1);
     if (typeof document !== 'undefined') {
       const doc = document as ViewTransitionDocument;
       if (doc.startViewTransition) {

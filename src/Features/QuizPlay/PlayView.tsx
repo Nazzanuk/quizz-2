@@ -34,7 +34,8 @@ import {
   isPlayableQuestion,
   lastRunAtom,
 } from '@/State/PlayAtoms';
-import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
+import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom, settingsOpenAtom } from '@/State/SettingsAtoms';
+import { confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
@@ -239,8 +240,18 @@ export default function PlayView({ quizId }: PlayViewProps) {
   useEffect(() => {
     if (practiceReady && hasPlayableQuestions && activeRunKeyRef.current !== runKey) {
       activeRunKeyRef.current = runKey;
-      const id = window.setTimeout(() => startRun(playableQuestions), 0);
-      return () => window.clearTimeout(id);
+      let fired = false;
+      const id = window.setTimeout(() => {
+        fired = true;
+        startRun(playableQuestions);
+      }, 0);
+      return () => {
+        window.clearTimeout(id);
+        // If cancelled before firing (StrictMode remount, dep change), reset
+        // the ref so the rerun can schedule again — the ref survives this
+        // effect and would otherwise block the run from ever starting.
+        if (!fired) activeRunKeyRef.current = '';
+      };
     }
     return undefined;
   }, [hasPlayableQuestions, playableQuestions, practiceReady, runKey, startRun]);
@@ -657,6 +668,10 @@ function ActiveQuestion({
   onAnswer,
 }: ActiveQuestionProps) {
   const [interactionLocked, setInteractionLocked] = useState(false);
+  // Pause the countdown while an overlay (leave-run confirm, settings sheet)
+  // covers the question — answering is impossible behind it.
+  const confirmOpen = useAtomValue(confirmDialogAtom) !== null;
+  const settingsOpen = useAtomValue(settingsOpenAtom);
   const [pressedValue, setPressedValue] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const transitionIdsRef = useRef<number[]>([]);
@@ -742,7 +757,7 @@ function ActiveQuestion({
       <PlayTimer
         seconds={PLAY_TIMER_SECONDS[format]}
         phase={answerPhase}
-        paused={interactionLocked}
+        paused={interactionLocked || confirmOpen || settingsOpen}
         hideTextUi={hideTextUi}
         onExpire={handleTimeout}
       />

@@ -18,6 +18,8 @@ type PendingAction = (() => void) | 'silent';
  */
 export function useHistoryDismiss(open: boolean, onDismiss: () => void) {
   const armedRef = useRef(false);
+  const idRef = useRef<string | null>(null);
+  if (idRef.current === null) idRef.current = crypto.randomUUID();
   const pendingRef = useRef<PendingAction | null>(null);
   const onDismissRef = useRef(onDismiss);
   onDismissRef.current = onDismiss;
@@ -25,6 +27,11 @@ export function useHistoryDismiss(open: boolean, onDismiss: () => void) {
   useEffect(() => {
     const handlePopstate = () => {
       if (!armedRef.current) return;
+      // The Next.js router re-dispatches popstate after syncing, and the
+      // event's own state can be stale. The reliable signal is the live
+      // history.state: if our entry is still the current one, nothing was
+      // popped — ignore the event.
+      if ((window.history.state as { overlay?: string } | null)?.overlay === idRef.current) return;
       armedRef.current = false;
       const pending = pendingRef.current;
       pendingRef.current = null;
@@ -40,7 +47,7 @@ export function useHistoryDismiss(open: boolean, onDismiss: () => void) {
 
   useEffect(() => {
     if (open && !armedRef.current) {
-      window.history.pushState({ overlay: true }, '');
+      window.history.pushState({ overlay: idRef.current }, '');
       armedRef.current = true;
     } else if (!open && armedRef.current) {
       // Overlay closed programmatically without going through history —
