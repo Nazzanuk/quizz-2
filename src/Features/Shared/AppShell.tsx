@@ -1,10 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
 import { settingsOpenAtom } from '@/State/SettingsAtoms';
-import { confirmDialogAtom } from '@/State/UiAtoms';
+import { confirmDialogAtom, playExitGuardAtom } from '@/State/UiAtoms';
 import { useTransitionRouter } from './Navigate';
 import TabBar from './TabBar';
 import styles from './AppShell.module.css';
@@ -20,6 +20,7 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
   const isHome = pathname === '/';
   const setSettingsOpen = useSetAtom(settingsOpenAtom);
   const setConfirm = useSetAtom(confirmDialogAtom);
+  const releaseExitGuard = useAtomValue(playExitGuardAtom);
   const focused = variant === 'focused';
 
   const handleExit = () => {
@@ -29,7 +30,14 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
       title: 'Leave this run?',
       message: 'Your current run will stop and any unanswered questions will be left behind.',
       confirmLabel: 'Leave',
-      onConfirm: () => replace(exitHref),
+      onConfirm: () => {
+        const exit = () => replace(exitHref);
+        if (releaseExitGuard) {
+          releaseExitGuard(exit);
+        } else {
+          exit();
+        }
+      },
     });
   };
 

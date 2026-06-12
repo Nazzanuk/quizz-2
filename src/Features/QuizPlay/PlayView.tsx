@@ -39,6 +39,7 @@ import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
+import { usePlayExitGuard } from './UsePlayExitGuard';
 import PlayProgress from './PlayProgress';
 import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
@@ -229,6 +230,11 @@ export default function PlayView({ quizId }: PlayViewProps) {
     () => `${quizId}:${practiceRunId ?? 'all'}:${playableQuestions.map((question) => question.id).join('|')}`,
     [playableQuestions, practiceRunId, quizId],
   );
+
+  const releaseExitGuard = usePlayExitGuard({
+    enabled: Boolean(quiz) && practiceReady && hasPlayableQuestions && playSessionReady && !showResult,
+    quizId,
+  });
 
   useEffect(() => {
     if (practiceReady && hasPlayableQuestions && activeRunKeyRef.current !== runKey) {
@@ -481,7 +487,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
             setAnswerPhase('idle');
             playSound(isNewBest ? 'newBest' : 'complete');
             haptic('success');
-            replace(`/quiz/${quizId}/results/${runId}`);
+            releaseExitGuard(() => replace(`/quiz/${quizId}/results/${runId}`));
           } catch {
             setAnswerPhase('idle');
             playSound(isNewBest ? 'newBest' : 'complete');
@@ -509,6 +515,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       questionStats,
       questions,
       quizId,
+      releaseExitGuard,
       replace,
       scheduleUi,
       showHostCue,
