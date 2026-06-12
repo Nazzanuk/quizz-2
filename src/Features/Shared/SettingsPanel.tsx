@@ -208,7 +208,10 @@ export default function SettingsPanel() {
                 key={issue.code}
                 className={`${styles.audioStatusItem} ${styles[`audioStatus${issue.level[0].toUpperCase()}${issue.level.slice(1)}`]}`}
               >
-                {issue.message}
+                <span>{issue.message}</span>
+                {issue.detail && (
+                  <span className={styles.audioStatusDetail}>{issue.detail}</span>
+                )}
               </p>
             ))}
           </div>

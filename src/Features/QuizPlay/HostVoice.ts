@@ -17,9 +17,26 @@ let playbackRequestId = 0;
 
 const SLOW_VOICE_MS = 1200;
 const VOICE_TIMEOUT_MS = 8000;
+const VOICE_GENERATION_ISSUE_CODES = [
+  'voice-generation-slow',
+  'voice-generation-failed',
+  'voice-generation-timeout',
+  'voice-generation-config-missing',
+  'voice-generation-provider-unreachable',
+  'voice-generation-provider-rejected',
+  'voice-generation-request-invalid',
+  'voice-generation-empty-audio',
+  'voice-generation-decode-failed',
+] as const;
 const PREVIEW_LINES: Record<HostPersona, string> = {
   sarcastic_pub_host: 'Right then. Voice check. If you can hear this, the quizmaster is awake.',
 };
+
+interface HostAudioErrorPayload {
+  stage?: string;
+  message?: string;
+  detail?: string;
+}
 
 export async function primeHostVoice(): Promise<void> {
   const context = ensureVoiceContext();
@@ -190,7 +207,7 @@ async function fetchVoiceBufferInner(
   prefetch: boolean,
 ): Promise<AudioBuffer | null> {
   const startedAt = performance.now();
-  const timeout = AbortSignal.timeout(VOICE_TIMEOUT_MS);
+  const timeout = createTimeoutController(VOICE_TIMEOUT_MS);
   const slowTimer = window.setTimeout(() => {
     reportAudioIssue({
       code: 'voice-generation-slow',
@@ -204,7 +221,7 @@ async function fetchVoiceBufferInner(
     const response = await fetch('/api/host/audio', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      signal: timeout,
+      signal: timeout.signal,
       body: JSON.stringify({
         text,
         hostPersona,
@@ -213,16 +230,10 @@ async function fetchVoiceBufferInner(
     });
 
     if (!response.ok) {
-      reportAudioIssue({
-        code: 'voice-generation-failed',
-        channel: 'voice',
-        level: 'error',
-        message: 'Host voice failed to generate.',
-        detail: `${response.status} ${response.statusText}`,
-      });
-      clearAudioIssue('voice-generation-slow');
-      return null;
+      const failure = await readHostAudioError(response);
+      return reportVoiceGenerationFailure(failure);
     }
+
     const context = ensureVoiceContext();
     if (!context) {
       reportAudioIssue({
@@ -231,31 +242,150 @@ async function fetchVoiceBufferInner(
         level: 'error',
         message: 'Host voice is unavailable in this browser.',
       });
-      clearAudioIssue('voice-generation-slow');
       return null;
     }
+
     const buffer = await response.arrayBuffer();
-    const decoded = await context.decodeAudioData(buffer.slice(0));
-    clearAudioIssue('voice-generation-slow');
-    clearAudioIssue('voice-generation-failed');
+    if (buffer.byteLength === 0) {
+      return reportVoiceGenerationFailure({
+        code: 'voice-generation-empty-audio',
+        message: 'Host voice was generated without any audio data.',
+        detail: 'The audio endpoint returned an empty response body.',
+      });
+    }
+
+    let decoded: AudioBuffer;
+    try {
+      decoded = await context.decodeAudioData(buffer.slice(0));
+    } catch (error: unknown) {
+      return reportVoiceGenerationFailure({
+        code: 'voice-generation-decode-failed',
+        message: 'Host voice was generated, but this browser could not decode it.',
+        detail: formatErrorDetail(error) ?? 'decodeAudioData failed for the returned audio stream.',
+      });
+    }
+
+    clearVoiceGenerationIssues();
     if (performance.now() - startedAt <= SLOW_VOICE_MS) {
       clearAudioIssue('voice-generation-slow');
     }
+
     return decoded;
   } catch (error: unknown) {
-    const detail = error instanceof Error ? error.name : 'request failed';
-    reportAudioIssue({
+    if (timeout.didTimeout()) {
+      return reportVoiceGenerationFailure({
+        code: 'voice-generation-timeout',
+        message: 'Host voice request timed out.',
+        detail: `The server did not respond within ${VOICE_TIMEOUT_MS / 1000} seconds.`,
+      });
+    }
+
+    return reportVoiceGenerationFailure({
       code: 'voice-generation-failed',
-      channel: 'voice',
-      level: 'error',
-      message: 'Host voice failed to generate.',
-      detail,
+      message: 'Host voice request could not be completed.',
+      detail: formatErrorDetail(error) ?? 'The browser could not reach the audio endpoint.',
     });
-    clearAudioIssue('voice-generation-slow');
-    return null;
   } finally {
     window.clearTimeout(slowTimer);
+    timeout.cancel();
+    clearAudioIssue('voice-generation-slow');
   }
+}
+
+function clearVoiceGenerationIssues(): void {
+  VOICE_GENERATION_ISSUE_CODES.forEach(clearAudioIssue);
+}
+
+function reportVoiceGenerationFailure(issue: {
+  code: string;
+  message: string;
+  detail?: string;
+}): null {
+  clearVoiceGenerationIssues();
+  reportAudioIssue({
+    code: issue.code,
+    channel: 'voice',
+    level: 'error',
+    message: issue.message,
+    detail: issue.detail,
+  });
+  return null;
+}
+
+async function readHostAudioError(response: Response): Promise<{
+  code: string;
+  message: string;
+  detail?: string;
+}> {
+  const statusDetail = `${response.status} ${response.statusText}`;
+  const fallback = {
+    code: 'voice-generation-failed',
+    message: 'Host voice failed to generate.',
+    detail: statusDetail,
+  };
+
+  const contentType = response.headers.get('content-type') ?? '';
+  if (!contentType.includes('application/json')) {
+    return fallback;
+  }
+
+  try {
+    const payload = await response.json() as HostAudioErrorPayload;
+    const message = typeof payload.message === 'string' && payload.message.trim()
+      ? payload.message.trim()
+      : fallback.message;
+    const detail = typeof payload.detail === 'string' && payload.detail.trim()
+      ? payload.detail.trim()
+      : statusDetail;
+    return {
+      code: mapHostAudioErrorCode(payload.stage),
+      message,
+      detail,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function mapHostAudioErrorCode(stage?: string): string {
+  switch (stage) {
+    case 'configuration':
+      return 'voice-generation-config-missing';
+    case 'request':
+      return 'voice-generation-request-invalid';
+    case 'upstream-request':
+      return 'voice-generation-provider-unreachable';
+    case 'upstream-response':
+      return 'voice-generation-provider-rejected';
+    default:
+      return 'voice-generation-failed';
+  }
+}
+
+function formatErrorDetail(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const message = error.message.trim();
+  if (!message || message === error.name) return error.name;
+  return `${error.name}: ${message}`;
+}
+
+function createTimeoutController(timeoutMs: number): {
+  signal: AbortSignal;
+  didTimeout: () => boolean;
+  cancel: () => void;
+} {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timerId = window.setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  return {
+    signal: controller.signal,
+    didTimeout: () => timedOut,
+    cancel: () => window.clearTimeout(timerId),
+  };
 }
 
 function ensureVoiceContext(): AudioContext | null {

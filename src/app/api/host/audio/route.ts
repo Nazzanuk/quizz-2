@@ -6,43 +6,105 @@ const DEFAULT_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? 'eleven_v3';
 // Hardcoded so a bad deploy-time env override cannot break the host voice.
 const HOST_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 
+type HostAudioErrorStage =
+  | 'request'
+  | 'configuration'
+  | 'upstream-request'
+  | 'upstream-response';
+
+interface HostAudioErrorBody {
+  error: string;
+  stage: HostAudioErrorStage;
+  message: string;
+  detail?: string;
+}
+
 export async function POST(req: Request) {
-  const body = await req.json().catch(() => ({}));
+  const body = await req.json().catch(() => null);
+  if (!body || typeof body !== 'object') {
+    return errorResponse(400, {
+      error: 'invalid request body',
+      stage: 'request',
+      message: 'Host voice request body could not be parsed.',
+      detail: 'Expected JSON with a non-empty text field.',
+    });
+  }
+
   const text = typeof body.text === 'string' ? body.text.trim() : '';
   if (!text) {
-    return NextResponse.json({ error: 'text is required' }, { status: 400 });
+    return errorResponse(400, {
+      error: 'text is required',
+      stage: 'request',
+      message: 'Host voice request text was empty.',
+      detail: 'The audio endpoint needs a non-empty text string to generate speech.',
+    });
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: 'voice unavailable' }, { status: 503 });
+    console.error('[host audio] ELEVENLABS_API_KEY is missing');
+    return errorResponse(503, {
+      error: 'voice unavailable',
+      stage: 'configuration',
+      message: 'Host voice is not configured on the server.',
+      detail: 'ELEVENLABS_API_KEY is missing.',
+    });
   }
 
-  const upstream = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${HOST_VOICE_ID}/stream`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'xi-api-key': apiKey,
-        Accept: 'audio/mpeg',
-      },
-      body: JSON.stringify({
-        text,
-        model_id: DEFAULT_MODEL_ID,
-        output_format: 'mp3_44100_128',
-        voice_settings: {
-          stability: body.prefetch ? 0.45 : 0.38,
-          similarity_boost: 0.72,
-          style: 0.35,
-          use_speaker_boost: true,
+  let upstream: Response;
+  try {
+    upstream = await fetch(
+      `https://api.elevenlabs.io/v1/text-to-speech/${HOST_VOICE_ID}/stream`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey,
+          Accept: 'audio/mpeg',
         },
-      }),
-    },
-  );
+        body: JSON.stringify({
+          text,
+          model_id: DEFAULT_MODEL_ID,
+          output_format: 'mp3_44100_128',
+          voice_settings: {
+            stability: body.prefetch ? 0.45 : 0.38,
+            similarity_boost: 0.72,
+            style: 0.35,
+            use_speaker_boost: true,
+          },
+        }),
+      },
+    );
+  } catch (error: unknown) {
+    const detail = formatErrorDetail(error);
+    console.error('[host audio] failed to reach ElevenLabs', detail ?? 'unknown error');
+    return errorResponse(502, {
+      error: 'voice provider unreachable',
+      stage: 'upstream-request',
+      message: 'The server could not reach the voice provider.',
+      detail,
+    });
+  }
 
   if (!upstream.ok || !upstream.body) {
-    return NextResponse.json({ error: 'voice generation failed' }, { status: 502 });
+    if (!upstream.ok) {
+      const detail = formatUpstreamFailure(upstream, await readUpstreamError(upstream));
+      console.error('[host audio] ElevenLabs rejected the request', detail);
+      return errorResponse(502, {
+        error: 'voice generation failed',
+        stage: 'upstream-response',
+        message: 'The voice provider rejected the host voice request.',
+        detail,
+      });
+    }
+
+    console.error('[host audio] ElevenLabs returned no response body');
+    return errorResponse(502, {
+      error: 'voice generation failed',
+      stage: 'upstream-response',
+      message: 'The voice provider returned no audio stream.',
+      detail: 'The upstream response completed without an audio body.',
+    });
   }
 
   return new Response(upstream.body, {
@@ -54,4 +116,47 @@ export async function POST(req: Request) {
         : 'no-store',
     },
   });
+}
+
+function errorResponse(status: number, body: HostAudioErrorBody) {
+  return NextResponse.json(body, { status });
+}
+
+async function readUpstreamError(upstream: Response): Promise<string | undefined> {
+  const contentType = upstream.headers.get('content-type') ?? '';
+
+  try {
+    if (contentType.includes('application/json')) {
+      const payload = await upstream.json();
+      if (payload && typeof payload === 'object') {
+        const detail =
+          pickString(payload.detail)
+          ?? pickString(payload.message)
+          ?? pickString(payload.error);
+        return detail?.trim() || undefined;
+      }
+    }
+
+    const text = (await upstream.text()).trim();
+    return text || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function pickString(value: unknown): string | undefined {
+  return typeof value === 'string' ? value : undefined;
+}
+
+function formatUpstreamFailure(upstream: Response, detail?: string): string {
+  const status = `${upstream.status} ${upstream.statusText}`;
+  if (!detail) return status;
+  return `${status}: ${detail}`;
+}
+
+function formatErrorDetail(error: unknown): string | undefined {
+  if (!(error instanceof Error)) return undefined;
+  const message = error.message.trim();
+  if (!message || message === error.name) return error.name;
+  return `${error.name}: ${message}`;
 }

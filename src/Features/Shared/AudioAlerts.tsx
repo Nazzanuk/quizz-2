@@ -15,10 +15,15 @@ export default function AudioAlerts() {
       seenCodesRef.current.add(issue.code);
       addToast({
         type: issue.level === 'error' ? 'error' : 'info',
-        message: issue.message,
+        message: formatIssueMessage(issue.message, issue.detail),
       });
     });
   }), [addToast]);
 
   return null;
+}
+
+function formatIssueMessage(message: string, detail?: string): string {
+  if (!detail) return message;
+  return `${message} ${detail}`;
 }
