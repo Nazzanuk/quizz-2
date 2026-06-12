@@ -180,7 +180,7 @@ export async function generateHostSessionIntro(opts: {
   categories: string[];
   hardCount: number;
 }): Promise<string> {
-  const model = getJsonModel(lineResponseSchema);
+  const model = getJsonModel(lineResponseSchema, 1.1);
   const result = await model.generateContent(buildHostIntroPrompt(opts));
   const text = result.response.text();
   return parseLine(text);
@@ -203,21 +203,28 @@ export async function generateHostRecap(opts: {
   weaknesses: string[];
   profile: PlayerProfile;
 }): Promise<string> {
-  const model = getJsonModel(lineResponseSchema);
+  const model = getJsonModel(lineResponseSchema, 1.1);
   const result = await model.generateContent(buildHostRecapPrompt(opts));
   const text = result.response.text();
   return parseLine(text);
 }
 
-function getJsonModel(responseSchema: Schema) {
+function getJsonModel(responseSchema: Schema, temperature?: number) {
   return genAI.getGenerativeModel({
     model: 'gemini-3-flash-preview',
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema,
+      ...(temperature !== undefined ? { temperature } : {}),
     },
   });
 }
+
+const HOST_VARIETY_RULES = [
+  'Variety rules: every line must feel newly written, never templated.',
+  'Do NOT open with stock quiz-host phrases such as "Right then", "Right,", "Well, well", "Ah,", "Ladies and gentlemen", "Alright" or "So,".',
+  'Vary sentence structure and vocabulary between generations — pick a fresh angle (the topic, the player history, the difficulty, the mood) rather than reusing a formula.',
+].join('\n');
 
 function buildPrompt(opts: {
   topic?: string;
@@ -263,6 +270,13 @@ const IMAGE_DESCRIPTION_RULES = [
   '- Skip the image when the question can be answered fully from text alone (e.g. abstract concepts, math, dates without a visual subject).',
   '- The image accompanies the QUESTION, not the literal answer phrase. It depicts the subject in a way that supports the question without trivially spelling out the answer in pixels (no captions, no text in the image).',
   '',
+  'CRITICAL — the image must never give the answer away:',
+  '- Before writing imageDescription, check it against answerText. If someone could pick the correct option just by looking at the image, the description is wrong.',
+  '- Never include answerText, a synonym of it, or its distinctive identifying features in imageDescription. Depict the subject of the QUESTION STEM instead (the thing being asked about), not the thing that answers it.',
+  '- Example: "Which planet is known as the Red Planet?" with answer "Mars" must NOT get "a red planet against a starfield". Use a neutral scene like "a telescope pointed at a night sky" — or set imageDescription to null.',
+  '- Example: "What is the largest big cat?" with answer "Tiger" must NOT get "a striped orange big cat". Use something answer-neutral, or null.',
+  '- When in doubt, set imageDescription to null. A missing image is always better than a spoiler.',
+  '',
   'imageDescription: a single concise visual description (or null). Use when a recognizable subject genuinely helps.',
   '',
   'optionImageDescriptions: only for mcq questions where the four answer options are visually distinct subjects (flags, landmarks, species, artworks, anatomical parts, etc). Provide an array of 4 descriptions in the same order as options. Each must follow the visual-attribute rules above. Each image must be unambiguous and isolated on a plain background so it can stand alone in a 2×2 grid. Set to null for fill_blank and odd_one_out questions, and set to null when text options suffice.',
@@ -270,7 +284,7 @@ const IMAGE_DESCRIPTION_RULES = [
 
 const FORMAT_INSTRUCTIONS = [
   'Use a mix of these question formats: mcq, fill_blank, and odd_one_out.',
-  'Distribute them as evenly as possible across the quiz. When the count is 3 or more, include at least one fill_blank or odd_one_out question.',
+  'Favour multiple-choice: roughly 60-70% of the questions should be mcq (the majority, but not all of them). Use fill_blank and odd_one_out for the remainder to keep things varied. When the count is 3 or more, include at least one fill_blank or odd_one_out question.',
   '',
   'Format rules:',
   '- mcq: questionText asks a standard question. options must contain exactly 4 choices. answerText is the correct choice, and the correct choice must be the first item in options.',
@@ -344,6 +358,7 @@ function buildHostIntroPrompt(opts: {
     `Player total runs: ${opts.profile.totalRuns}`,
     `Player best score: ${opts.profile.bestPct ?? 'none yet'}%`,
     'Mention the theme or difficulty profile when useful. Keep the tone sharp, playful, and confident.',
+    HOST_VARIETY_RULES,
   ].filter(Boolean).join('\n');
 }
 
@@ -381,6 +396,7 @@ function buildHostRecapPrompt(opts: {
     `Weaknesses: ${opts.weaknesses.join(', ') || 'none obvious'}`,
     `Player total runs: ${opts.profile.totalRuns}`,
     'Make it feel like a mini performance review, witty but not mean, and mention a comeback, wobble, pace, or streak when possible.',
+    HOST_VARIETY_RULES,
   ].filter(Boolean).join('\n');
 }
 

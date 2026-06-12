@@ -1,4 +1,5 @@
 import { HOST_MODE_CONFIG } from '@/Lib/Constants';
+import { hashString } from '@/Lib/Utils';
 import type {
   HostConfidenceLevel,
   HostMode,
@@ -21,6 +22,75 @@ export function shouldPromptConfidence(args: {
     || args.previousWasWrong;
 }
 
+// Variant pools keep the host from repeating himself. Picks are seeded per
+// question + run, so a re-render replays the exact same line instead of
+// rolling a new one.
+const OPENER_LINES = {
+  firstEasy: [
+    'Warm-up one. Try not to overcomplicate basic literacy.',
+    'A gentle starter. Embarrassing to miss, frankly.',
+    'Opening softball. Swing with dignity.',
+    'We begin with a freebie. Cherish it.',
+  ],
+  firstHard: [
+    'Straight in, then. No gentle easing here.',
+    'No warm-up tonight. Straight off the deep end.',
+    'First question, and it already has teeth.',
+    'We open with a proper one. Brace accordingly.',
+  ],
+  finalOnStreak: [
+    'Final question. Try not to fumble the landing.',
+    'Last one. A streak like that deserves a tidy finish.',
+    'One left. Hot hands have dropped easier than this.',
+    'The closer. Stick the landing and we say nothing more about it.',
+  ],
+  final: [
+    'Last one. Plenty of time to rescue this.',
+    'Final question. Redemption is still technically on the table.',
+    'And we arrive at the end. Make it count.',
+    'One more, then the judging begins.',
+  ],
+  hard: [
+    'This is where people suddenly become revisionist historians about what they “definitely knew”.',
+    'A spicy one. Guess with conviction if you must.',
+    'Difficulty just went up a gear. Pretend you noticed gracefully.',
+    'Proper thinker, this one. Take a breath.',
+    'Here comes the separator. Sheep, goats, et cetera.',
+  ],
+  easy: [
+    'Comfortably gettable, this. Don’t invent problems.',
+    'A kind one. Accept the gift.',
+    'Should be routine. Famous last words, obviously.',
+    'Nothing sneaky here. Probably.',
+  ],
+  mid: [
+    'Right, keep it moving.',
+    'On we go.',
+    'Next up. Eyes forward.',
+    'No dawdling. Here’s another.',
+    'Onwards. The quiz waits for no one.',
+  ],
+  rareCorrect: [
+    (pct: number) => `Only ${pct}% of players have landed it. Pleasantly rude, that.`,
+    (pct: number) => `${pct}% success rate on this one. The graveyard is full.`,
+    (pct: number) => `Fair warning: just ${pct}% get this right.`,
+  ],
+  categoryStrong: [
+    (cat: string) => `You normally behave yourself on ${cat}.`,
+    (cat: string) => `${cat}. Usually your safe ground.`,
+    (cat: string) => `Historically you’re decent at ${cat}. No pressure.`,
+  ],
+  categoryWeak: [
+    (cat: string) => `${cat} again. Historically, not your cleanest work.`,
+    (cat: string) => `Ah, ${cat}. Your old nemesis returns.`,
+    (cat: string) => `${cat}. Past performance suggests caution.`,
+  ],
+};
+
+function pick<T>(pool: T[], seed: string): T {
+  return pool[hashString(seed) % pool.length];
+}
+
 export function buildQuestionOpener(args: {
   question: Question;
   index: number;
@@ -29,28 +99,30 @@ export function buildQuestionOpener(args: {
   mode: HostMode;
   stats?: QuestionAggregateStats;
   profile: PlayerProfile;
+  seed?: string;
 }): string {
   const { question, index, total, streak, stats, profile } = args;
+  const seed = `${args.seed ?? ''}:${question.id}:${index}`;
   const base: string[] = [];
 
   if (index === 0) {
     base.push(question.difficulty === 'easy'
-      ? 'Warm-up one. Try not to overcomplicate basic literacy.'
-      : 'Straight in, then. No gentle easing here.');
+      ? pick(OPENER_LINES.firstEasy, `${seed}:first`)
+      : pick(OPENER_LINES.firstHard, `${seed}:first`));
   } else if (index + 1 === total) {
     base.push(streak >= 3
-      ? 'Final question. Try not to fumble the landing.'
-      : 'Last one. Plenty of time to rescue this.');
+      ? pick(OPENER_LINES.finalOnStreak, `${seed}:final`)
+      : pick(OPENER_LINES.final, `${seed}:final`));
   } else if (question.difficulty === 'hard') {
-    base.push('This is where people suddenly become revisionist historians about what they “definitely knew”.');
+    base.push(pick(OPENER_LINES.hard, `${seed}:hard`));
   } else if (question.difficulty === 'easy') {
-    base.push('Comfortably gettable, this. Don’t invent problems.');
+    base.push(pick(OPENER_LINES.easy, `${seed}:easy`));
   } else {
-    base.push('Right, keep it moving.');
+    base.push(pick(OPENER_LINES.mid, `${seed}:mid`));
   }
 
   if (stats && stats.attempts >= 5 && stats.correctPct !== null && stats.correctPct <= 25) {
-    base.push(`Only ${stats.correctPct}% of players have landed it. Pleasantly rude, that.`);
+    base.push(pick(OPENER_LINES.rareCorrect, `${seed}:rare`)(stats.correctPct));
   }
 
   const category = question.category?.trim();
@@ -59,9 +131,9 @@ export function buildQuestionOpener(args: {
     if (profileCategory && profileCategory.seen >= 3) {
       const accuracy = Math.round((profileCategory.correct / profileCategory.seen) * 100);
       if (accuracy >= 75) {
-        base.push(`You normally behave yourself on ${category.toLowerCase()}.`);
+        base.push(pick(OPENER_LINES.categoryStrong, `${seed}:cat`)(category.toLowerCase()));
       } else if (accuracy <= 45) {
-        base.push(`${category} again. Historically, not your cleanest work.`);
+        base.push(pick(OPENER_LINES.categoryWeak, `${seed}:cat`)(category));
       }
     }
   }
@@ -76,47 +148,115 @@ export function buildConfidencePrompt(confidence: HostConfidenceLevel | null): s
   return 'How sure are you, then?';
 }
 
+const REACTION_LINES = {
+  correctArrogant: [
+    'Annoyingly, that swagger was justified.',
+    'Arrogant and right. The worst combination for me personally.',
+    'Called it with full chest, landed it. Fine.',
+    'Insufferable, but correct. Carry on.',
+  ],
+  correctStreak: [
+    (n: number) => `That’s ${n} in a row. Confidence becoming a public hazard now.`,
+    (n: number) => `${n} straight. Someone check this for wires.`,
+    (n: number) => `A ${n}-question streak. Starting to look premeditated.`,
+  ],
+  correctRedemption: [
+    'There we are. Redemption arc back on the rails.',
+    'Bounced back. Very dignified of you.',
+    'Recovery noted. We’ll pretend the last one never happened.',
+    'Back from the dead. Lovely stuff.',
+  ],
+  correctFast: [
+    'Correct. Suspiciously quick, that.',
+    'Right, and instantly. Either brilliance or a lucky reflex.',
+    'Barely let me finish. Correct, though.',
+    'Snap answer, correct answer. Showing off slightly.',
+  ],
+  correctSlow: [
+    'Correct. Eventually, but correctly.',
+    'Got there. Scenic route, but got there.',
+    'Correct. The pause was for drama, I assume.',
+    'Right answer. The hesitation will be discussed later.',
+  ],
+  timeout: [
+    (a: string) => `Time. The answer was ${a}. You let that one die on stage.`,
+    (a: string) => `The clock wins. It was ${a}, for the record.`,
+    (a: string) => `Nothing? Bold strategy. ${a} was the answer.`,
+    (a: string) => `Time’s up. ${a}. Even a wild guess would’ve had a chance.`,
+  ],
+  wrongArrogant: [
+    (a: string) => `Arrogant was a choice. ${a} was the correct one.`,
+    (a: string) => `All that confidence, and it was ${a}. Delicious.`,
+    (a: string) => `Swagger: maximum. Accuracy: not so much. ${a}.`,
+    (a: string) => `Bold call. Wrong call. ${a} was the one.`,
+  ],
+  wrongFast: [
+    (a: string) => `Nope. Impressively immediate, though. ${a} was right.`,
+    (a: string) => `Instant and incorrect. Efficient, at least. It was ${a}.`,
+    (a: string) => `Quick on the buzzer, wrong on the facts. ${a}.`,
+  ],
+  wrong: [
+    (a: string) => `Not quite. ${a} was the answer.`,
+    (a: string) => `Afraid not. ${a} was what we wanted.`,
+    (a: string) => `No. The answer was ${a}. Moving swiftly on.`,
+    (a: string) => `Close-ish. The correct answer was ${a}.`,
+    (a: string) => `That’s a miss. ${a}, for future reference.`,
+  ],
+  smugMinority: [
+    (pct: number) => `Only ${pct}% get that right. Welcome to the smug minority.`,
+    (pct: number) => `Just ${pct}% manage that one. Quietly impressive.`,
+    (pct: number) => `${pct}% success rate, and you’re in it. Noted.`,
+  ],
+  commonMiss: [
+    (pct: number) => `To make it worse, ${pct}% usually get that one.`,
+    (pct: number) => `${pct}% of players land that. Just saying.`,
+    (pct: number) => `That one has a ${pct}% success rate. So. Yes.`,
+  ],
+};
+
 export function buildAnswerReaction(args: {
   question: Question;
   attempt: SaveResultAttemptInput;
   mode: HostMode;
   stats?: QuestionAggregateStats;
   previousWasWrong: boolean;
+  seed?: string;
 }): string {
   const { question, attempt, stats, previousWasWrong, mode } = args;
   const parts: string[] = [];
   const showFactDrops = HOST_MODE_CONFIG[mode].showFactDrops;
   const answer = question.answerText;
+  const seed = `${args.seed ?? ''}:${question.id}:reaction`;
 
   if (attempt.correct) {
     if (attempt.confidence === 'arrogant') {
-      parts.push('Annoyingly, that swagger was justified.');
+      parts.push(pick(REACTION_LINES.correctArrogant, seed));
     } else if (attempt.streakAfter >= 5) {
-      parts.push(`That’s ${attempt.streakAfter} in a row. Confidence becoming a public hazard now.`);
+      parts.push(pick(REACTION_LINES.correctStreak, seed)(attempt.streakAfter));
     } else if (previousWasWrong) {
-      parts.push('There we are. Redemption arc back on the rails.');
+      parts.push(pick(REACTION_LINES.correctRedemption, seed));
     } else if (attempt.responseMs <= 1800) {
-      parts.push('Correct. Suspiciously quick, that.');
+      parts.push(pick(REACTION_LINES.correctFast, seed));
     } else {
-      parts.push('Correct. Eventually, but correctly.');
+      parts.push(pick(REACTION_LINES.correctSlow, seed));
     }
   } else if (attempt.timedOut) {
-    parts.push(`Time. The answer was ${answer}. You let that one die on stage.`);
+    parts.push(pick(REACTION_LINES.timeout, seed)(answer));
   } else {
     if (attempt.confidence === 'arrogant') {
-      parts.push(`Arrogant was a choice. ${answer} was the correct one.`);
+      parts.push(pick(REACTION_LINES.wrongArrogant, seed)(answer));
     } else if (attempt.responseMs <= 1800) {
-      parts.push(`Nope. Impressively immediate, though. ${answer} was right.`);
+      parts.push(pick(REACTION_LINES.wrongFast, seed)(answer));
     } else {
-      parts.push(`Not quite. ${answer} was the answer.`);
+      parts.push(pick(REACTION_LINES.wrong, seed)(answer));
     }
   }
 
   if (stats && stats.attempts >= 5 && stats.correctPct !== null) {
     if (attempt.correct && stats.correctPct <= 30) {
-      parts.push(`Only ${stats.correctPct}% get that right. Welcome to the smug minority.`);
+      parts.push(pick(REACTION_LINES.smugMinority, `${seed}:stats`)(stats.correctPct));
     } else if (!attempt.correct && stats.correctPct >= 75) {
-      parts.push(`To make it worse, ${stats.correctPct}% usually get that one.`);
+      parts.push(pick(REACTION_LINES.commonMiss, `${seed}:stats`)(stats.correctPct));
     }
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { fetchQuiz, fetchRun, generateHostRecap } from '@/Lib/Api/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
@@ -93,8 +93,14 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     };
   }, [freshDetail, quizId, routeKey, runId]);
 
+  const recapRequestedForRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!fresh || !detail || !quizMeta) return;
+    // The upgraded recap is an LLM call; only request it once per run, even
+    // across re-renders or StrictMode effect replays.
+    if (recapRequestedForRef.current === runId) return;
+    recapRequestedForRef.current = runId;
 
     const attempts = toSaveAttempts(detail.attempts);
     const insights = getRunInsights({ questions: detail.questions, attempts });

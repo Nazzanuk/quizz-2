@@ -109,6 +109,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const runStartedAtRef = useRef(0);
   const attemptsRef = useRef<SaveResultAttemptInput[]>([]);
   const activeRunKeyRef = useRef('');
+  const hostSessionKeyRef = useRef('');
 
   const questionById = useMemo(
     () => new Map(questions.map((question) => [question.id, question])),
@@ -241,6 +242,12 @@ export default function PlayView({ quizId }: PlayViewProps) {
   useEffect(() => {
     if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
 
+    // The host session hits the LLM; guard so a re-render or StrictMode
+    // remount never regenerates the intro for the same run.
+    const sessionKey = `${runIdRef.current}:${hostMode}`;
+    if (hostSessionKeyRef.current === sessionKey) return;
+    hostSessionKeyRef.current = sessionKey;
+
     let cancelled = false;
     const profile = getPlayerProfile();
 
@@ -290,6 +297,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       mode: hostMode,
       stats: questionStats[current.id],
       profile: playerProfile,
+      seed: runIdRef.current,
     });
     const line = [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
@@ -377,6 +385,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
         mode: hostMode,
         stats: questionStats[questionId],
         previousWasWrong,
+        seed: runIdRef.current,
       });
 
       showHostCue({

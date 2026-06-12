@@ -5,14 +5,16 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN!,
 });
 
+// Matches the app's neo-brutalist UI: thick black borders, flat saturated
+// colors on cream (#fffdf5), hard offset shadows, sticker-like shapes.
 const QUESTION_STYLE =
-  'Soft editorial illustration, warm pastel palette, recognizable subject on a calm minimal background. No text, letters, words, captions, or watermarks.';
+  'Bold neo-brutalist flat vector illustration: recognizable subject drawn with thick black outlines, flat saturated fills in coral red, sunshine yellow, lavender, lime green and cyan, on a plain cream off-white background, hard-edged sticker-like shapes with a solid black offset drop shadow. Playful poster art, no gradients, no soft shading, no photorealism. No text, letters, words, captions, or watermarks.';
 
 const COVER_STYLE =
-  'Minimal soft illustration, warm pastel colors, organic shapes, paper-like texture. Abstract and calm. No text, letters, or words.';
+  'Bold neo-brutalist abstract poster: chunky geometric shapes with thick black outlines, flat saturated fills in coral red, sunshine yellow, lavender, lime green and cyan, on a cream off-white background, hard black offset shadows, sticker-collage feel. Flat graphic design, no gradients, no photorealism. No text, letters, or words.';
 
 const SANITIZED_FALLBACK_STYLE =
-  'Abstract symbolic illustration evoking the theme. Soft pastel palette, organic shapes, no recognizable people, brands, characters, or logos. No text or letters.';
+  'Abstract symbolic neo-brutalist illustration evoking the theme: bold geometric shapes, thick black outlines, flat coral red, sunshine yellow, lavender, lime and cyan fills on a cream background, hard black offset shadows. No recognizable people, brands, characters, or logos. No gradients. No text or letters.';
 
 export async function generateCoverImage(topic: string): Promise<string> {
   const prompt = `${COVER_STYLE} The quiz topic is "${topic}".`;

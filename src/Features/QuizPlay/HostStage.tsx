@@ -50,7 +50,10 @@ export default function HostStage({
 
   useEffect(() => {
     if (!voiceEnabled || !cue || dismissedId === cue.id) return;
-    const playbackKey = cue.kind === 'recap' ? `${cue.id}:${cue.text}` : cue.id;
+    // Key on the cue id only: when the upgraded recap text swaps in after the
+    // fallback has already been spoken, the host shouldn't speak twice for
+    // the same scenario.
+    const playbackKey = cue.id;
     if (lastPlaybackKeyRef.current === playbackKey) return;
     lastPlaybackKeyRef.current = playbackKey;
     playHostVoice({

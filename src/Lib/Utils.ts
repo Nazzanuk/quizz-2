@@ -15,7 +15,7 @@ export function shuffleArray<T>(arr: T[]): T[] {
   return copy;
 }
 
-function hashString(value: string): number {
+export function hashString(value: string): number {
   let hash = 2166136261;
   for (let i = 0; i < value.length; i++) {
     hash ^= value.charCodeAt(i);
