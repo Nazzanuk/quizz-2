@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAtom } from 'jotai';
 import { settingsOpenAtom } from '@/State/SettingsAtoms';
+import { useHistoryDismiss } from './UseHistoryDismiss';
 import SettingsControls from './SettingsControls';
 import styles from './SettingsPanel.module.css';
 
@@ -19,8 +20,6 @@ export default function SettingsPanel() {
     };
   }, []);
 
-  if (!open) return null;
-
   const dismiss = () => {
     if (closing) return;
     setClosing(true);
@@ -30,10 +29,14 @@ export default function SettingsPanel() {
     }, EXIT_DURATION_MS);
   };
 
+  const { requestDismiss } = useHistoryDismiss(open, dismiss);
+
+  if (!open) return null;
+
   return (
     <div
       className={`${styles.backdrop} ${closing ? styles.backdropClosing : ''}`}
-      onClick={dismiss}
+      onClick={requestDismiss}
     >
       <div
         className={`${styles.sheet} ${closing ? styles.sheetClosing : ''}`}
@@ -44,7 +47,7 @@ export default function SettingsPanel() {
         <div className={styles.grabber} />
         <h3 className={styles.title}>Settings</h3>
         <SettingsControls />
-        <button type="button" className={styles.close} onClick={dismiss}>
+        <button type="button" className={styles.close} onClick={requestDismiss}>
           Done
         </button>
       </div>
