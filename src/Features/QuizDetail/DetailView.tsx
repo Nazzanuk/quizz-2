@@ -24,16 +24,20 @@ interface DetailViewProps {
 export default function DetailView({ quizId }: DetailViewProps) {
   const { quiz, questions, imagesPending, patchQuestion } = useQuiz(quizId, { poll: true });
   const [stats, setStats] = useState<ResultsSummary | null>(null);
+  const [statsLoaded, setStatsLoaded] = useState(false);
   const [runs, setRuns] = useState<QuizRun[]>([]);
+  const [runsLoaded, setRunsLoaded] = useState(false);
   const addToast = useSetAtom(addToastAtom);
 
   useEffect(() => {
     getResultsSummary(quizId)
       .then(setStats)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setStatsLoaded(true));
     fetchQuizRuns(quizId, 5)
       .then(setRuns)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setRunsLoaded(true));
   }, [quizId]);
 
   const handleShare = async () => {
@@ -69,7 +73,9 @@ export default function DetailView({ quizId }: DetailViewProps) {
               <Button variant="primary" fullWidth>Play quiz</Button>
             </Link>
             <div className={styles.metaRow}>
-              {stats && stats.count > 0 ? (
+              {!statsLoaded ? (
+                <span className={`uiSkeleton ${styles.loadingStatsText}`} aria-hidden="true" />
+              ) : stats && stats.count > 0 ? (
                 <span className={styles.statsText}>
                   {stats.count} {stats.count === 1 ? 'play' : 'plays'}
                   {stats.best !== null && ` · Best: ${stats.best}%`}
@@ -88,10 +94,16 @@ export default function DetailView({ quizId }: DetailViewProps) {
           <div className={styles.questionsHeader}>
             <h2 className={styles.questionsTitle}>
               Recent runs
-              <span className={styles.count}>{runs.length}</span>
+              {runsLoaded && <span className={styles.count}>{runs.length}</span>}
             </h2>
           </div>
-          {runs.length > 0 ? (
+          {!runsLoaded ? (
+            <div className={styles.runList} aria-hidden="true">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <div key={index} className={`uiSkeleton ${styles.loadingRunRow}`} />
+              ))}
+            </div>
+          ) : runs.length > 0 ? (
             <div className={styles.runList}>
               {runs.map((run) => (
                 <Link

@@ -16,10 +16,13 @@ export default function ProgressView() {
   const [profile] = useState<PlayerProfile>(() => getPlayerProfile());
   const [stats, setStats] = useState<StatsResponse | null>(null);
 
+  const [statsLoaded, setStatsLoaded] = useState(false);
+
   useEffect(() => {
     fetchStats(12)
       .then(setStats)
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setStatsLoaded(true));
   }, []);
 
   const totals = useMemo(() => {
@@ -39,6 +42,9 @@ export default function ProgressView() {
   }, [profile, stats]);
 
   const empty = totals.runs === 0 && (stats?.runs.length ?? 0) === 0;
+  // Local profile data renders immediately; only block on the API when the
+  // profile is empty, so "no runs yet" can't flash while stats are in flight.
+  const loading = !statsLoaded && empty;
 
   return (
     <AppShell>
@@ -48,7 +54,9 @@ export default function ProgressView() {
         <span className="neo-sticker" aria-hidden="true">Progress</span>
         <p className={styles.kicker}>Run receipts</p>
         <h1 className={styles.heading}>Progress</h1>
-        {empty ? (
+        {loading ? (
+          <ProgressLoadingState />
+        ) : empty ? (
           <EmptyState />
         ) : (
           <>
@@ -59,6 +67,16 @@ export default function ProgressView() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+function ProgressLoadingState() {
+  return (
+    <div className={styles.loadingTiles} aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, index) => (
+        <div key={index} className={`uiSkeleton ${styles.loadingTile}`} />
+      ))}
+    </div>
   );
 }
 

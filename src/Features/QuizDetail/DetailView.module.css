@@ -424,3 +424,12 @@
   display: flex;
   justify-content: center;
 }
+
+.loadingStatsText {
+  width: 8.5rem;
+  height: 1.95rem;
+}
+
+.loadingRunRow {
+  min-height: 56px;
+}
