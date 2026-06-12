@@ -85,6 +85,17 @@
   margin-top: 1.75rem;
 }
 
+.noMatches {
+  margin: 1rem 0 0;
+  padding: 1rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  color: var(--neo-ink);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .center {
   display: flex;
   justify-content: center;

@@ -540,7 +540,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
             recap={recap}
             onRetry={() => startRun(questions)}
             onPracticeWeak={wrongQuestions.length > 0
-              ? () => navigate(`/quiz/${quizId}/play?practice=${runIdRef.current}`)
+              ? () => startRun(wrongQuestions)
               : undefined}
             onBack={() => navigate(`/quiz/${quizId}`)}
           />

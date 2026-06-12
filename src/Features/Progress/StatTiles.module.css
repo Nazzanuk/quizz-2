@@ -1,0 +1,37 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.tile {
+  min-height: 7rem;
+  padding: 0.8rem;
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  color: var(--neo-ink);
+}
+
+.tile span {
+  display: block;
+  margin-bottom: 0.65rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tile strong {
+  display: block;
+  font-family: var(--font-accent);
+  font-size: clamp(2.1rem, 10vw, 3.5rem);
+  font-weight: 400;
+  line-height: 0.9;
+}
+
+.yellow { background: var(--neo-secondary); }
+.cyan { background: var(--neo-cyan); }
+.lime { background: var(--neo-lime); }
+.violet { background: var(--neo-muted); }
+.white { background: var(--neo-white); }
+.red { background: var(--neo-accent); }

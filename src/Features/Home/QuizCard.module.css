@@ -43,7 +43,9 @@
 }
 
 .titleLink {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
   text-decoration: none;
   color: inherit;
 }

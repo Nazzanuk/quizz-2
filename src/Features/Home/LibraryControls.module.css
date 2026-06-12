@@ -1,0 +1,90 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 0.9rem;
+  background: var(--neo-muted);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(-0.6deg);
+}
+
+.searchLabel,
+.sortLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--neo-ink);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.searchLabel input,
+.sortLabel select {
+  min-height: 48px;
+  width: 100%;
+  padding: 0 0.85rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.searchLabel input:focus,
+.sortLabel select:focus {
+  outline: 4px solid var(--neo-ink);
+  outline-offset: 2px;
+  background: var(--neo-secondary);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.filterChip {
+  min-height: 48px;
+  padding: 0 0.85rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
+  color: var(--neo-ink);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
+.filterChipActive {
+  background: var(--neo-lime);
+  border: var(--neo-border);
+}
+
+.filterChip:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+@media (max-width: 420px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .filterChip {
+    width: 100%;
+  }
+}

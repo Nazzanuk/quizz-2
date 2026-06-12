@@ -5,7 +5,6 @@ import { useAtomValue } from 'jotai';
 import { fetchQuiz, fetchRun, generateHostRecap } from '@/Lib/Api/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type {
-  HostPersona,
   LastRunSnapshot,
   Question,
   QuestionAttempt,
@@ -13,7 +12,7 @@ import type {
   SaveResultAttemptInput,
 } from '@/Lib/Types';
 import { lastRunAtom } from '@/State/PlayAtoms';
-import { hostModeAtom, hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
+import { hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Card from '@/Features/Shared/Card';
@@ -33,11 +32,8 @@ interface ResultsPageProps {
   runId: string;
 }
 
-const HOST_PERSONA: HostPersona = 'sarcastic_pub_host';
-
 export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
   const lastRun = useAtomValue(lastRunAtom);
-  const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
   const { navigate } = useTransitionRouter();
   const freshDetail = useMemo(
@@ -178,8 +174,8 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
         {hostCue && (
           <HostStage
             cue={hostCue}
-            mode={hostMode}
-            hostPersona={HOST_PERSONA}
+            mode={detail.run.mode}
+            hostPersona={detail.run.hostPersona}
             voiceEnabled={hostVoiceEnabled}
           />
         )}

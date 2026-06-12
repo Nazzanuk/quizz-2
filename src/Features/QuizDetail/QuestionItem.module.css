@@ -59,6 +59,8 @@
 }
 
 .editBtn {
+  width: 44px;
+  height: 44px;
   background: var(--neo-cyan);
   border: var(--neo-border-thin);
   cursor: pointer;
@@ -67,6 +69,8 @@
   border-radius: 9999px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   box-shadow: var(--neo-shadow-sm);
   transition:
     transform var(--neo-fast),

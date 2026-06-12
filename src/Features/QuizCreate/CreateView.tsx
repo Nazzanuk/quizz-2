@@ -6,6 +6,7 @@ import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { createTopicAtom, createMaterialAtom } from '@/State/QuizAtoms';
 import { generateQuiz } from '@/Lib/Api/Client';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
+import type { Quiz } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import ScrollReveal from '@/Features/Shared/ScrollReveal';
@@ -14,6 +15,7 @@ import TopicInput from './TopicInput';
 import MaterialPaste from './MaterialPaste';
 import CountPicker from './CountPicker';
 import GeneratingState from './GeneratingState';
+import CreatedState from './CreatedState';
 import styles from './CreateView.module.css';
 
 export default function CreateView() {
@@ -22,6 +24,7 @@ export default function CreateView() {
   const [material, setMaterial] = useAtom(createMaterialAtom);
   const [count, setCount] = useState(DEFAULT_QUESTION_COUNT);
   const [generating, setGenerating] = useState(false);
+  const [createdQuiz, setCreatedQuiz] = useState<Quiz | null>(null);
   const [error, setError] = useState('');
 
   const canSubmit = (topic.trim() || material.trim()) && !generating;
@@ -37,7 +40,8 @@ export default function CreateView() {
       });
       setTopic('');
       setMaterial('');
-      navigate(`/quiz/${quiz.id}`);
+      setCreatedQuiz(quiz);
+      setGenerating(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Generation failed');
       setGenerating(false);
@@ -49,6 +53,25 @@ export default function CreateView() {
       <AppShell>
         <BlobField />
         <GeneratingState />
+      </AppShell>
+    );
+  }
+
+  if (createdQuiz) {
+    return (
+      <AppShell>
+        <BlobField />
+        <div className={styles.content}>
+          <CreatedState
+            quiz={createdQuiz}
+            onPlay={() => navigate(`/quiz/${createdQuiz.id}/play`)}
+            onEdit={() => navigate(`/quiz/${createdQuiz.id}/edit`)}
+            onCreateAnother={() => {
+              setCreatedQuiz(null);
+              setCount(DEFAULT_QUESTION_COUNT);
+            }}
+          />
+        </div>
       </AppShell>
     );
   }

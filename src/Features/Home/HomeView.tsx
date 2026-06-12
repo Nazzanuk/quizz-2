@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAtomValue } from 'jotai';
-import { sortedQuizListAtom, isLoadingAtom } from '@/State/QuizAtoms';
+import { filteredQuizListAtom, isLoadingAtom, quizListAtom } from '@/State/QuizAtoms';
 import { useQuizzes } from '@/Lib/Hooks/UseQuizzes';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
@@ -11,11 +11,13 @@ import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import QuizList from './QuizList';
 import EmptyState from './EmptyState';
+import LibraryControls from './LibraryControls';
 import styles from './HomeView.module.css';
 
 export default function HomeView() {
   useQuizzes();
-  const quizzes = useAtomValue(sortedQuizListAtom);
+  const quizzes = useAtomValue(filteredQuizListAtom);
+  const allQuizzes = useAtomValue(quizListAtom);
   const isLoading = useAtomValue(isLoadingAtom);
 
   return (
@@ -46,10 +48,13 @@ export default function HomeView() {
       </section>
 
       <section className={styles.list}>
-        {isLoading && quizzes.length === 0 ? (
+        {allQuizzes.length > 0 && <LibraryControls />}
+        {isLoading && allQuizzes.length === 0 ? (
           <HomeLoadingState />
-        ) : quizzes.length === 0 ? (
+        ) : allQuizzes.length === 0 ? (
           <EmptyState />
+        ) : quizzes.length === 0 ? (
+          <p className={styles.noMatches}>No quizzes match that filter yet.</p>
         ) : (
           <QuizList quizzes={quizzes} />
         )}

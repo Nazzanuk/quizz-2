@@ -57,7 +57,6 @@ export const resetPlayAtom = atom(null, (_get, set) => {
   set(userAnswersAtom, new Map());
   set(playActiveAtom, false);
   set(showResultAtom, false);
-  set(lastRunAtom, null);
   set(questionOrderAtom, []);
   set(questionFormatsAtom, new Map());
 });
