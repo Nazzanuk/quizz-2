@@ -1,0 +1,232 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 64px;
+  padding: 0.8rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-primary);
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
+.row:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .row:hover {
+    background: var(--neo-cyan);
+    transform: translateY(-2px);
+    box-shadow: var(--neo-shadow);
+  }
+}
+
+.rowText {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.rowLabel {
+  color: var(--neo-ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rowSub {
+  color: var(--neo-ink);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 32px;
+  flex-shrink: 0;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    background var(--neo-fast),
+    box-shadow var(--neo-fast);
+}
+
+.toggleOn {
+  background: var(--neo-lime);
+}
+
+.toggleKnob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: var(--neo-accent);
+  border: var(--neo-border-thin);
+  border-radius: 50%;
+  transition: transform 140ms ease-out;
+}
+
+.toggleOn .toggleKnob {
+  transform: translateX(20px);
+  background: var(--neo-secondary);
+}
+
+.modeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.8rem;
+  background: var(--neo-muted);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.voiceTest {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  min-height: 56px;
+  padding: 0.8rem;
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  background: var(--neo-secondary);
+  text-align: left;
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast);
+}
+
+.voiceTest:disabled {
+  cursor: wait;
+  border-style: dashed;
+  background: var(--neo-bg);
+  box-shadow: none;
+}
+
+.voiceTest:active:not(:disabled) {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.voiceTestLabel {
+  color: var(--neo-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.voiceTestSub {
+  color: var(--neo-ink);
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.modePills {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.modePill {
+  flex: 1;
+  min-height: 44px;
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
+  background: var(--neo-white);
+  color: var(--neo-ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
+.modePill:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+.modePillActive {
+  background: var(--neo-accent);
+}
+
+.audioStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.8rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.audioStatusLabel {
+  color: var(--neo-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.audioStatusItem {
+  padding: 0.65rem 0.75rem;
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  color: var(--neo-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.audioStatusDetail {
+  display: block;
+  margin-top: 0.24rem;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.audioStatusInfo {
+  background: var(--neo-secondary);
+}
+
+.audioStatusWarning {
+  background: var(--neo-cyan);
+}
+
+.audioStatusError {
+  background: var(--neo-accent);
+}

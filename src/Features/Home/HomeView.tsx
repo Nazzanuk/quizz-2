@@ -34,7 +34,7 @@ export default function HomeView() {
             short, high-energy sessions.
           </p>
           <div className={styles.actions}>
-            <Link href="/quiz/new">
+            <Link href="/create">
               <Button variant="primary">Create a quiz</Button>
             </Link>
           </div>

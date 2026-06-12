@@ -417,6 +417,13 @@ a {
   animation: 220ms ease-out both fadeInScale;
 }
 
+::view-transition-old(quizz-tabbar),
+::view-transition-new(quizz-tabbar),
+::view-transition-old(quizz-header),
+::view-transition-new(quizz-header) {
+  animation: none;
+}
+
 @keyframes fadeOutScale {
   to { transform: scale(0.98); }
 }

@@ -1,0 +1,66 @@
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.content :global(.neo-bigtext) {
+  right: -0.4rem;
+  top: 1.2rem;
+  font-size: clamp(4rem, 22vw, 7rem);
+  -webkit-text-stroke-color: var(--neo-muted);
+  transform: rotate(8deg);
+}
+
+.content :global(.neo-sticker) {
+  align-self: flex-start;
+  background: var(--neo-cyan);
+  --sticker-tilt: 3deg;
+}
+
+.kicker {
+  position: relative;
+  z-index: 1;
+  width: fit-content;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.heading {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  color: var(--neo-ink);
+  font-size: clamp(3.3rem, 17vw, 5.9rem);
+  line-height: 0.85;
+  text-transform: uppercase;
+}
+
+.subhead {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0.85rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.controls {
+  position: relative;
+  z-index: 1;
+  margin-top: 0.45rem;
+}

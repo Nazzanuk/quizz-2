@@ -4,23 +4,47 @@ import { usePathname } from 'next/navigation';
 import { useSetAtom } from 'jotai';
 import type { ReactNode } from 'react';
 import { settingsOpenAtom } from '@/State/SettingsAtoms';
+import { confirmDialogAtom } from '@/State/UiAtoms';
 import { useTransitionRouter } from './Navigate';
+import TabBar from './TabBar';
 import styles from './AppShell.module.css';
 
 interface AppShellProps {
   children: ReactNode;
+  variant?: 'tabs' | 'focused';
 }
 
-export default function AppShell({ children }: AppShellProps) {
-  const { back } = useTransitionRouter();
+export default function AppShell({ children, variant = 'tabs' }: AppShellProps) {
+  const { back, navigate } = useTransitionRouter();
   const pathname = usePathname();
   const isHome = pathname === '/';
   const setSettingsOpen = useSetAtom(settingsOpenAtom);
+  const setConfirm = useSetAtom(confirmDialogAtom);
+  const focused = variant === 'focused';
+
+  const handleExit = () => {
+    const quizId = pathname.match(/^\/quiz\/([^/]+)\/play/)?.[1];
+    const exitHref = quizId ? `/quiz/${quizId}` : '/';
+    setConfirm({
+      title: 'Leave this run?',
+      message: 'Your current run will stop and any unanswered questions will be left behind.',
+      confirmLabel: 'Leave',
+      onConfirm: () => navigate(exitHref),
+    });
+  };
 
   return (
-    <div className={styles.shell}>
+    <div className={`${styles.shell} ${focused ? styles.shellFocused : ''}`}>
       <div className={styles.header}>
-        {!isHome ? (
+        {focused ? (
+          <button
+            className={styles.iconButton}
+            onClick={handleExit}
+            aria-label="Leave run"
+          >
+            <span aria-hidden="true" className={styles.iconGlyph}>X</span>
+          </button>
+        ) : !isHome ? (
           <button
             className={styles.iconButton}
             onClick={back}
@@ -35,7 +59,7 @@ export default function AppShell({ children }: AppShellProps) {
         )}
         <button
           className={styles.iconButton}
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => focused ? setSettingsOpen(true) : navigate('/settings')}
           aria-label="Settings"
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -43,7 +67,8 @@ export default function AppShell({ children }: AppShellProps) {
           </svg>
         </button>
       </div>
-      <main className={styles.main}>{children}</main>
+      <main className={`${styles.main} ${focused ? styles.mainFocused : ''}`}>{children}</main>
+      {!focused && <TabBar />}
     </div>
   );
 }

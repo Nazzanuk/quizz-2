@@ -24,6 +24,20 @@ export function useTransitionRouter() {
     [router],
   );
 
+  const replace = useCallback(
+    (href: string) => {
+      if (typeof document !== 'undefined') {
+        const doc = document as ViewTransitionDocument;
+        if (doc.startViewTransition) {
+          doc.startViewTransition(() => router.replace(href));
+          return;
+        }
+      }
+      router.replace(href);
+    },
+    [router],
+  );
+
   const back = useCallback(() => {
     if (typeof document !== 'undefined') {
       const doc = document as ViewTransitionDocument;
@@ -35,5 +49,5 @@ export function useTransitionRouter() {
     router.back();
   }, [router]);
 
-  return { navigate, back };
+  return { navigate, replace, back };
 }

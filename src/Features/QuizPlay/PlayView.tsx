@@ -446,7 +446,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
 
   if (!quiz || (hasPlayableQuestions && !playSessionReady)) {
     return (
-      <AppShell>
+      <AppShell variant="focused">
         <div className={styles.center}><LoadingSpinner /></div>
       </AppShell>
     );
@@ -455,7 +455,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   if (showResult) {
     const wrongQuestions = questions.filter((question) => answers.get(question.id) === '__wrong__');
     return (
-      <AppShell>
+      <AppShell variant="focused">
         <BlobField />
       <div className={styles.content}>
         <HostStage
@@ -482,7 +482,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
 
   if (questions.length > 0 && !hasPlayableQuestions) {
     return (
-      <AppShell>
+      <AppShell variant="focused">
         <BlobField />
         <div className={styles.content}>
           <div className={styles.retiredState}>
@@ -501,14 +501,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
 
   if (!current) {
     return (
-      <AppShell>
+      <AppShell variant="focused">
         <div className={styles.center}><LoadingSpinner /></div>
       </AppShell>
     );
   }
 
   return (
-    <AppShell>
+    <AppShell variant="focused">
       <BlobField />
       <div className={`${styles.content} ${styles.liveContent} ${hideTextUi ? styles.liveContentMinimal : ''}`}>
         <HostStage

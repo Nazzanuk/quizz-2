@@ -1,5 +1,5 @@
-import CreateView from '@/Features/QuizCreate/CreateView';
+import { redirect } from 'next/navigation';
 
 export default function NewQuizPage() {
-  return <CreateView />;
+  redirect('/create');
 }
