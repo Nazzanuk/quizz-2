@@ -6,9 +6,12 @@ import type {
   PlayerProfile,
   Question,
   Quiz,
+  QuizRun,
+  QuizRunDetail,
   QuizWithQuestions,
   ResultsSummary,
   SaveResultRequest,
+  StatsResponse,
 } from '../Types';
 
 const BASE = '/api';
@@ -103,6 +106,18 @@ export function generateImage(quizId: string, topic: string): Promise<void> {
 
 export function getResultsSummary(quizId: string): Promise<ResultsSummary> {
   return request(`/quizzes/${quizId}/results`);
+}
+
+export function fetchQuizRuns(quizId: string, limit = 5): Promise<QuizRun[]> {
+  return request(`/quizzes/${quizId}/runs?limit=${limit}`);
+}
+
+export function fetchRun(quizId: string, runId: string): Promise<QuizRunDetail> {
+  return request(`/quizzes/${quizId}/runs/${runId}`);
+}
+
+export function fetchStats(limit = 12): Promise<StatsResponse> {
+  return request(`/stats?limit=${limit}`);
 }
 
 export function saveResult(

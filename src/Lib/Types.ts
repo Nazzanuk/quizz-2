@@ -157,6 +157,77 @@ export interface ResultsSummary {
   last: number | null;
 }
 
+export interface QuizRun {
+  id: string;
+  quizId: string;
+  mode: HostMode;
+  hostPersona: HostPersona;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  elapsedMs: number;
+  recap: string | null;
+  createdAt: string;
+}
+
+export interface QuestionAttempt {
+  id: string;
+  runId: string;
+  quizId: string;
+  questionId: string;
+  orderIndex: number;
+  selectedAnswer: string | null;
+  confidence: HostConfidenceLevel | null;
+  correct: boolean;
+  timedOut: boolean;
+  responseMs: number;
+  streakBefore: number;
+  streakAfter: number;
+  wasFinalQuestion: boolean;
+  hostMode: HostMode;
+  createdAt: string;
+}
+
+export interface QuizRunWithTitle extends QuizRun {
+  quizTitle: string;
+  quizTopic: string | null;
+}
+
+export interface QuizRunDetail {
+  run: QuizRun;
+  attempts: QuestionAttempt[];
+  questions: Question[];
+}
+
+export interface LastRunSnapshot {
+  runId: string;
+  quizId: string;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  wrongQuestionIds: string[];
+  recap: string | null;
+  previousBest: number | null;
+  elapsedMs: number;
+  attempts: QuestionAttempt[];
+  questions: Question[];
+}
+
+export interface StatsTotals {
+  runs: number;
+  questions: number;
+  correct: number;
+  bestPct: number | null;
+  averagePct: number | null;
+  bestStreak: number;
+  fastestMs: number | null;
+}
+
+export interface StatsResponse {
+  runs: QuizRunWithTitle[];
+  totals: StatsTotals;
+}
+
 export interface GenerateQuizRequest {
   topic?: string;
   material?: string;

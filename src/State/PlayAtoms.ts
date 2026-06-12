@@ -1,11 +1,12 @@
 import { atom } from 'jotai';
-import type { Question, QuizFormat } from '@/Lib/Types';
+import type { LastRunSnapshot, Question, QuizFormat } from '@/Lib/Types';
 import { shuffleArray } from '@/Lib/Utils';
 
 export const currentIndexAtom = atom(0);
 export const userAnswersAtom = atom<Map<string, string>>(new Map());
 export const playActiveAtom = atom(false);
 export const showResultAtom = atom(false);
+export const lastRunAtom = atom<LastRunSnapshot | null>(null);
 
 // Per-question randomised state — set by initPlayAtom on session start / retry
 export const questionOrderAtom = atom<string[]>([]);
@@ -56,6 +57,7 @@ export const resetPlayAtom = atom(null, (_get, set) => {
   set(userAnswersAtom, new Map());
   set(playActiveAtom, false);
   set(showResultAtom, false);
+  set(lastRunAtom, null);
   set(questionOrderAtom, []);
   set(questionFormatsAtom, new Map());
 });

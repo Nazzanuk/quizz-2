@@ -2,16 +2,23 @@ import { desc, eq, inArray } from 'drizzle-orm';
 import { db } from './Client';
 import { quizzes, questions, images, quizResults, quizRuns, questionAttempts } from './Schema';
 import {
+  normalizeHostConfidenceLevel,
+  normalizeHostMode,
+  normalizeHostPersona,
   normalizeQuestionDifficulty,
   normalizeQuizFormat,
   type HostMode,
   type HostPersona,
+  type QuestionAttempt,
   type Question,
   type QuestionAggregateStats,
   type QuestionDifficulty,
   type Quiz,
   type QuizAggregateStats,
   type QuizFormat,
+  type QuizRun,
+  type QuizRunWithTitle,
+  type StatsTotals,
   type ResultsSummary,
   type SaveResultAttemptInput,
 } from '../Types';
@@ -258,6 +265,104 @@ export async function getResultsSummary(quizId: string): Promise<ResultsSummary>
   };
 }
 
+export async function getQuizRun(runId: string): Promise<QuizRun | undefined> {
+  const [row] = await db.select().from(quizRuns).where(eq(quizRuns.id, runId));
+  return row ? parseQuizRun(row) : undefined;
+}
+
+export async function getRunAttempts(runId: string): Promise<QuestionAttempt[]> {
+  const rows = await db
+    .select()
+    .from(questionAttempts)
+    .where(eq(questionAttempts.runId, runId))
+    .orderBy(questionAttempts.orderIndex);
+  return rows.map(parseQuestionAttempt);
+}
+
+export async function listRunsForQuiz(quizId: string, limit = 5): Promise<QuizRun[]> {
+  const rows = await db
+    .select()
+    .from(quizRuns)
+    .where(eq(quizRuns.quizId, quizId))
+    .orderBy(desc(quizRuns.createdAt))
+    .limit(limit);
+  return rows.map(parseQuizRun);
+}
+
+export async function listRecentRuns(limit = 12): Promise<QuizRunWithTitle[]> {
+  const rows = await db
+    .select({
+      id: quizRuns.id,
+      quizId: quizRuns.quizId,
+      mode: quizRuns.mode,
+      hostPersona: quizRuns.hostPersona,
+      correct: quizRuns.correct,
+      total: quizRuns.total,
+      bestStreak: quizRuns.bestStreak,
+      elapsedMs: quizRuns.elapsedMs,
+      recap: quizRuns.recap,
+      createdAt: quizRuns.createdAt,
+      quizTitle: quizzes.title,
+      quizTopic: quizzes.topic,
+    })
+    .from(quizRuns)
+    .leftJoin(quizzes, eq(quizRuns.quizId, quizzes.id))
+    .orderBy(desc(quizRuns.createdAt))
+    .limit(limit);
+
+  return rows.map((row) => ({
+    ...parseQuizRun(row),
+    quizTitle: row.quizTitle ?? 'Untitled quiz',
+    quizTopic: row.quizTopic ?? null,
+  }));
+}
+
+export async function getRunTotals(): Promise<StatsTotals> {
+  const rows = await db.select().from(quizRuns);
+  if (rows.length === 0) {
+    return {
+      runs: 0,
+      questions: 0,
+      correct: 0,
+      bestPct: null,
+      averagePct: null,
+      bestStreak: 0,
+      fastestMs: null,
+    };
+  }
+
+  let questionsTotal = 0;
+  let correctTotal = 0;
+  let pctTotal = 0;
+  let bestPct = 0;
+  let bestStreak = 0;
+
+  rows.forEach((row) => {
+    const pct = row.total > 0 ? Math.round((row.correct / row.total) * 100) : 0;
+    questionsTotal += row.total;
+    correctTotal += row.correct;
+    pctTotal += pct;
+    bestPct = Math.max(bestPct, pct);
+    bestStreak = Math.max(bestStreak, row.bestStreak);
+  });
+
+  const attempts = await db.select().from(questionAttempts);
+  const fastestMs = attempts.reduce<number | null>(
+    (best, attempt) => best === null ? attempt.responseMs : Math.min(best, attempt.responseMs),
+    null,
+  );
+
+  return {
+    runs: rows.length,
+    questions: questionsTotal,
+    correct: correctTotal,
+    bestPct,
+    averagePct: Math.round(pctTotal / rows.length),
+    bestStreak,
+    fastestMs,
+  };
+}
+
 export async function getQuestionAggregateStats(
   quizId: string,
   questionIds: string[],
@@ -349,4 +454,50 @@ function parseQuestion(row: typeof questions.$inferSelect): Question {
     factText: row.factText ?? null,
     tags: row.tags ? JSON.parse(row.tags) : null,
   } as Question;
+}
+
+function parseQuizRun(row: {
+  id: string;
+  quizId: string;
+  mode: string;
+  hostPersona: string;
+  correct: number;
+  total: number;
+  bestStreak: number;
+  elapsedMs: number;
+  recap: string | null;
+  createdAt: string;
+}): QuizRun {
+  return {
+    id: row.id,
+    quizId: row.quizId,
+    mode: normalizeHostMode(row.mode),
+    hostPersona: normalizeHostPersona(row.hostPersona),
+    correct: row.correct,
+    total: row.total,
+    bestStreak: row.bestStreak,
+    elapsedMs: row.elapsedMs,
+    recap: row.recap,
+    createdAt: row.createdAt,
+  };
+}
+
+function parseQuestionAttempt(row: typeof questionAttempts.$inferSelect): QuestionAttempt {
+  return {
+    id: row.id,
+    runId: row.runId,
+    quizId: row.quizId,
+    questionId: row.questionId,
+    orderIndex: row.orderIndex,
+    selectedAnswer: row.selectedAnswer,
+    confidence: normalizeHostConfidenceLevel(row.confidence),
+    correct: row.correct === 1,
+    timedOut: row.timedOut === 1,
+    responseMs: row.responseMs,
+    streakBefore: row.streakBefore,
+    streakAfter: row.streakAfter,
+    wasFinalQuestion: row.wasFinalQuestion === 1,
+    hostMode: normalizeHostMode(row.hostMode),
+    createdAt: row.createdAt,
+  };
 }
