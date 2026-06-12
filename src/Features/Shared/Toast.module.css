@@ -12,37 +12,34 @@
 }
 
 .toast {
-  padding: 0.85rem 1.25rem;
-  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  border: var(--neo-border);
+  border-radius: 0;
+  color: var(--neo-ink);
   font-family: var(--font-primary);
-  font-weight: 500;
-  font-size: 0.9rem;
-  box-shadow: var(--shadow-md);
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: var(--neo-shadow);
+  animation: slideUp 180ms ease-out;
 }
 
 .success {
-  background: var(--sage);
-  color: var(--text-dark);
+  background: var(--neo-lime);
 }
 
 .error {
-  background: var(--peach);
-  color: var(--text-dark);
+  background: var(--neo-accent);
 }
 
 .info {
-  background: var(--lavender);
-  color: var(--text-dark);
+  background: var(--neo-secondary);
 }
 
 @keyframes slideUp {
   from {
-    opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(10px) rotate(-1deg);
   }
   to {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) rotate(-1deg);
   }
 }

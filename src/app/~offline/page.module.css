@@ -6,17 +6,29 @@
 }
 
 .card {
+  width: min(calc(100% - 2rem), 340px);
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 2rem 1.5rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  transform: rotate(-1deg);
 }
 
 .heading {
-  font-size: 1.5rem;
+  font-family: var(--font-accent);
+  font-size: clamp(1.35rem, 8vw, 1.7rem);
+  font-weight: 400;
   margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .body {
   font-size: 0.95rem;
-  color: var(--text-muted);
-  line-height: 1.5;
+  color: var(--neo-ink);
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
 }

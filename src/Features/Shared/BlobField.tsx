@@ -13,9 +13,9 @@ interface BlobConfig {
 }
 
 const DEFAULT_BLOBS: BlobConfig[] = [
-  { color: 'var(--peach)', size: 300, top: '-80px', right: '-60px' },
-  { color: 'var(--lavender)', size: 220, bottom: '-40px', left: '-30px', delay: -3 },
-  { color: 'var(--sage)', size: 180, top: '40%', right: '10%', delay: -5 },
+  { color: 'var(--neo-accent)', size: 300, top: '-80px', right: '-60px' },
+  { color: 'var(--neo-muted)', size: 220, bottom: '-40px', left: '-30px', delay: -3 },
+  { color: 'var(--neo-lime)', size: 180, top: '40%', right: '10%', delay: -5 },
 ];
 
 interface BlobFieldProps {

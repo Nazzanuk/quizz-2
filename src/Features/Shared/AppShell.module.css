@@ -2,10 +2,16 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  width: min(100%, 500px);
   max-width: 500px;
   margin: 0 auto;
   position: relative;
   isolation: isolate;
+  overflow-x: clip;
+  background:
+    linear-gradient(90deg, var(--neo-bg) 0 64%, var(--neo-cyan) 64% 100%);
+  border-inline: var(--neo-border);
+  box-shadow: var(--neo-shadow-xl);
 }
 
 .header {
@@ -19,8 +25,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.75rem var(--content-pad) 0;
-  padding-top: calc(0.6rem + env(safe-area-inset-top));
-  background: transparent;
+  padding-top: calc(0.7rem + env(safe-area-inset-top));
   pointer-events: none;
 }
 
@@ -28,50 +33,60 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.42);
-  color: var(--text-dark);
+  width: 44px;
+  height: 44px;
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-secondary);
+  color: var(--neo-ink);
   cursor: pointer;
   pointer-events: auto;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 12px 28px -22px rgba(41, 37, 36, 0.55);
+  box-shadow: var(--neo-shadow-sm);
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) ease,
-    background var(--motion-fast) ease;
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
+.iconButton svg {
+  width: 21px;
+  height: 21px;
 }
 
 @media (hover: hover) {
   .iconButton:hover {
-    transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.58);
-    box-shadow: 0 16px 36px -22px rgba(41, 37, 36, 0.55);
+    transform: translateY(-3px) rotate(-2deg);
+    background: var(--neo-white);
+    box-shadow: var(--neo-shadow);
   }
 }
 
 .iconButton:active {
-  transform: translateY(1px) scale(0.96);
+  transform: translate(4px, 4px);
+  box-shadow: none;
 }
 
 .main {
   flex: 1;
   min-height: 0;
-  padding: calc(3.9rem + env(safe-area-inset-top)) var(--content-pad) 0.85rem;
+  padding: calc(4rem + env(safe-area-inset-top)) var(--content-pad) 0.85rem;
   padding-bottom: calc(2rem + env(safe-area-inset-bottom));
   position: relative;
   z-index: 1;
-  animation: fadeInUp 0.3s var(--ease-spring) both;
+  animation: fadeInUp 180ms ease-out both;
 }
 
 @media (max-width: 640px) {
+  .shell {
+    border-inline: 0;
+    box-shadow: none;
+  }
+
   .header {
-    padding-top: calc(0.5rem + env(safe-area-inset-top));
+    padding-top: calc(0.55rem + env(safe-area-inset-top));
   }
 
   .main {
-    padding-top: calc(3.5rem + env(safe-area-inset-top));
+    padding-top: calc(3.75rem + env(safe-area-inset-top));
   }
 }

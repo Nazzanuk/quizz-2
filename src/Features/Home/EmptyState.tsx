@@ -8,7 +8,7 @@ import styles from './EmptyState.module.css';
 export default function EmptyState() {
   return (
     <Card color="lavender" className={styles.card}>
-      <div className={styles.spark} aria-hidden="true">✦</div>
+      <div className={styles.spark} aria-hidden="true">*</div>
       <p className={styles.heading}>No quizzes yet</p>
       <p className={styles.body}>
         Create your first quiz from a topic or your own notes.

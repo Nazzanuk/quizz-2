@@ -5,46 +5,52 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  animation: settle var(--motion-base) var(--ease-spring) both;
+  animation: settle 180ms ease-out both;
 }
 
 .image {
   width: 100%;
   max-height: 220px;
   object-fit: cover;
-  border-radius: calc(var(--radius-md) - 0.35rem);
+  border-radius: 0;
   display: block;
-  box-shadow: var(--shadow-md);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: var(--neo-shadow);
+  border: var(--neo-border);
 }
 
 .promptCard {
-  padding: 1.4rem 1.35rem 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.76);
-  box-shadow: var(--shadow-lg), var(--shadow-inset);
+  padding: 1.15rem;
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  background: var(--neo-lime);
+  transform: rotate(1deg);
 }
 
 .kicker {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem 0.72rem;
-  border-radius: 999px;
+  min-height: 2rem;
+  padding: 0 0.72rem;
+  border-radius: 9999px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-dark);
+  color: var(--neo-ink);
   margin-bottom: 0.8rem;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(41, 37, 36, 0.08);
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .question {
+  font-family: var(--font-primary);
   font-size: clamp(1.35rem, 4.5vw, 1.75rem);
-  line-height: 1.4;
-  color: var(--text-dark);
-  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--neo-ink);
+  letter-spacing: 0;
 }
 
 .grid {
@@ -55,41 +61,36 @@
   min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding-bottom: 0.25rem;
+  padding: 0.25rem 0.4rem 0.45rem 0;
 }
 
 .option {
   position: relative;
   min-height: 132px;
   padding: 0.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: calc(var(--radius-md) - 0.1rem);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.74)),
-    linear-gradient(145deg, rgba(236, 231, 251, 0.92), rgba(223, 240, 222, 0.86));
-  color: var(--text-dark);
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-white);
+  color: var(--neo-ink);
   font-family: var(--font-primary);
   font-size: 1.02rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.35;
   text-align: left;
   cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow);
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy),
-    border-color var(--motion-fast) ease,
-    opacity var(--motion-fast) ease,
-    filter var(--motion-fast) ease;
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
 }
 
-.option::before {
-  content: '';
-  position: absolute;
-  inset: 1px;
-  border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0));
-  pointer-events: none;
+.option:nth-child(odd) {
+  transform: rotate(-1deg);
+}
+
+.option:nth-child(even) {
+  transform: rotate(1deg);
 }
 
 .optionInner {
@@ -100,8 +101,8 @@
   gap: 0.85rem;
   min-height: 100%;
   padding: 1rem;
-  border-radius: calc(var(--radius-md) - 0.45rem);
-  background: rgba(255, 255, 255, 0.38);
+  border: var(--neo-border-thin);
+  background: var(--neo-bg);
 }
 
 .stateBadge {
@@ -110,47 +111,69 @@
   justify-content: center;
   width: 2rem;
   height: 2rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(41, 37, 36, 0.1);
-  color: var(--text-dark);
+  border-radius: 9999px;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
   font-size: 0.95rem;
   font-weight: 700;
-  box-shadow: 0 10px 18px -16px rgba(41, 37, 36, 0.55);
+  box-shadow: var(--neo-shadow-sm);
   flex-shrink: 0;
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    opacity var(--motion-fast) ease,
-    background var(--motion-fast) ease,
-    color var(--motion-fast) ease;
+    transform var(--neo-fast),
+    background var(--neo-fast);
 }
 
 .stateBadge:empty {
-  opacity: 0;
-  transform: scale(0.82);
+  visibility: hidden;
+  transform: scale(0.8);
 }
 
 .pressed {
-  animation: pressIn var(--motion-press) ease forwards;
+  animation: pressIn var(--motion-press) ease-out forwards;
 }
 
 .selected {
-  transform: translateY(-3px);
-  border-color: rgba(255, 143, 108, 0.72);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 238, 0.84)),
-    linear-gradient(145deg, rgba(255, 179, 154, 0.3), rgba(236, 231, 251, 0.92));
-  box-shadow: var(--shadow-md), var(--glow-peach), var(--shadow-inset);
+  background: var(--neo-secondary);
+  box-shadow: var(--neo-shadow-lg);
 }
 
 .selected .stateBadge {
-  opacity: 1;
+  visibility: visible;
   transform: scale(1);
+  background: var(--neo-white);
 }
 
 .dimmed {
-  opacity: 0.54;
-  filter: saturate(0.82);
+  background: var(--neo-bg);
+  border: 2px dashed var(--neo-ink);
+  box-shadow: none;
+}
+
+.correct {
+  background: var(--neo-lime);
+  box-shadow: var(--neo-shadow-lg);
+  animation: correctPop var(--motion-base) ease-out both;
+}
+
+.wrong {
+  background: var(--neo-accent);
+  box-shadow: var(--neo-shadow-lg);
+  animation: shake 320ms ease-out both;
+}
+
+.correct .stateBadge,
+.wrong .stateBadge {
+  visibility: visible;
+  transform: scale(1);
+  background: var(--neo-white);
+}
+
+@media (hover: hover) {
+  .option:hover:not(:disabled) {
+    transform: translateY(-3px) rotate(0);
+    box-shadow: var(--neo-shadow-lg);
+  }
 }
 
 @media (max-width: 640px) {
@@ -182,45 +205,6 @@
 
   .optionInner {
     padding: 0.8rem 0.82rem;
-  }
-}
-
-.correct {
-  border-color: rgba(77, 168, 95, 0.32);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 255, 241, 0.78)),
-    linear-gradient(145deg, rgba(185, 240, 184, 0.88), rgba(223, 240, 222, 0.82));
-  box-shadow: var(--shadow-md), var(--glow-success), var(--shadow-inset);
-  animation: correctPop var(--motion-base) ease-out both;
-}
-
-.wrong {
-  border-color: rgba(203, 93, 81, 0.32);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 244, 243, 0.78)),
-    linear-gradient(145deg, rgba(255, 208, 203, 0.92), rgba(255, 230, 226, 0.82));
-  box-shadow: var(--shadow-md), var(--glow-danger), var(--shadow-inset);
-  animation: shake 0.4s ease-out both;
-}
-
-.correct .stateBadge {
-  opacity: 1;
-  transform: scale(1);
-  background: var(--success-strong);
-  color: var(--white);
-}
-
-.wrong .stateBadge {
-  opacity: 1;
-  transform: scale(1);
-  background: var(--danger-strong);
-  color: var(--white);
-}
-
-@media (hover: hover) {
-  .option:hover:not(:disabled) {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
   }
 }
 

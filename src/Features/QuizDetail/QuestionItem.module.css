@@ -1,40 +1,47 @@
 .card {
-  padding: 1.25rem 1.35rem;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: var(--shadow), var(--shadow-inset);
+  padding: 1.1rem;
+  overflow: visible;
+  border: var(--neo-border);
+  background: var(--neo-white);
+  box-shadow: var(--neo-shadow);
 }
 
 .questionImg {
-  width: calc(100% + 2.7rem);
-  margin: -1.25rem -1.35rem 1rem;
+  width: calc(100% + 2.2rem);
+  margin: -1.1rem -1.1rem 1rem;
   height: 168px;
   object-fit: cover;
   display: block;
+  border-bottom: var(--neo-border);
 }
 
 .cardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
 }
 
 .number {
+  width: fit-content;
+  padding: 0.22rem 0.55rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
   font-size: 0.74rem;
   font-weight: 700;
-  color: var(--text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .text {
   font-size: 1.02rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  line-height: 1.4;
-  margin-bottom: 0.7rem;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: var(--neo-ink);
+  line-height: 1.35;
+  margin-bottom: 0.8rem;
+  letter-spacing: 0;
 }
 
 .answer {
@@ -42,35 +49,36 @@
   align-items: center;
   gap: 0.45rem;
   font-size: 0.84rem;
-  color: var(--text-dark);
-  font-weight: 600;
+  color: var(--neo-ink);
+  font-weight: 700;
   padding: 0.35rem 0.7rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.84);
-  box-shadow: var(--shadow), var(--shadow-inset);
+  border-radius: 9999px;
+  background: var(--neo-lime);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .editBtn {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.84);
+  background: var(--neo-cyan);
+  border: var(--neo-border-thin);
   cursor: pointer;
-  color: var(--text-dark);
-  padding: 0.4rem;
-  border-radius: 999px;
+  color: var(--neo-ink);
+  padding: 0.45rem;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow-sm);
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy),
-    background var(--motion-fast) ease;
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
 }
 
 @media (hover: hover) {
   .editBtn:hover {
+    background: var(--neo-secondary);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    box-shadow: var(--neo-shadow);
   }
 }
 
@@ -79,18 +87,17 @@
   width: 100%;
   font-family: var(--font-primary);
   font-size: 0.9rem;
-  color: var(--text-dark);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7)),
-    linear-gradient(145deg, rgba(223, 240, 222, 0.68), rgba(236, 231, 251, 0.48));
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  border-radius: 1rem;
+  font-weight: 700;
+  color: var(--neo-ink);
+  background: var(--neo-white);
+  border: var(--neo-border);
+  border-radius: 0;
   padding: 0.7rem 0.8rem;
   outline: none;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.45;
   margin-bottom: 0.5rem;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .editImageWrap {
@@ -98,16 +105,18 @@
 }
 
 .editField:focus {
-  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
+  background: var(--neo-secondary);
+  box-shadow: var(--neo-shadow);
 }
 
 .editLabel {
   display: block;
   margin: 0.15rem 0 0.45rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-dark);
-  letter-spacing: -0.01em;
+  color: var(--neo-ink);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .editActions {
@@ -131,89 +140,58 @@
   gap: 0.5rem;
 }
 
+.imageBtn,
+.imageRemoveBtn,
+.saveBtn,
+.cancelBtn {
+  min-height: 44px;
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
 .imageBtn {
-  background: rgba(255, 255, 255, 0.74);
-  color: var(--text-dark);
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  font-family: var(--font-primary);
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.5rem 0.85rem;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
-  transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy);
+  background: var(--neo-cyan);
 }
 
-.imageBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.imageRemoveBtn {
-  background: rgba(255, 255, 255, 0.74);
-  color: var(--danger-strong);
-  border: 1px solid rgba(203, 93, 81, 0.18);
-  font-family: var(--font-primary);
-  font-size: 0.8rem;
-  font-weight: 700;
-  padding: 0.5rem 0.85rem;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
-  transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy);
-}
-
-.imageRemoveBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.imageError {
-  font-size: 0.8rem;
-  color: var(--danger-strong);
+.imageRemoveBtn,
+.cancelBtn {
+  background: var(--neo-white);
 }
 
 .saveBtn {
-  background: linear-gradient(180deg, var(--peach-strong), var(--active));
-  color: #fff;
-  border: none;
-  font-family: var(--font-primary);
+  background: var(--neo-accent);
+  border: var(--neo-border);
+}
+
+.imageBtn:disabled,
+.imageRemoveBtn:disabled,
+.saveBtn:disabled {
+  cursor: not-allowed;
+  border-style: dashed;
+  background: var(--neo-bg);
+  box-shadow: none;
+}
+
+.imageError {
+  padding: 0.35rem 0.55rem;
+  background: var(--neo-accent);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
   font-size: 0.8rem;
   font-weight: 700;
-  padding: 0.52rem 1rem;
-  border-radius: 2rem;
-  cursor: pointer;
-  box-shadow: var(--shadow), var(--glow-peach);
-  transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy),
-    opacity var(--motion-fast) ease;
-}
-
-.saveBtn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cancelBtn {
-  background: rgba(255, 255, 255, 0.7);
-  color: var(--text-dark);
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  font-family: var(--font-primary);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.5rem 0.85rem;
-  border-radius: 2rem;
-  cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
-  transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy);
 }
 
 @media (hover: hover) {
@@ -222,7 +200,7 @@
   .saveBtn:hover:not(:disabled),
   .cancelBtn:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    box-shadow: var(--neo-shadow);
   }
 }
 
@@ -237,22 +215,22 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: 0.8rem;
-  box-shadow: 0 14px 24px -20px rgba(41, 37, 36, 0.65);
+  border-radius: 0;
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  to { background-position: 32px 0; }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.05) 25%,
-    rgba(0, 0, 0, 0.1) 50%,
-    rgba(0, 0, 0, 0.05) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--neo-white) 0 12px,
+      var(--neo-secondary) 12px 24px
+    );
+  background-size: 32px 32px;
+  animation: shimmer 700ms steps(2, end) infinite;
 }

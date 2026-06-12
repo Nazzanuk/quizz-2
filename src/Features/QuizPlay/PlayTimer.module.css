@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+  padding: 0.6rem;
+  background: var(--neo-bg);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .row {
@@ -9,67 +13,70 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.2rem;
 }
 
 .label {
-  font-size: 0.75rem;
+  padding: 0.18rem 0.5rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
+  font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }
 
 .value {
+  color: var(--neo-ink);
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--text-dark);
-  transition: color var(--motion-fast) ease, transform var(--motion-fast) var(--ease-spring);
+  transition: transform var(--neo-fast);
 }
 
 .valueCritical {
-  color: var(--warning-strong);
+  color: var(--neo-ink);
 }
 
 .valuePulse {
-  animation: timerUrgentPulse 0.75s ease-in-out infinite;
+  animation: timerUrgentPulse 500ms steps(1, end) infinite;
 }
 
 .containerTimedOut .value {
-  color: var(--danger-strong);
+  color: var(--neo-ink);
 }
 
 .track {
   width: 100%;
-  height: 10px;
-  background: rgba(41, 37, 36, 0.08);
-  border-radius: 999px;
+  height: 14px;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(41, 37, 36, 0.05);
 }
 
 .fill {
   height: 100%;
-  background: linear-gradient(90deg, #ffc6b7 0%, var(--peach-strong) 100%);
-  border-radius: 999px;
-  transition: width 0.12s linear, background 0.2s ease;
-  box-shadow: 0 0 20px rgba(255, 143, 108, 0.4);
+  background: var(--neo-lime);
+  border-right: var(--neo-border-thin);
+  border-radius: 0;
+  transition: width 120ms linear, background 120ms ease-out;
 }
 
 .warning {
-  background: linear-gradient(90deg, #ffd58a 0%, #f4a726 100%);
+  background: var(--neo-secondary);
 }
 
 .critical {
-  background: linear-gradient(90deg, #ffb6aa 0%, #f16348 100%);
-  animation: timerUrgentPulse 0.7s ease-in-out infinite;
+  background: var(--neo-accent);
+  animation: timerUrgentPulse 500ms steps(1, end) infinite;
 }
 
 .timedOut {
   width: 100% !important;
-  background: linear-gradient(90deg, #ffd0cb 0%, #f0a5a0 100%);
+  background: var(--neo-accent);
 }
 
 .containerTimedOut .track {
-  background: rgba(203, 93, 81, 0.12);
+  background: var(--neo-secondary);
 }

@@ -22,6 +22,8 @@ export default function HomeView() {
     <AppShell>
       <BlobField />
       <section className={styles.hero}>
+        <span className="neo-bigtext" aria-hidden="true">Play</span>
+        <span className="neo-sticker neo-sticker-pin" aria-hidden="true">Fast rounds</span>
         <ScrollReveal>
           <p className={styles.kicker}>Playful study sessions</p>
           <h1 className={styles.heading}>
@@ -37,6 +39,10 @@ export default function HomeView() {
             </Link>
           </div>
         </ScrollReveal>
+        <div className="neo-marquee" aria-hidden="true">
+          <span>quizzes * streaks * recall * questions * </span>
+          <span>quizzes * streaks * recall * questions * </span>
+        </div>
       </section>
 
       <section className={styles.list}>

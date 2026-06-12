@@ -1,33 +1,31 @@
 .card {
-  overflow: hidden;
-  border-radius: var(--radius-md);
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  box-shadow: var(--shadow), var(--shadow-inset);
+  overflow: visible;
+  border-radius: 0;
+  padding: 1.5rem;
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
   position: relative;
   z-index: 1;
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) ease,
-    border-color var(--motion-fast) ease;
+    transform var(--neo-med),
+    box-shadow var(--neo-med);
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4), transparent 28%);
-  pointer-events: none;
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-4px) rotate(-0.5deg);
+    box-shadow: var(--neo-shadow-lg);
+  }
 }
 
 .sage {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), var(--sage));
+  background: var(--neo-lime);
 }
 
 .lavender {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), var(--lavender));
+  background: var(--neo-muted);
 }
 
 .bg {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), var(--bg));
+  background: var(--neo-white);
 }

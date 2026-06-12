@@ -57,7 +57,9 @@ export default function CreateView() {
     <AppShell>
       <BlobField />
       <div className={styles.content}>
+        <span className="neo-bigtext" aria-hidden="true">Make</span>
         <ScrollReveal>
+          <span className="neo-sticker" aria-hidden="true">Fresh deck</span>
           <p className={styles.kicker}>Build a fresh round</p>
           <h1 className={styles.heading}>
             Create a <span className={styles.accent}>quiz</span>

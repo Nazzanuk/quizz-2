@@ -1,70 +1,85 @@
 .content {
   position: relative;
   z-index: 1;
-  padding-top: 2rem;
+  padding-top: 1.2rem;
+}
+
+.content :global(.neo-bigtext) {
+  right: -0.2rem;
+  top: 5.25rem;
+  font-size: clamp(3.5rem, 16vw, 5.5rem);
+  transform: rotate(8deg);
+  -webkit-text-stroke-color: var(--neo-accent);
 }
 
 .kicker {
   display: inline-flex;
   align-items: center;
   width: fit-content;
-  padding: 0.38rem 0.82rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  box-shadow: var(--shadow), var(--shadow-inset);
-  color: var(--text-dark);
+  min-height: 2rem;
+  margin: 0.8rem 0 0.85rem;
+  padding: 0 0.75rem;
+  border-radius: 9999px;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
   font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  margin-bottom: 0.85rem;
 }
 
 .heading {
-  font-size: clamp(2rem, 5vw, 3rem);
-  line-height: 0.98;
-  letter-spacing: -0.05em;
-  margin-bottom: 0.8rem;
+  max-width: 9ch;
+  font-family: var(--font-accent);
+  font-size: clamp(2.8rem, 12vw, 4.5rem);
+  font-weight: 400;
+  line-height: 0.88;
+  letter-spacing: 0;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
 }
 
 .accent {
-  font-family: var(--font-accent);
-  font-size: 1.3em;
   display: inline-block;
-  transform: rotate(-1deg);
-  line-height: 1;
-  color: var(--active);
+  color: transparent;
+  -webkit-text-stroke: 2px var(--neo-ink);
+  transform: rotate(-3deg);
 }
 
 .subhead {
   max-width: 31rem;
+  padding: 0.85rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
   font-size: 1rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-  margin-bottom: 1.8rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--neo-ink);
+  margin-bottom: 1.4rem;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.4rem;
-  border-radius: calc(var(--radius-lg) - 0.4rem);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.72)),
-    linear-gradient(145deg, rgba(236, 231, 251, 0.64), rgba(223, 240, 222, 0.56));
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  box-shadow: var(--shadow-lg), var(--shadow-inset);
-  backdrop-filter: blur(14px);
+  gap: 1.35rem;
+  padding: 1.1rem;
+  border-radius: 0;
+  background: var(--neo-muted);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  transform: rotate(0.8deg);
 }
 
 .error {
   font-size: 0.92rem;
-  color: var(--danger-strong);
-  padding: 0.9rem 1rem;
-  background: rgba(255, 208, 203, 0.64);
-  border: 1px solid rgba(203, 93, 81, 0.18);
-  border-radius: 1.2rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+  color: var(--neo-ink);
+  padding: 0.85rem 1rem;
+  background: var(--neo-accent);
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  box-shadow: var(--neo-shadow-sm);
 }

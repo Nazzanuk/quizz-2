@@ -1,76 +1,100 @@
 .header {
+  position: relative;
   margin-bottom: 1.75rem;
+  padding: 1rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
+  transform: rotate(-1deg);
+}
+
+.header::after {
+  content: 'quiz';
+  position: absolute;
+  top: -0.9rem;
+  right: 0.7rem;
+  padding: 0.25rem 0.7rem;
+  background: var(--neo-accent);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  font-family: var(--font-accent);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  transform: rotate(7deg);
 }
 
 .cover {
   width: 100%;
   height: 210px;
   object-fit: cover;
-  border-radius: calc(var(--radius-lg) - 0.4rem);
+  border-radius: 0;
   margin-bottom: 1.25rem;
-  opacity: 0;
-  transition: opacity 0.5s ease;
-  box-shadow: var(--shadow-lg);
-  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--neo-shadow);
+  border: var(--neo-border);
+  display: block;
 }
 
 .coverLoaded {
-  opacity: 1;
+  display: block;
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  to { background-position: 32px 0; }
 }
 
 .coverSkeleton {
-  opacity: 1;
-  background: linear-gradient(
-    90deg,
-    rgba(0, 0, 0, 0.05) 25%,
-    rgba(0, 0, 0, 0.1) 50%,
-    rgba(0, 0, 0, 0.05) 75%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--neo-white) 0 12px,
+      var(--neo-secondary) 12px 24px
+    );
+  background-size: 32px 32px;
+  animation: shimmer 700ms steps(2, end) infinite;
 }
 
 .title {
-  font-size: clamp(2rem, 6vw, 3rem);
-  line-height: 0.98;
-  letter-spacing: -0.05em;
-  margin-bottom: 0.65rem;
+  font-family: var(--font-accent);
+  font-size: clamp(2.2rem, 8vw, 4rem);
+  font-weight: 400;
+  line-height: 0.9;
+  letter-spacing: 0;
+  margin-bottom: 0.8rem;
 }
 
 .titleInput {
   width: 100%;
-  font-family: var(--font-primary);
-  font-size: clamp(1.5rem, 4.5vw, 2.25rem);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text-dark);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.68)),
-    linear-gradient(145deg, rgba(223, 240, 222, 0.78), rgba(255, 248, 227, 0.48));
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 1.2rem;
+  font-family: var(--font-accent);
+  font-size: clamp(1.7rem, 6vw, 3rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--neo-ink);
+  background: var(--neo-white);
+  border: var(--neo-border);
+  border-radius: 0;
   padding: 0.75rem 0.9rem;
   margin-bottom: 0.5rem;
   outline: none;
-  line-height: 1.2;
+  line-height: 1;
   display: block;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .titleInput:focus {
-  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
+  background: var(--neo-secondary);
+  box-shadow: var(--neo-shadow);
 }
 
 .desc {
   max-width: 34rem;
+  padding: 0.8rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
   font-size: 1rem;
-  color: var(--text-muted);
-  line-height: 1.5;
+  font-weight: 500;
+  color: var(--neo-ink);
+  line-height: 1.45;
   margin-bottom: 0.9rem;
 }
 
@@ -78,23 +102,23 @@
   width: 100%;
   font-family: var(--font-primary);
   font-size: 0.95rem;
-  color: var(--text-dark);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.68)),
-    linear-gradient(145deg, rgba(236, 231, 251, 0.78), rgba(255, 248, 227, 0.48));
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 1.2rem;
+  font-weight: 700;
+  color: var(--neo-ink);
+  background: var(--neo-white);
+  border: var(--neo-border);
+  border-radius: 0;
   padding: 0.75rem 0.9rem;
   margin-bottom: 0.5rem;
   outline: none;
   resize: vertical;
-  line-height: 1.5;
+  line-height: 1.45;
   display: block;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .descInput:focus {
-  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
+  background: var(--neo-secondary);
+  box-shadow: var(--neo-shadow);
 }
 
 .metaRow {
@@ -105,26 +129,33 @@
 }
 
 .meta {
-  font-size: 0.82rem;
-  color: var(--text-muted);
+  padding: 0.32rem 0.6rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .saving {
-  font-style: italic;
+  font-style: normal;
+  text-transform: uppercase;
 }
 
 .statusPill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.36rem 0.72rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.74);
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow), var(--shadow-inset);
-  color: var(--text-dark);
+  min-height: 2rem;
+  padding: 0 0.72rem;
+  border-radius: 9999px;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
   font-size: 0.74rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }

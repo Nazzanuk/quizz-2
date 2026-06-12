@@ -5,39 +5,39 @@
 }
 
 .label {
-  font-size: 0.85rem;
+  color: var(--neo-ink);
+  font-size: 0.78rem;
   font-weight: 700;
-  color: var(--text-dark);
-  letter-spacing: -0.01em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .textarea {
+  min-height: 130px;
+  padding: 0.9rem 1rem;
+  border: var(--neo-border);
+  border-radius: 0;
+  background: var(--neo-white);
+  color: var(--neo-ink);
   font-family: var(--font-primary);
   font-size: 1rem;
-  padding: 1rem 1.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: calc(var(--radius-md) - 0.25rem);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.7)),
-    linear-gradient(145deg, rgba(236, 231, 251, 0.84), rgba(255, 248, 227, 0.56));
-  color: var(--text-dark);
+  font-weight: 700;
+  line-height: 1.45;
   outline: none;
   resize: vertical;
-  min-height: 120px;
-  line-height: 1.5;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  box-shadow: var(--neo-shadow-sm);
   transition:
-    box-shadow var(--motion-fast) ease,
-    transform var(--motion-fast) var(--ease-spring),
-    border-color var(--motion-fast) ease;
+    background var(--neo-fast),
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast);
 }
 
 .textarea::placeholder {
-  color: var(--text-muted);
+  color: var(--neo-ink);
 }
 
 .textarea:focus {
-  border-color: rgba(255, 143, 108, 0.48);
-  box-shadow: var(--shadow-md), var(--ring), var(--shadow-inset);
-  transform: translateY(-1px);
+  background: var(--neo-secondary);
+  box-shadow: var(--neo-shadow);
+  transform: translateY(-2px);
 }

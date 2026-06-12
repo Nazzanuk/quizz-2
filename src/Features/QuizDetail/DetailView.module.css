@@ -1,7 +1,23 @@
 .content {
   position: relative;
   z-index: 1;
-  padding-top: 2rem;
+  padding-top: 1.2rem;
+}
+
+.content::before {
+  content: 'deck';
+  position: absolute;
+  top: 1.4rem;
+  right: -0.2rem;
+  z-index: -1;
+  color: transparent;
+  font-family: var(--font-accent);
+  font-size: clamp(4rem, 18vw, 7rem);
+  line-height: 0.8;
+  text-transform: uppercase;
+  -webkit-text-stroke: 2px var(--neo-ink);
+  transform: rotate(8deg);
+  pointer-events: none;
 }
 
 .center {
@@ -13,29 +29,29 @@
 .loadingContent {
   position: relative;
   z-index: 1;
-  padding-top: 2rem;
+  padding-top: 1.2rem;
 }
 
 .loadingCover {
   width: 100%;
   height: 210px;
-  border-radius: calc(var(--radius-lg) - 0.4rem);
+  border-radius: 0;
   margin-bottom: 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow-lg);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-lg);
 }
 
 .loadingTitle {
   width: min(78%, 22rem);
   height: clamp(2.1rem, 6vw, 3rem);
-  border-radius: 1rem;
+  border-radius: 0;
   margin-bottom: 0.8rem;
 }
 
 .loadingDesc {
   width: min(62%, 20rem);
   height: 1rem;
-  border-radius: 999px;
+  border-radius: 9999px;
   margin-bottom: 1rem;
 }
 
@@ -50,19 +66,19 @@
 .loadingMeta {
   width: 10rem;
   height: 0.85rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .loadingPill {
   width: 8rem;
   height: 1.5rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .loadingAction {
   width: 100%;
   height: 3.4rem;
-  border-radius: 999px;
+  border-radius: 0;
   margin-bottom: 1.6rem;
 }
 
@@ -77,32 +93,32 @@
 .loadingQuestionsTitle {
   width: 7.5rem;
   height: 1.25rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .loadingEditToggle {
   width: 4.8rem;
   height: 2rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .loadingQuestionList {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
 .loadingQuestionCard {
-  padding: 1.25rem 1.35rem;
+  padding: 1.1rem;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: var(--shadow), var(--shadow-inset);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
 }
 
 .loadingQuestionImage {
-  width: calc(100% + 2.7rem);
+  width: calc(100% + 2.2rem);
   height: 168px;
-  margin: -1.25rem -1.35rem 1rem;
+  margin: -1.1rem -1.1rem 1rem;
 }
 
 .loadingQuestionTop {
@@ -115,33 +131,34 @@
 .loadingQuestionNumber {
   width: 2.4rem;
   height: 0.8rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .loadingQuestionLineLg {
   width: 88%;
   height: 1.05rem;
-  border-radius: 999px;
+  border-radius: 9999px;
   margin-bottom: 0.55rem;
 }
 
 .loadingQuestionLineMd {
   width: 72%;
   height: 1.05rem;
-  border-radius: 999px;
+  border-radius: 9999px;
   margin-bottom: 0.8rem;
 }
 
 .loadingQuestionAnswer {
   width: 6.5rem;
   height: 1.9rem;
-  border-radius: 999px;
+  border-radius: 9999px;
 }
 
 .playLink {
   display: block;
   text-decoration: none;
   margin-bottom: 1rem;
+  transform: rotate(-1deg);
 }
 
 .questionsHeader {
@@ -149,58 +166,67 @@
   align-items: center;
   justify-content: space-between;
   margin: 1.35rem 0 1rem;
+  padding: 0.75rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(1deg);
 }
 
 .questionsTitle {
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: var(--text-dark);
+  font-family: var(--font-accent);
+  font-size: 1.45rem;
+  font-weight: 400;
+  color: var(--neo-ink);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .count {
+  font-family: var(--font-primary);
   font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-dark);
-  background: rgba(255, 255, 255, 0.78);
+  font-weight: 700;
+  color: var(--neo-ink);
+  background: var(--neo-white);
   padding: 0.18rem 0.6rem;
-  border-radius: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.84);
-  box-shadow: var(--shadow), var(--shadow-inset);
+  border-radius: 9999px;
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .editToggle {
-  background: rgba(255, 255, 255, 0.66);
-  border: 1px solid rgba(255, 255, 255, 0.84);
-  color: var(--text-dark);
+  min-height: 44px;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
   font-family: var(--font-primary);
-  font-size: 0.84rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  padding: 0.48rem 1rem;
-  border-radius: 2rem;
+  letter-spacing: 0.06em;
+  padding: 0 1rem;
+  border-radius: 9999px;
   cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  text-transform: uppercase;
+  box-shadow: var(--neo-shadow-sm);
   transition:
-    background var(--motion-fast) ease,
-    color var(--motion-fast) ease,
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy);
+    background var(--neo-fast),
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast);
 }
 
 @media (hover: hover) {
   .editToggle:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    box-shadow: var(--neo-shadow);
   }
 }
 
 .editToggleActive {
-  background: linear-gradient(180deg, var(--peach-strong), var(--active));
-  color: #fff;
-  box-shadow: var(--shadow-md), var(--glow-peach);
+  background: var(--neo-accent);
+  border: var(--neo-border);
 }
 
 .metaRow {
@@ -208,45 +234,53 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-top: -0.25rem;
-  margin-bottom: 2rem;
+  margin: -0.25rem 0 2rem;
   min-height: 2rem;
   flex-wrap: wrap;
 }
 
 .statsText {
-  font-size: 0.84rem;
-  color: var(--text-muted);
+  padding: 0.35rem 0.6rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: var(--neo-shadow-sm);
 }
 
 .shareBtn {
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.82);
+  min-height: 44px;
+  background: var(--neo-cyan);
+  border: var(--neo-border-thin);
+  border-radius: 0;
+  color: var(--neo-ink);
   font-family: var(--font-primary);
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--text-dark);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
-  padding: 0.48rem 0.82rem;
-  border-radius: 999px;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  padding: 0 0.82rem;
+  box-shadow: var(--neo-shadow-sm);
   transition:
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy),
-    background var(--motion-fast) ease;
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
 }
 
 @media (hover: hover) {
   .shareBtn:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    background: var(--neo-secondary);
+    box-shadow: var(--neo-shadow);
   }
 }
 
 .editActions {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid var(--line-soft);
+  border-top: var(--neo-border);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -254,37 +288,37 @@
 }
 
 .addBtn {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.58)),
-    linear-gradient(145deg, rgba(223, 240, 222, 0.46), rgba(236, 231, 251, 0.46));
-  border: 1px dashed rgba(41, 37, 36, 0.18);
-  color: var(--text-dark);
+  width: 100%;
+  min-height: 52px;
+  background: var(--neo-lime);
+  border: var(--neo-border);
+  color: var(--neo-ink);
   font-family: var(--font-primary);
   font-size: 0.88rem;
   font-weight: 700;
+  letter-spacing: 0.06em;
   padding: 0.9rem 1.5rem;
-  border-radius: var(--radius-md);
+  border-radius: 0;
   cursor: pointer;
-  box-shadow: var(--shadow), var(--shadow-inset);
+  text-transform: uppercase;
+  box-shadow: var(--neo-shadow);
   transition:
-    color var(--motion-fast) ease,
-    border-color var(--motion-fast) ease,
-    transform var(--motion-fast) var(--ease-spring),
-    box-shadow var(--motion-fast) var(--ease-snappy);
-  width: 100%;
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast);
 }
 
 @media (hover: hover) {
   .addBtn:hover:not(:disabled) {
     transform: translateY(-2px);
-    border-color: rgba(255, 143, 108, 0.42);
-    box-shadow: var(--shadow-md), var(--shadow-inset);
+    box-shadow: var(--neo-shadow-lg);
   }
 }
 
 .addBtn:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
+  border-style: dashed;
+  background: var(--neo-bg);
+  box-shadow: none;
 }
 
 .deleteWrap {
