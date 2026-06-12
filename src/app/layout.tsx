@@ -33,7 +33,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
-  themeColor: '#FFD93D',
+  // Matches --neo-bg so the status bar blends into the app background
+  themeColor: '#FFFDF5',
 };
 
 export default function RootLayout({

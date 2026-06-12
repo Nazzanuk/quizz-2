@@ -1,4 +1,7 @@
+'use client';
+
 import AppShell from '@/Features/Shared/AppShell';
+import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import styles from './page.module.css';
 
@@ -12,6 +15,14 @@ export default function OfflinePage() {
             Check your connection and try again.
             Quizzes you have already loaded may still be playable.
           </p>
+          <div className={styles.actions}>
+            <Button variant="primary" fullWidth onClick={() => window.location.reload()}>
+              Try again
+            </Button>
+            <Button variant="secondary" fullWidth onClick={() => window.location.assign('/')}>
+              Go home
+            </Button>
+          </div>
         </Card>
       </div>
     </AppShell>

@@ -121,6 +121,7 @@ export default function HostStage({
                 key={value}
                 type="button"
                 className={`${styles.confidencePill} ${confidence === value ? styles.confidencePillActive : ''}`}
+                aria-pressed={confidence === value}
                 onClick={() => onConfidenceChange(value)}
               >
                 {value}

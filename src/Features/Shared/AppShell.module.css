@@ -36,6 +36,7 @@
 }
 
 .iconButton {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -52,6 +53,14 @@
     transform var(--neo-fast),
     box-shadow var(--neo-fast),
     background var(--neo-fast);
+}
+
+/* Extend the touch target beyond the 44px visual without moving anything;
+   the header itself is pointer-events: none so taps nearby fall through. */
+.iconButton::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
 }
 
 .iconButton svg {

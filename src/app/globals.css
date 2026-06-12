@@ -83,6 +83,9 @@ button,
 a,
 [role="button"] {
   -webkit-touch-callout: none;
+  /* touch-action is per-element, not inherited: opt every control out of
+     double-tap-to-zoom so rapid answer taps never zoom mid-quiz */
+  touch-action: manipulation;
 }
 
 button {

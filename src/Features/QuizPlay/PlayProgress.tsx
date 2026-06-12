@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import type { QuizAnswerPhase, QuizMilestone } from '@/Lib/Types';
 import styles from './PlayProgress.module.css';
 
@@ -26,7 +27,12 @@ export default function PlayProgress({
   const scoreHot = answerPhase === 'revealed-correct';
   const streakActive = streak > 0;
 
-  if (hideTextUi) {
+  // hideTextUi comes from a localStorage-backed atom whose value differs
+  // between server and first client render — branch only after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (mounted && hideTextUi) {
     return (
       <div className={`${styles.container} ${styles.minimalContainer}`}>
         <div className={styles.track}>

@@ -1,21 +1,29 @@
 .backdrop {
   position: fixed;
   inset: 0;
+  z-index: 9997;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+/* The striped pattern lives on a pseudo-element so it can fade via opacity —
+   animating background-color under a gradient image has no visible effect. */
+.backdrop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   background:
     repeating-linear-gradient(
       45deg,
       var(--neo-ink) 0 8px,
       var(--neo-secondary) 8px 16px
     );
-  z-index: 9997;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: backdropIn 120ms steps(1, end) both;
+  animation: backdropIn 120ms ease-out both;
 }
 
-.backdropClosing {
-  animation: backdropOut 120ms steps(1, end) both;
+.backdropClosing::before {
+  animation: backdropOut 120ms ease-out both;
 }
 
 .sheet {
@@ -311,12 +319,12 @@
 }
 
 @keyframes backdropIn {
-  from { background-color: transparent; }
-  to { background-color: var(--neo-secondary); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes backdropOut {
-  to { background-color: transparent; }
+  to { opacity: 0; }
 }
 
 @keyframes sheetIn {
@@ -326,4 +334,13 @@
 
 @keyframes sheetOut {
   to { transform: translateY(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop::before,
+  .backdropClosing::before,
+  .sheet,
+  .sheetClosing {
+    animation-duration: 1ms;
+  }
 }

@@ -18,6 +18,11 @@
   }
 }
 
+.card:active {
+  transform: translate(3px, 3px);
+  box-shadow: var(--neo-shadow-sm);
+}
+
 .sage {
   background: var(--neo-lime);
 }
