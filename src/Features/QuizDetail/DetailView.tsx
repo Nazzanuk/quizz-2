@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSetAtom } from 'jotai';
-import { useTransitionRouter } from '@/Features/Shared/Navigate';
+import { fetchQuizRuns, getResultsSummary } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
-import { deleteQuiz, updateQuiz, getResultsSummary, generateMoreQuestions } from '@/Lib/Api/Client';
-import { confirmDialogAtom, addToastAtom } from '@/State/UiAtoms';
+import type { QuizRun, ResultsSummary } from '@/Lib/Types';
+import { formatDate } from '@/Lib/Utils';
+import { addToastAtom } from '@/State/UiAtoms';
 import { haptic } from '@/Features/Shared/Haptic';
-import type { ResultsSummary } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
@@ -22,54 +22,25 @@ interface DetailViewProps {
 }
 
 export default function DetailView({ quizId }: DetailViewProps) {
-  const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions } = useQuiz(quizId, { poll: true });
-  const [editing, setEditing] = useState(false);
+  const { quiz, questions, imagesPending, patchQuestion } = useQuiz(quizId, { poll: true });
   const [stats, setStats] = useState<ResultsSummary | null>(null);
-  const [addingQuestions, setAddingQuestions] = useState(false);
-  const { navigate } = useTransitionRouter();
-  const setConfirm = useSetAtom(confirmDialogAtom);
+  const [runs, setRuns] = useState<QuizRun[]>([]);
   const addToast = useSetAtom(addToastAtom);
 
   useEffect(() => {
     getResultsSummary(quizId)
       .then(setStats)
       .catch(() => {});
+    fetchQuizRuns(quizId, 5)
+      .then(setRuns)
+      .catch(() => {});
   }, [quizId]);
-
-  const handleDelete = () => {
-    setConfirm({
-      title: 'Delete quiz',
-      message: 'This will permanently remove the quiz and all its questions.',
-      confirmLabel: 'Delete',
-      onConfirm: async () => {
-        await deleteQuiz(quizId);
-        navigate('/');
-      },
-    });
-  };
-
-  const handleSaveHeader = async (data: { title: string; description: string | null }) => {
-    const updated = await updateQuiz(quizId, data);
-    patchQuiz(updated);
-  };
 
   const handleShare = async () => {
     const url = `${window.location.origin}/quiz/${quizId}/play`;
     await navigator.clipboard.writeText(url).catch(() => {});
     addToast({ message: 'Link copied', type: 'success' });
     haptic('tap');
-  };
-
-  const handleAddQuestions = async () => {
-    setAddingQuestions(true);
-    try {
-      const newQuestions = await generateMoreQuestions(quizId, 5);
-      addQuestions(newQuestions);
-    } catch {
-      // silently ignore — user can retry
-    } finally {
-      setAddingQuestions(false);
-    }
   };
 
   if (!quiz) {
@@ -87,8 +58,8 @@ export default function DetailView({ quizId }: DetailViewProps) {
       <div className={styles.content}>
         <QuizHeader
           quiz={quiz}
-          editing={editing}
-          onSave={handleSaveHeader}
+          editing={false}
+          onSave={async () => {}}
           imagesPending={imagesPending}
         />
 
@@ -98,11 +69,13 @@ export default function DetailView({ quizId }: DetailViewProps) {
               <Button variant="primary" fullWidth>Play quiz</Button>
             </Link>
             <div className={styles.metaRow}>
-              {stats && stats.count > 0 && (
+              {stats && stats.count > 0 ? (
                 <span className={styles.statsText}>
                   {stats.count} {stats.count === 1 ? 'play' : 'plays'}
                   {stats.best !== null && ` · Best: ${stats.best}%`}
                 </span>
+              ) : (
+                <span className={styles.statsText}>No runs yet</span>
               )}
               <button className={styles.shareBtn} onClick={handleShare}>
                 Share link
@@ -111,44 +84,61 @@ export default function DetailView({ quizId }: DetailViewProps) {
           </>
         )}
 
+        <section className={styles.recentRuns}>
+          <div className={styles.questionsHeader}>
+            <h2 className={styles.questionsTitle}>
+              Recent runs
+              <span className={styles.count}>{runs.length}</span>
+            </h2>
+          </div>
+          {runs.length > 0 ? (
+            <div className={styles.runList}>
+              {runs.map((run) => (
+                <Link
+                  key={run.id}
+                  href={`/quiz/${quizId}/results/${run.id}`}
+                  className={styles.runLink}
+                >
+                  <span className={styles.runScore}>{scorePct(run)}%</span>
+                  <span className={styles.runMeta}>
+                    {run.correct}/{run.total} · {formatDate(run.createdAt)}
+                  </span>
+                  <span className={styles.runArrow} aria-hidden="true">&gt;</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Card color="bg" className={styles.emptyRunCard}>
+              <p>No completed runs yet. Play this quiz once and the receipts land here.</p>
+            </Card>
+          )}
+        </section>
+
+        <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
+          <Button variant="secondary" fullWidth>Edit quiz</Button>
+        </Link>
+
         <div className={styles.questionsHeader}>
           <h2 className={styles.questionsTitle}>
             Questions
             <span className={styles.count}>{questions.length}</span>
           </h2>
-          <button
-            className={`${styles.editToggle} ${editing ? styles.editToggleActive : ''}`}
-            onClick={() => setEditing(v => !v)}
-          >
-            {editing ? 'Done' : 'Edit'}
-          </button>
         </div>
 
         <QuestionList
           questions={questions}
           quizId={quizId}
-          editing={editing}
+          editing={false}
           imagesPending={imagesPending}
           onUpdate={patchQuestion}
         />
-
-        {editing && (
-          <div className={styles.editActions}>
-            <button
-              className={styles.addBtn}
-              onClick={handleAddQuestions}
-              disabled={addingQuestions}
-            >
-              {addingQuestions ? 'Adding…' : '+ Add 5 questions'}
-            </button>
-            <div className={styles.deleteWrap}>
-              <Button variant="ghost" onClick={handleDelete}>Delete quiz</Button>
-            </div>
-          </div>
-        )}
       </div>
     </AppShell>
   );
+}
+
+function scorePct(run: QuizRun): number {
+  return run.total > 0 ? Math.round((run.correct / run.total) * 100) : 0;
 }
 
 function DetailLoadingState() {
