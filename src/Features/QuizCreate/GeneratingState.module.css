@@ -1,7 +1,23 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background-color: var(--neo-bg);
+  background-image:
+    radial-gradient(var(--neo-ink) 1.25px, transparent 1.25px),
+    linear-gradient(var(--neo-ink) 2px, transparent 2px),
+    linear-gradient(90deg, var(--neo-ink) 2px, transparent 2px);
+  background-position: 0 0, -2px -2px, -2px -2px;
+  background-size: 18px 18px, 72px 72px, 72px 72px;
+}
+
 .container {
   position: relative;
   display: flex;
-  min-height: 70dvh;
+  width: min(100%, 30rem);
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -77,6 +93,61 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.progressBlock {
+  width: 100%;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.progressTrack {
+  width: 100%;
+  height: 1.6rem;
+  background: var(--neo-white);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow-sm);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  min-width: 0.6rem;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      var(--neo-accent) 0 12px,
+      var(--neo-secondary) 12px 24px
+    );
+  border-right: var(--neo-border-thin);
+  background-size: 34px 34px;
+  animation: neo-stripe 800ms linear infinite;
+  transition: width 220ms ease-out;
+}
+
+.progressMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.stageLabel {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--neo-ink);
+  animation: fadeInUp 260ms ease-out;
+}
+
+.pct {
+  font-family: var(--font-accent);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--neo-ink);
 }
 
 .dots {

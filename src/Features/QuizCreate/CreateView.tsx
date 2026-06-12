@@ -48,15 +48,6 @@ export default function CreateView() {
     }
   };
 
-  if (generating) {
-    return (
-      <AppShell>
-        <BlobField />
-        <GeneratingState />
-      </AppShell>
-    );
-  }
-
   if (createdQuiz) {
     return (
       <AppShell>
@@ -79,6 +70,7 @@ export default function CreateView() {
   return (
     <AppShell>
       <BlobField />
+      {generating && <GeneratingState count={count} />}
       <div className={styles.content}>
         <span className="neo-bigtext" aria-hidden="true">Make</span>
         <ScrollReveal>
