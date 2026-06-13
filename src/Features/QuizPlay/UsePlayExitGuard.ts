@@ -31,7 +31,10 @@ export function usePlayExitGuard({ enabled, quizId }: { enabled: boolean; quizId
   const settingsOpen = useAtomValue(settingsOpenAtom);
   const overlayOpen = dialogOpen || settingsOpen;
   const overlayOpenRef = useRef(overlayOpen);
-  overlayOpenRef.current = overlayOpen;
+
+  useEffect(() => {
+    overlayOpenRef.current = overlayOpen;
+  }, [overlayOpen]);
 
   const release = useCallback((action: () => void) => {
     if (armedRef.current) {

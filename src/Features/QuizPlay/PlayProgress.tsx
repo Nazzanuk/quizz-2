@@ -30,7 +30,10 @@ export default function PlayProgress({
   // hideTextUi comes from a localStorage-backed atom whose value differs
   // between server and first client render — branch only after mount.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   if (mounted && hideTextUi) {
     return (

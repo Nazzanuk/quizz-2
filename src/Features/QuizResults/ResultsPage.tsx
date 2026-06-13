@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { fetchQuiz, fetchRun, generateHostRecap } from '@/Lib/Api/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type {
@@ -13,10 +13,13 @@ import type {
 } from '@/Lib/Types';
 import { lastRunAtom } from '@/State/PlayAtoms';
 import { hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
+import { addToastAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Card from '@/Features/Shared/Card';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
+import { haptic } from '@/Features/Shared/Haptic';
+import { shareLink } from '@/Features/Shared/Share';
 import ResultsView from '@/Features/QuizPlay/ResultsView';
 import HostStage, { type HostCue } from '@/Features/QuizPlay/HostStage';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
@@ -35,6 +38,7 @@ interface ResultsPageProps {
 export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
   const lastRun = useAtomValue(lastRunAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
+  const addToast = useSetAtom(addToastAtom);
   const { navigate } = useTransitionRouter();
   const freshDetail = useMemo(
     () => snapshotToDetail(lastRun, quizId, runId),
@@ -170,6 +174,25 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
   }
 
   const wrongCount = detail.attempts.filter((attempt) => !attempt.correct).length;
+  const pct = detail.run.total > 0
+    ? Math.round((detail.run.correct / detail.run.total) * 100)
+    : 0;
+  const quizTitle = quizMeta?.title ?? 'this quiz';
+
+  const handleShareResult = async () => {
+    const result = await shareLink({
+      title: `${pct}% on ${quizTitle}`,
+      text: `${detail.run.correct}/${detail.run.total} correct. View the score proof and try the quiz.`,
+      url: window.location.href,
+    }).catch(() => null);
+    if (result === 'cancelled') return;
+
+    addToast({
+      message: result === null ? 'Could not copy score link' : result === 'shared' ? 'Share sheet opened' : 'Score link copied',
+      type: result === null ? 'error' : 'success',
+    });
+    haptic('tap');
+  };
 
   return (
     <AppShell>
@@ -192,6 +215,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
           bestStreak={detail.run.bestStreak}
           wrongCount={wrongCount}
           recap={recap}
+          onShare={handleShareResult}
           onRetry={() => navigate(`/quiz/${quizId}/play`)}
           onPracticeWeak={wrongCount > 0
             ? () => navigate(`/quiz/${quizId}/play?practice=${runId}`)

@@ -5,6 +5,7 @@ import Toast from '@/Features/Shared/Toast';
 import AudioAlerts from '@/Features/Shared/AudioAlerts';
 import ConfirmDialog from '@/Features/Shared/ConfirmDialog';
 import SettingsPanel from '@/Features/Shared/SettingsPanel';
+import { getSiteUrl } from '@/Lib/SiteUrl';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
@@ -22,9 +23,24 @@ const archivoBlack = Archivo_Black({
 });
 
 export const metadata: Metadata = {
-  title: 'Quizz',
-  description: 'Generate and play quizzes powered by AI',
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: 'Quizz',
+    template: '%s | Quizz',
+  },
+  description: 'Generate, play, and share AI-powered quiz scores.',
   manifest: '/manifest.json',
+  openGraph: {
+    title: 'Quizz',
+    description: 'Generate, play, and share AI-powered quiz scores.',
+    siteName: 'Quizz',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Quizz',
+    description: 'Generate, play, and share AI-powered quiz scores.',
+  },
 };
 
 export const viewport: Viewport = {

@@ -22,7 +22,10 @@ export function useHistoryDismiss(open: boolean, onDismiss: () => void) {
   if (idRef.current === null) idRef.current = crypto.randomUUID();
   const pendingRef = useRef<PendingAction | null>(null);
   const onDismissRef = useRef(onDismiss);
-  onDismissRef.current = onDismiss;
+
+  useEffect(() => {
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
 
   useEffect(() => {
     const handlePopstate = () => {

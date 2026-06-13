@@ -9,6 +9,7 @@ import type { QuizRun, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import { addToastAtom } from '@/State/UiAtoms';
 import { haptic } from '@/Features/Shared/Haptic';
+import { shareLink } from '@/Features/Shared/Share';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
@@ -42,8 +43,17 @@ export default function DetailView({ quizId }: DetailViewProps) {
 
   const handleShare = async () => {
     const url = `${window.location.origin}/quiz/${quizId}`;
-    await navigator.clipboard.writeText(url).catch(() => {});
-    addToast({ message: 'Link copied', type: 'success' });
+    const result = await shareLink({
+      title: `${quiz?.title ?? 'Quiz'} | Quizz`,
+      text: quiz?.description ?? 'Take this quiz and compare your score.',
+      url,
+    }).catch(() => null);
+    if (result === 'cancelled') return;
+
+    addToast({
+      message: result === null ? 'Could not copy link' : result === 'shared' ? 'Share sheet opened' : 'Link copied',
+      type: result === null ? 'error' : 'success',
+    });
     haptic('tap');
   };
 

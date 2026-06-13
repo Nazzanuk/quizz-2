@@ -14,6 +14,7 @@ interface ResultsViewProps {
   bestStreak: number;
   wrongCount: number;
   recap?: string;
+  onShare?: () => void;
   onRetry: () => void;
   onPracticeWeak?: () => void;
   onBack: () => void;
@@ -26,6 +27,7 @@ export default function ResultsView({
   bestStreak,
   wrongCount,
   recap,
+  onShare,
   onRetry,
   onPracticeWeak,
   onBack,
@@ -100,6 +102,11 @@ export default function ResultsView({
       </div>
 
       <div className={`${styles.actions} ${showActions ? styles.sectionVisible : ''}`}>
+        {onShare && (
+          <Button variant="secondary" onClick={onShare}>
+            Share score
+          </Button>
+        )}
         {onPracticeWeak && (
           <Button variant="primary" onClick={onPracticeWeak}>
             Practice {wrongCount} weak {wrongCount === 1 ? 'spot' : 'spots'}

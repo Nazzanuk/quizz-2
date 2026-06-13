@@ -50,7 +50,9 @@ import { notifyHostAudioInteraction } from './HostVoice';
 import {
   averageResponseMs,
   buildAnswerReaction,
+  buildFallbackRecap,
   buildQuestionOpener,
+  buildSessionIntro,
   fastestResponseMs,
   getRunInsights,
   shouldPromptConfidence,
@@ -231,6 +233,27 @@ export default function PlayView({ quizId }: PlayViewProps) {
     () => `${quizId}:${practiceRunId ?? 'all'}:${playableQuestions.map((question) => question.id).join('|')}`,
     [playableQuestions, practiceRunId, quizId],
   );
+  const preRenderedQuestionOpeners = useMemo(() => {
+    if (!questionOrder.length || runSeed === 0) return {};
+
+    const result: Record<string, string> = {};
+    questionOrder.forEach((questionId, index) => {
+      const question = questionById.get(questionId);
+      if (!question) return;
+
+      result[question.id] = buildQuestionOpener({
+        question,
+        index,
+        total: questionOrder.length,
+        streak: 0,
+        mode: hostMode,
+        profile: playerProfile,
+        seed: `${quizId}:${runSeed}:pre`,
+      });
+    });
+
+    return result;
+  }, [hostMode, playerProfile, questionById, questionOrder, quizId, runSeed]);
 
   const releaseExitGuard = usePlayExitGuard({
     enabled: Boolean(quiz) && practiceReady && hasPlayableQuestions && playSessionReady && !showResult,
@@ -259,14 +282,38 @@ export default function PlayView({ quizId }: PlayViewProps) {
   useEffect(() => {
     if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
 
-    // The host session hits the LLM; guard so a re-render or StrictMode
-    // remount never regenerates the intro for the same run.
     const sessionKey = `${runIdRef.current}:${hostMode}`;
     if (hostSessionKeyRef.current === sessionKey) return;
     hostSessionKeyRef.current = sessionKey;
 
-    let cancelled = false;
+    const orderedQuestions = questionOrder
+      .map((questionId) => questionById.get(questionId))
+      .filter((question): question is Question => question != null);
+    const categories = Array.from(
+      new Set(
+        orderedQuestions
+          .map((question) => question.category)
+          .filter((value): value is string => Boolean(value)),
+      ),
+    ).slice(0, 4);
+    const hardCount = orderedQuestions.filter((question) => question.difficulty === 'hard').length;
     const profile = getPlayerProfile();
+
+    setHostIntro(buildSessionIntro({
+      title: quiz.title,
+      topic: quiz.topic,
+      count: orderedQuestions.length,
+      mode: hostMode,
+      profile,
+      categories,
+      hardCount,
+      seed: runIdRef.current,
+    }));
+
+    // This request enriches question metadata and aggregate stats. In-round
+    // announcer lines are generated locally above so the quiz does not wait
+    // for or repeat a live generated intro.
+    let cancelled = false;
 
     fetchHostSession(quizId, {
       mode: hostMode,
@@ -276,19 +323,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
       .then((session) => {
         if (cancelled) return;
         session.questions.forEach((question) => patchQuestion(question.id, question));
-        setHostIntro(session.intro);
         setQuestionStats(session.questionStats);
       })
-      .catch(() => {
-        if (!cancelled) {
-          setHostIntro('Right then. Ten questions. No hiding. Let’s see if your brain is awake.');
-        }
-      });
+      .catch(() => {});
 
     return () => {
       cancelled = true;
     };
-  }, [patchQuestion, questionOrder.length, quiz, quizId, runSeed, hostMode]);
+  }, [patchQuestion, questionById, questionOrder, quiz, quizId, runSeed, hostMode]);
 
   const currentId = questionOrder[idx];
   const current = currentId ? questionById.get(currentId) : undefined;
@@ -306,7 +348,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   useEffect(() => {
     if (!current || showResult || answerPhase !== 'idle') return;
 
-    const opener = buildQuestionOpener({
+    const dynamicOpener = buildQuestionOpener({
       question: current,
       index: idx,
       total: questionOrder.length,
@@ -316,6 +358,9 @@ export default function PlayView({ quizId }: PlayViewProps) {
       profile: playerProfile,
       seed: runIdRef.current,
     });
+    const opener = streak === 0 && !questionStats[current.id]
+      ? preRenderedQuestionOpeners[current.id] ?? dynamicOpener
+      : dynamicOpener;
     const line = [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
     showHostCue({
@@ -333,6 +378,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
     playerProfile,
     questionOrder.length,
     questionStats,
+    preRenderedQuestionOpeners,
     showResult,
     showHostCue,
     streak,
@@ -433,6 +479,8 @@ export default function PlayView({ quizId }: PlayViewProps) {
           averageMs: averageResponseMs(nextAttempts),
           strengths: runInsights.strengths,
           weaknesses: runInsights.weaknesses,
+          mode: hostMode,
+          seed: runIdRef.current,
         });
         setRecap(fallbackRecap);
 
@@ -804,39 +852,4 @@ function toQuestionAttempts(args: {
     hostMode: args.hostMode,
     createdAt: args.createdAt,
   }));
-}
-
-function buildFallbackRecap(args: {
-  correct: number;
-  total: number;
-  bestStreak: number;
-  fastestMs: number | null;
-  averageMs: number | null;
-  strengths: string[];
-  weaknesses: string[];
-}): string {
-  const parts = [
-    `${args.correct} out of ${args.total}.`,
-    args.bestStreak >= 3
-      ? `Strong streak of ${args.bestStreak} before things got theatrical.`
-      : 'No huge streaks, but you kept the wheels attached.',
-    args.fastestMs !== null
-      ? `Fastest answer ${formatMs(args.fastestMs)}.`
-      : '',
-    args.strengths.length > 0
-      ? `You looked sharp on ${args.strengths.join(' and ')}.`
-      : '',
-    args.weaknesses.length > 0
-      ? `${args.weaknesses.join(' and ')} still need a quiet word.`
-      : '',
-    args.averageMs !== null && args.averageMs <= 2200
-      ? 'The pace suggested confidence, recklessness, or both.'
-      : '',
-  ].filter(Boolean);
-
-  return parts.slice(0, 3).join(' ');
-}
-
-function formatMs(value: number): string {
-  return `${(value / 1000).toFixed(1)}s`;
 }
