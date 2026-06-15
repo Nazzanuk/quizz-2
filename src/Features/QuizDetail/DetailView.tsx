@@ -8,7 +8,7 @@ import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { useSession } from '@/Lib/Auth/Client';
 import { recordViewedQuiz } from '@/Lib/ViewedQuizzes';
 import { DEFAULT_QUESTIONS_PER_RUN } from '@/Lib/Constants';
-import type { QuizRun, ResultsSummary } from '@/Lib/Types';
+import type { QuizRun, QuizVisibility, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import { addToastAtom } from '@/State/UiAtoms';
 import { haptic } from '@/Features/Shared/Haptic';
@@ -24,6 +24,12 @@ import styles from './DetailView.module.css';
 interface DetailViewProps {
   quizId: string;
 }
+
+const VISIBILITY_LABEL: Record<QuizVisibility, string> = {
+  private: '🔒 Private',
+  unlisted: '🔗 Unlisted',
+  public: '🌐 Public',
+};
 
 export default function DetailView({ quizId }: DetailViewProps) {
   const { quiz, questions, imagesPending } = useQuiz(quizId, { poll: true });
@@ -95,6 +101,10 @@ export default function DetailView({ quizId }: DetailViewProps) {
           onSave={async () => {}}
           imagesPending={imagesPending}
         />
+
+        {session?.user?.id === quiz.ownerId && (
+          <span className={styles.visBadge}>{VISIBILITY_LABEL[quiz.visibility]}</span>
+        )}
 
         {questions.length > 0 && (
           <>

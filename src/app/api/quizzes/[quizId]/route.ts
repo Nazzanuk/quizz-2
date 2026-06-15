@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getQuiz, getQuestions, updateQuiz, deleteQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { isQuizVisibility, type Quiz } from '@/Lib/Types';
 
 interface Params {
   params: Promise<{ quizId: string }>;
@@ -48,8 +49,24 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const body = await req.json();
-  const updated = await updateQuiz(quizId, body);
+  const body = await req.json().catch(() => ({}));
+
+  // Whitelist editable fields — never trust the raw body (prevents overwriting
+  // ownerId, timestamps, etc. via mass assignment).
+  const patch: Partial<Pick<Quiz, 'title' | 'description' | 'questionsPerRun' | 'visibility'>> = {};
+  if (typeof body.title === 'string') patch.title = body.title;
+  if (typeof body.description === 'string' || body.description === null) patch.description = body.description;
+  if (typeof body.questionsPerRun === 'number' || body.questionsPerRun === null) {
+    patch.questionsPerRun = body.questionsPerRun;
+  }
+  if (body.visibility !== undefined) {
+    if (typeof body.visibility !== 'string' || !isQuizVisibility(body.visibility)) {
+      return NextResponse.json({ error: 'invalid visibility' }, { status: 400 });
+    }
+    patch.visibility = body.visibility;
+  }
+
+  const updated = await updateQuiz(quizId, patch);
 
   if (!updated) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });

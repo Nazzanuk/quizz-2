@@ -102,7 +102,7 @@ export function createQuiz(data: {
 
 export function updateQuiz(
   id: string,
-  data: Partial<Pick<Quiz, 'title' | 'description' | 'questionsPerRun'>>,
+  data: Partial<Pick<Quiz, 'title' | 'description' | 'questionsPerRun' | 'visibility'>>,
 ): Promise<Quiz> {
   return request(`/quizzes/${id}`, {
     method: 'PUT',

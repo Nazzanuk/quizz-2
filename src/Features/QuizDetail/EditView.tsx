@@ -13,6 +13,7 @@ import {
   updateQuiz,
 } from '@/Lib/Api/Client';
 import { DEFAULT_QUESTIONS_PER_RUN, QUESTION_COUNT_OPTIONS } from '@/Lib/Constants';
+import type { QuizVisibility } from '@/Lib/Types';
 import { confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
@@ -25,6 +26,18 @@ import styles from './DetailView.module.css';
 interface EditViewProps {
   quizId: string;
 }
+
+const VISIBILITY_OPTIONS: { value: QuizVisibility; label: string }[] = [
+  { value: 'private', label: 'Private' },
+  { value: 'unlisted', label: 'Unlisted' },
+  { value: 'public', label: 'Public' },
+];
+
+const VISIBILITY_HINT: Record<QuizVisibility, string> = {
+  private: 'Only you can open this quiz.',
+  unlisted: 'Anyone with the link can play. Hidden from Discover.',
+  public: 'Listed in Discover for everyone to find.',
+};
 
 export default function EditView({ quizId }: EditViewProps) {
   const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion } = useQuiz(quizId, { poll: true });
@@ -89,6 +102,11 @@ export default function EditView({ quizId }: EditViewProps) {
     await updateQuiz(quizId, { questionsPerRun: value }).catch(() => {});
   };
 
+  const handleSetVisibility = async (value: QuizVisibility) => {
+    patchQuiz({ visibility: value });
+    await updateQuiz(quizId, { visibility: value }).catch(() => {});
+  };
+
   // Hold the loading state until ownership is confirmed so the edit UI never
   // flashes for a non-owner (who is being redirected away).
   if (!quiz || isPending || !isOwner) {
@@ -111,6 +129,25 @@ export default function EditView({ quizId }: EditViewProps) {
           onSave={handleSaveHeader}
           imagesPending={imagesPending}
         />
+
+        <div className={styles.perRun}>
+          <div className={styles.perRunText}>
+            <span className={styles.perRunLabel}>Visibility</span>
+            <span className={styles.perRunSub}>{VISIBILITY_HINT[quiz.visibility]}</span>
+          </div>
+          <div className={styles.perRunPills}>
+            {VISIBILITY_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={`${styles.perRunPill} ${quiz.visibility === option.value ? styles.perRunPillActive : ''}`}
+                onClick={() => handleSetVisibility(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {questions.length >= 2 && (() => {
           const total = questions.length;

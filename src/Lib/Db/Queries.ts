@@ -117,14 +117,14 @@ export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
 
 export async function updateQuiz(
   id: string,
-  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl' | 'questionCount' | 'questionsPerRun'>>,
+  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl' | 'questionCount' | 'questionsPerRun' | 'visibility'>>,
 ): Promise<Quiz | undefined> {
   const [row] = await db
     .update(quizzes)
     .set({ ...data, updatedAt: nowISO() })
     .where(eq(quizzes.id, id))
     .returning();
-  return row as Quiz | undefined;
+  return row ? parseQuiz(row) : undefined;
 }
 
 export async function deleteQuiz(id: string): Promise<void> {
@@ -544,7 +544,8 @@ export async function getTopQuizzes(limit = 5): Promise<TopQuiz[]> {
     .select({ quiz: quizzes, plays: sql<number>`count(${quizRuns.id})` })
     .from(quizzes)
     .innerJoin(quizRuns, eq(quizRuns.quizId, quizzes.id))
-    .where(sql`${quizzes.visibility} IS NULL OR ${quizzes.visibility} != 'private'`)
+    // Discover lists only quizzes the creator explicitly made public.
+    .where(eq(quizzes.visibility, 'public'))
     .groupBy(quizzes.id)
     .orderBy(desc(sql`count(${quizRuns.id})`))
     .limit(limit);
