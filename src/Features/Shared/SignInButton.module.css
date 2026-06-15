@@ -1,0 +1,10 @@
+.error {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.85rem;
+  background: var(--neo-accent);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--neo-ink);
+}
