@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quiz Dart
 
-## Getting Started
+Quiz Dart is an AI-powered quiz PWA. Generate a quiz from a topic or your own
+study notes, play fast, high-energy rounds with an AI host, and share a link so
+anyone can play and compare scores — no account needed to play.
 
-First, run the development server:
+Live at [quizdart.app](https://quizdart.app).
+
+## Features
+
+- **AI generation** — quizzes (Google Gemini) and cover/question art (Replicate)
+  from a topic or pasted material.
+- **Progressive auth** — anyone can play shared links anonymously; creating
+  quizzes requires Google sign-in (Better Auth).
+- **Credits** — each new creator gets a free monthly bundle of generation
+  credits; one quiz generation costs one credit.
+- **Ownership & visibility** — your dashboard shows only your quizzes; shared
+  links stay public, private quizzes stay owner-only.
+- **Play mechanics** — multiple formats, streaks, confidence calls, detailed
+  per-question recaps, and device-local stats.
+- **PWA** — installable, offline-aware (Serwist service worker).
+
+## Tech stack
+
+- **Next.js 16** (App Router) + **React 19**
+- **Turso / libSQL** with **Drizzle ORM**
+- **Better Auth** (Google provider), data stored in the same Turso DB
+- **Jotai** for client state, plain CSS modules (neo-brutalist design)
+- Deployed on **Railway** (pnpm, standalone output)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+With no `TURSO_*` vars set, the app uses a local SQLite file (`local.db`).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+Copy `.env.example` and fill in:
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Purpose |
+| --- | --- |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | Turso DB (omit for local SQLite) |
+| `GOOGLE_AI_API_KEY` | Gemini quiz generation |
+| `REPLICATE_API_TOKEN` | Image generation |
+| `BETTER_AUTH_SECRET` | Auth signing secret (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | Public base URL (e.g. `https://quizdart.app`) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth credentials |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Google OAuth redirect URI: `<BETTER_AUTH_URL>/api/auth/callback/google`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `pnpm dev` / `pnpm build` / `pnpm start` — Next.js dev / build / serve
+- `pnpm lint` — ESLint
+- `pnpm backfill-owner <email>` — assign pre-auth ownerless quizzes to a user
+- `pnpm generate-sounds` — regenerate UI sound effects

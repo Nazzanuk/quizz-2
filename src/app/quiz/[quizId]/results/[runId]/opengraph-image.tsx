@@ -2,7 +2,7 @@ import { getQuiz, getQuizRun } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { OG_CONTENT_TYPE, OG_SIZE, renderOgImage } from '@/Features/Shared/OgImage';
 
-export const alt = 'Quizz result';
+export const alt = 'Quiz Dart result';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
@@ -19,7 +19,7 @@ export default async function Image({
 
   return renderOgImage({
     eyebrow: 'Result',
-    title: quiz?.title ?? 'Quizz result',
+    title: quiz?.title ?? 'Quiz Dart result',
     score: valid ? `${pct}%` : null,
     subtitle: valid
       ? `${valid.correct}/${valid.total} correct · best streak ${valid.bestStreak}`

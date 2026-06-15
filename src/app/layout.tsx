@@ -25,20 +25,20 @@ const archivoBlack = Archivo_Black({
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: 'Quizz',
-    template: '%s | Quizz',
+    default: 'Quiz Dart',
+    template: '%s | Quiz Dart',
   },
   description: 'Generate, play, and share AI-powered quiz scores.',
   manifest: '/manifest.json',
   openGraph: {
-    title: 'Quizz',
+    title: 'Quiz Dart',
     description: 'Generate, play, and share AI-powered quiz scores.',
-    siteName: 'Quizz',
+    siteName: 'Quiz Dart',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Quizz',
+    title: 'Quiz Dart',
     description: 'Generate, play, and share AI-powered quiz scores.',
   },
 };

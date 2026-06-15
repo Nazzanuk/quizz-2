@@ -1,6 +1,6 @@
 import { OG_CONTENT_TYPE, OG_SIZE, renderOgImage } from '@/Features/Shared/OgImage';
 
-export const alt = 'Quizz';
+export const alt = 'Quiz Dart';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 

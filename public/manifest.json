@@ -1,7 +1,7 @@
 {
-  "name": "Quizz",
-  "short_name": "Quizz",
-  "description": "Generate and play quizzes powered by AI",
+  "name": "Quiz Dart",
+  "short_name": "Quiz Dart",
+  "description": "Generate, play, and share AI-powered quizzes",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

@@ -3,7 +3,7 @@ import { getQuiz, getQuizRun, getRunAttempts } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import type { QuestionAttempt, Quiz, QuizRun } from '@/Lib/Types';
 
-const SITE_NAME = 'Quizz';
+const SITE_NAME = 'Quiz Dart';
 
 export async function buildQuizMetadata(quizId: string): Promise<Metadata> {
   const quiz = await getQuizForMetadata(quizId);

@@ -44,7 +44,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
   const handleShare = async () => {
     const url = `${window.location.origin}/quiz/${quizId}`;
     const result = await shareLink({
-      title: `${quiz?.title ?? 'Quiz'} | Quizz`,
+      title: `${quiz?.title ?? 'Quiz'} | Quiz Dart`,
       text: quiz?.description ?? 'Take this quiz and compare your score.',
       url,
     }).catch(() => null);

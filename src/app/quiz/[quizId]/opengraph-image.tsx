@@ -2,7 +2,7 @@ import { getQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { OG_CONTENT_TYPE, OG_SIZE, renderOgImage } from '@/Features/Shared/OgImage';
 
-export const alt = 'Quizz';
+export const alt = 'Quiz Dart';
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
@@ -13,7 +13,7 @@ export default async function Image({ params }: { params: Promise<{ quizId: stri
 
   return renderOgImage({
     eyebrow: 'Quiz',
-    title: quiz?.title ?? 'Quizz',
+    title: quiz?.title ?? 'Quiz Dart',
     subtitle: quiz
       ? quiz.topic ?? `${quiz.questionCount} ${quiz.questionCount === 1 ? 'question' : 'questions'}`
       : 'Generate, play, and share AI-powered quizzes.',
