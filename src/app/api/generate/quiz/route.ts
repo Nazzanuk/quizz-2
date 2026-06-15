@@ -9,7 +9,18 @@ import {
   updateQuestionOptionImages,
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
-import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
+import {
+  DEFAULT_QUESTION_COUNT,
+  DEFAULT_QUESTIONS_PER_RUN,
+  MAX_QUESTION_COUNT,
+  MIN_QUESTION_COUNT,
+} from '@/Lib/Constants';
+
+function clampCount(value: number | undefined): number {
+  const n = Math.floor(value ?? DEFAULT_QUESTION_COUNT);
+  if (!Number.isFinite(n)) return DEFAULT_QUESTION_COUNT;
+  return Math.max(MIN_QUESTION_COUNT, Math.min(MAX_QUESTION_COUNT, n));
+}
 
 export async function POST(req: Request) {
   await runMigrations();
@@ -31,7 +42,7 @@ export async function POST(req: Request) {
   const generated = await generateQuiz({
     topic,
     material,
-    count: count ?? DEFAULT_QUESTION_COUNT,
+    count: clampCount(count),
   });
 
   const quizId = crypto.randomUUID();
@@ -44,6 +55,7 @@ export async function POST(req: Request) {
     sourceMaterial: material ?? undefined,
     format: 'mcq',
     questionCount: generated.questions.length,
+    questionsPerRun: DEFAULT_QUESTIONS_PER_RUN,
   });
 
   const questionRows = generated.questions.map((q, i) => ({

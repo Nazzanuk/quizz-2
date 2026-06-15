@@ -50,6 +50,12 @@ export const STREAK_MILESTONES: Record<number, QuizMilestone> = {
   10: 'streak10',
 };
 
-export const DEFAULT_QUESTION_COUNT = 10;
-export const MAX_QUESTION_COUNT = 25;
+export const DEFAULT_QUESTION_COUNT = 20;
+export const MAX_QUESTION_COUNT = 50;
 export const MIN_QUESTION_COUNT = 3;
+
+// How many questions a single play run asks (picked at random) when a quiz
+// has no explicit per-run preference set.
+export const DEFAULT_QUESTIONS_PER_RUN = 20;
+// Preset choices offered when generating a quiz or picking questions per run.
+export const QUESTION_COUNT_OPTIONS = [10, 20, 30, 40, 50];

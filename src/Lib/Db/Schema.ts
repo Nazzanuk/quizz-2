@@ -9,6 +9,7 @@ export const quizzes = sqliteTable('quizzes', {
   coverImageUrl: text('cover_image_url'),
   format: text('format').notNull(),
   questionCount: integer('question_count').default(0),
+  questionsPerRun: integer('questions_per_run'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

@@ -14,6 +14,14 @@ interface QuestionItemProps {
   editing: boolean;
   imagesPending: boolean;
   onUpdate: (questionId: string, data: Partial<Question>) => void;
+  onDelete?: (questionId: string) => void;
+}
+
+// The wrong-answer options for a question = its stored options minus the
+// correct answer, padded to three editable slots.
+function deriveDistractors(question: Question): string[] {
+  const others = (question.options ?? []).filter((o) => o !== question.answerText);
+  return [0, 1, 2].map((i) => others[i] ?? '');
 }
 
 export default function QuestionItem({
@@ -23,63 +31,62 @@ export default function QuestionItem({
   editing,
   imagesPending,
   onUpdate,
+  onDelete,
 }: QuestionItemProps) {
   const color = index % 2 === 0 ? 'sage' : 'lavender';
+  const hasOptions = Array.isArray(question.options) && question.options.length > 0;
   const [isEditing, setIsEditing] = useState(false);
   const [text, setText] = useState(question.questionText);
   const [answer, setAnswer] = useState(question.answerText);
+  const [distractors, setDistractors] = useState<string[]>(() => deriveDistractors(question));
   const [imagePrompt, setImagePrompt] = useState(question.imagePrompt ?? question.questionText);
   const [saving, setSaving] = useState(false);
   const [regeneratingImage, setRegeneratingImage] = useState(false);
   const [removingImage, setRemovingImage] = useState(false);
   const [imageError, setImageError] = useState('');
 
+  const distractorsIncomplete = hasOptions && distractors.some((d) => !d.trim());
+
   const handleSave = async () => {
     const t = text.trim();
     const a = answer.trim();
     const prompt = imagePrompt.trim();
-    if (!t || !a) return;
-    if (
-      t === question.questionText
-      && a === question.answerText
-      && prompt === (question.imagePrompt ?? question.questionText)
-    ) {
-      setIsEditing(false);
-      return;
-    }
+    if (!t || !a || distractorsIncomplete) return;
 
     setSaving(true);
     setImageError('');
-    const options = question.options ? [a, ...question.options.slice(1)] : undefined;
-    await updateQuestion(quizId, question.id, {
+    const options = hasOptions ? [a, ...distractors.map((d) => d.trim())] : undefined;
+    const patch = {
       questionText: t,
       answerText: a,
       imagePrompt: prompt || null,
       ...(options ? { options } : {}),
-    });
-    onUpdate(question.id, {
-      questionText: t,
-      answerText: a,
-      imagePrompt: prompt || null,
-      ...(options ? { options } : {}),
-    });
+    };
+    await updateQuestion(quizId, question.id, patch);
+    onUpdate(question.id, patch);
     setSaving(false);
     setIsEditing(false);
   };
 
-  const handleCancel = () => {
+  const setDistractor = (i: number, value: string) => {
+    setDistractors((prev) => prev.map((d, idx) => (idx === i ? value : d)));
+  };
+
+  const resetFields = () => {
     setText(question.questionText);
     setAnswer(question.answerText);
+    setDistractors(deriveDistractors(question));
     setImagePrompt(question.imagePrompt ?? question.questionText);
     setImageError('');
+  };
+
+  const handleCancel = () => {
+    resetFields();
     setIsEditing(false);
   };
 
   const handleStartEdit = () => {
-    setText(question.questionText);
-    setAnswer(question.answerText);
-    setImagePrompt(question.imagePrompt ?? question.questionText);
-    setImageError('');
+    resetFields();
     setIsEditing(true);
   };
 
@@ -143,8 +150,22 @@ export default function QuestionItem({
           className={styles.editField}
           value={answer}
           onChange={e => setAnswer(e.target.value)}
-          placeholder="Answer"
+          placeholder="Correct answer"
         />
+        {hasOptions && (
+          <>
+            <label className={styles.editLabel}>Other options</label>
+            {distractors.map((d, i) => (
+              <input
+                key={i}
+                className={styles.editField}
+                value={d}
+                onChange={e => setDistractor(i, e.target.value)}
+                placeholder={`Option ${i + 2}`}
+              />
+            ))}
+          </>
+        )}
         <label className={styles.editLabel} htmlFor={`image-prompt-${question.id}`}>
           Image prompt
         </label>
@@ -183,13 +204,22 @@ export default function QuestionItem({
           <button
             className={styles.saveBtn}
             onClick={handleSave}
-            disabled={saving || regeneratingImage || removingImage || !text.trim() || !answer.trim()}
+            disabled={saving || regeneratingImage || removingImage || !text.trim() || !answer.trim() || distractorsIncomplete}
           >
             {saving ? 'Saving…' : 'Save'}
           </button>
           <button className={styles.cancelBtn} onClick={handleCancel}>
             Cancel
           </button>
+          {onDelete && (
+            <button
+              className={styles.deleteBtn}
+              type="button"
+              onClick={() => onDelete(question.id)}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </Card>
     );

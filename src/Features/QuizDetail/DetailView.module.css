@@ -167,6 +167,96 @@
   transform: rotate(-1deg);
 }
 
+.runNote {
+  margin: -0.4rem 0 1rem;
+  padding: 0.5rem 0.7rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.runNote strong {
+  font-weight: 700;
+}
+
+.perRun {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0.5rem 0 0.25rem;
+  padding: 0.85rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(-1deg);
+}
+
+.perRunText {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.perRunLabel {
+  font-family: var(--font-accent);
+  font-size: 1.05rem;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  color: var(--neo-ink);
+}
+
+.perRunSub {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--neo-ink);
+}
+
+.perRunPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.perRunPill {
+  min-height: 44px;
+  padding: 0 0.95rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--neo-shadow-sm);
+  transition:
+    transform var(--neo-fast),
+    box-shadow var(--neo-fast),
+    background var(--neo-fast);
+}
+
+.perRunPill:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.perRunPillActive {
+  background: var(--neo-accent);
+  border: var(--neo-border);
+}
+
+@media (hover: hover) {
+  .perRunPill:hover:not(.perRunPillActive) {
+    transform: translateY(-2px);
+    background: var(--neo-secondary);
+    box-shadow: var(--neo-shadow);
+  }
+}
+
 .questionsHeader {
   display: flex;
   align-items: center;
@@ -257,6 +347,15 @@
   flex-direction: column;
   gap: 0.65rem;
 }
+
+.runLink {
+  animation: riseIn var(--motion-base) var(--ease-soft) backwards;
+}
+
+.runLink:nth-child(2) { animation-delay: 55ms; }
+.runLink:nth-child(3) { animation-delay: 110ms; }
+.runLink:nth-child(4) { animation-delay: 165ms; }
+.runLink:nth-child(5) { animation-delay: 220ms; }
 
 .runLink {
   display: grid;

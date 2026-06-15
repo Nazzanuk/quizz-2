@@ -8,6 +8,18 @@
   animation: settle 180ms ease-out both;
 }
 
+/* Stagger the answers in. Declared before the interaction states below so
+   .pressed/.selected/.correct/.wrong animations still take over on tap. */
+.option {
+  animation: softIn var(--motion-base) var(--ease-soft) backwards;
+}
+
+.option:nth-child(2) { animation-delay: 55ms; }
+.option:nth-child(3) { animation-delay: 110ms; }
+.option:nth-child(4) { animation-delay: 165ms; }
+.option:nth-child(5) { animation-delay: 220ms; }
+.option:nth-child(6) { animation-delay: 275ms; }
+
 .answerCard {
   text-align: center;
   padding: 0;

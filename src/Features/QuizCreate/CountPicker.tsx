@@ -1,8 +1,9 @@
 'use client';
 
+import { QUESTION_COUNT_OPTIONS } from '@/Lib/Constants';
 import styles from './CountPicker.module.css';
 
-const OPTIONS = [5, 10, 15, 20];
+const OPTIONS = QUESTION_COUNT_OPTIONS;
 
 interface CountPickerProps {
   value: number;

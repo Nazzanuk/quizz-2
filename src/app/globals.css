@@ -318,6 +318,18 @@ a {
   to { transform: translateY(0); }
 }
 
+/* Subtle entrance helpers used for staggered list/grid reveals across screens.
+   softIn is transform-free so it's safe on elements that carry a static tilt. */
+@keyframes softIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes slideInRight {
   from { transform: translateX(18px); }
   to { transform: translateX(0); }

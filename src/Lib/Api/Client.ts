@@ -50,7 +50,7 @@ export function createQuiz(data: {
 
 export function updateQuiz(
   id: string,
-  data: Partial<Pick<Quiz, 'title' | 'description'>>,
+  data: Partial<Pick<Quiz, 'title' | 'description' | 'questionsPerRun'>>,
 ): Promise<Quiz> {
   return request(`/quizzes/${id}`, {
     method: 'PUT',
@@ -159,4 +159,12 @@ export function generateMoreQuestions(quizId: string, count: number): Promise<Qu
     method: 'POST',
     body: JSON.stringify({ count }),
   });
+}
+
+export function createQuestion(quizId: string): Promise<Question> {
+  return request(`/quizzes/${quizId}/questions`, { method: 'POST' });
+}
+
+export function deleteQuestion(quizId: string, questionId: string): Promise<void> {
+  return request(`/quizzes/${quizId}/questions/${questionId}`, { method: 'DELETE' });
 }

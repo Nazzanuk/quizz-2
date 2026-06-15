@@ -4,7 +4,14 @@ import { useState } from 'react';
 import { useSetAtom } from 'jotai';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
-import { deleteQuiz, generateMoreQuestions, updateQuiz } from '@/Lib/Api/Client';
+import {
+  createQuestion,
+  deleteQuestion,
+  deleteQuiz,
+  generateMoreQuestions,
+  updateQuiz,
+} from '@/Lib/Api/Client';
+import { DEFAULT_QUESTIONS_PER_RUN, QUESTION_COUNT_OPTIONS } from '@/Lib/Constants';
 import { confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
@@ -19,8 +26,9 @@ interface EditViewProps {
 }
 
 export default function EditView({ quizId }: EditViewProps) {
-  const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions } = useQuiz(quizId, { poll: true });
+  const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion } = useQuiz(quizId, { poll: true });
   const [addingQuestions, setAddingQuestions] = useState(false);
+  const [addingManual, setAddingManual] = useState(false);
   const { navigate, back } = useTransitionRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);
 
@@ -51,6 +59,26 @@ export default function EditView({ quizId }: EditViewProps) {
     }
   };
 
+  const handleAddManual = async () => {
+    setAddingManual(true);
+    try {
+      const created = await createQuestion(quizId);
+      addQuestions([created]);
+    } finally {
+      setAddingManual(false);
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId: string) => {
+    removeQuestion(questionId);
+    await deleteQuestion(quizId, questionId).catch(() => {});
+  };
+
+  const handleSetPerRun = async (value: number) => {
+    patchQuiz({ questionsPerRun: value });
+    await updateQuiz(quizId, { questionsPerRun: value }).catch(() => {});
+  };
+
   if (!quiz) {
     return (
       <AppShell>
@@ -71,6 +99,34 @@ export default function EditView({ quizId }: EditViewProps) {
           onSave={handleSaveHeader}
           imagesPending={imagesPending}
         />
+
+        {questions.length >= 2 && (() => {
+          const total = questions.length;
+          const current = Math.min(quiz.questionsPerRun ?? DEFAULT_QUESTIONS_PER_RUN, total);
+          const options = Array.from(
+            new Set([...QUESTION_COUNT_OPTIONS.filter((n) => n < total), total]),
+          ).sort((a, b) => a - b);
+          return (
+            <div className={styles.perRun}>
+              <div className={styles.perRunText}>
+                <span className={styles.perRunLabel}>Questions per run</span>
+                <span className={styles.perRunSub}>Picked at random each time you play.</span>
+              </div>
+              <div className={styles.perRunPills}>
+                {options.map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    className={`${styles.perRunPill} ${n === current ? styles.perRunPillActive : ''}`}
+                    onClick={() => handleSetPerRun(n)}
+                  >
+                    {n === total ? `All (${total})` : n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         <div className={styles.questionsHeader}>
           <h2 className={styles.questionsTitle}>
@@ -98,15 +154,23 @@ export default function EditView({ quizId }: EditViewProps) {
           editing
           imagesPending={imagesPending}
           onUpdate={patchQuestion}
+          onDelete={handleDeleteQuestion}
         />
 
         <div className={styles.editActions}>
           <button
             className={styles.addBtn}
+            onClick={handleAddManual}
+            disabled={addingManual}
+          >
+            {addingManual ? 'Adding...' : '+ Add a question manually'}
+          </button>
+          <button
+            className={styles.addBtn}
             onClick={handleAddQuestions}
             disabled={addingQuestions}
           >
-            {addingQuestions ? 'Adding...' : '+ Add 5 questions'}
+            {addingQuestions ? 'Generating...' : '+ Generate 5 questions'}
           </button>
           <div className={styles.deleteWrap}>
             <Button variant="ghost" onClick={handleDelete}>Delete quiz</Button>

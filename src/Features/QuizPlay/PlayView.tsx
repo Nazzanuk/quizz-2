@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import Link from '@/Features/Shared/TransitionLink';
 import { useSearchParams } from 'next/navigation';
-import { HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
+import { DEFAULT_QUESTIONS_PER_RUN, HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
 import { fetchHostSession, fetchRun, getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { recordPlayerRun, getPlayerProfile } from '@/Lib/PlayerProfile';
@@ -180,10 +180,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
     setRunSeed((value) => value + 1);
   }, [clearUiTimers]);
 
-  const startRun = useCallback((items: Question[]) => {
+  const startRun = useCallback((items: Question[], limit?: number | null) => {
     resetRunState();
-    initPlay(items);
+    initPlay({ questions: items, limit });
   }, [initPlay, resetRunState]);
+
+  // How many questions a full run asks (picked at random). Practice runs
+  // replay a specific set, so they pass null to skip the cap.
+  const runLimit = quiz?.questionsPerRun ?? DEFAULT_QUESTIONS_PER_RUN;
 
   useEffect(() => () => {
     resetPlay();
@@ -266,7 +270,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       let fired = false;
       const id = window.setTimeout(() => {
         fired = true;
-        startRun(playableQuestions);
+        startRun(playableQuestions, practiceRunId ? null : runLimit);
       }, 0);
       return () => {
         window.clearTimeout(id);
@@ -277,7 +281,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       };
     }
     return undefined;
-  }, [hasPlayableQuestions, playableQuestions, practiceReady, runKey, startRun]);
+  }, [hasPlayableQuestions, playableQuestions, practiceReady, practiceRunId, runKey, runLimit, startRun]);
 
   useEffect(() => {
     if (!quiz || questionOrder.length === 0 || runSeed === 0) return;
@@ -613,9 +617,9 @@ export default function PlayView({ quizId }: PlayViewProps) {
             bestStreak={bestStreak}
             wrongCount={wrongQuestions.length}
             recap={recap}
-            onRetry={() => startRun(questions)}
+            onRetry={() => startRun(questions, runLimit)}
             onPracticeWeak={wrongQuestions.length > 0
-              ? () => startRun(wrongQuestions)
+              ? () => startRun(wrongQuestions, null)
               : undefined}
             onBack={() => navigate(`/quiz/${quizId}`)}
           />

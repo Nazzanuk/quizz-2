@@ -116,6 +116,8 @@ export interface Quiz {
   coverImageUrl: string | null;
   format: QuizFormat;
   questionCount: number;
+  // How many questions to ask per run, chosen at random. null = ask all.
+  questionsPerRun: number | null;
   createdAt: string;
   updatedAt: string;
 }

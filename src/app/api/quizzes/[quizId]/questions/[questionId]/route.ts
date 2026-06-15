@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { updateQuestion } from '@/Lib/Db/Queries';
+import {
+  deleteQuestion,
+  getQuestions,
+  updateQuestion,
+  updateQuiz,
+} from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 
 interface Params {
@@ -17,4 +22,14 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   return NextResponse.json(updated);
+}
+
+export async function DELETE(_req: Request, { params }: Params) {
+  await runMigrations();
+  const { quizId, questionId } = await params;
+  await deleteQuestion(questionId);
+  // Keep the quiz's cached count in sync with what's actually stored.
+  const remaining = await getQuestions(quizId);
+  await updateQuiz(quizId, { questionCount: remaining.length });
+  return NextResponse.json({ ok: true });
 }

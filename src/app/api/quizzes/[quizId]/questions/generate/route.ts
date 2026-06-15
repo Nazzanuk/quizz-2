@@ -10,6 +10,7 @@ import {
   updateQuestionOptionImages,
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
+import { MAX_QUESTION_COUNT, MIN_QUESTION_COUNT } from '@/Lib/Constants';
 
 interface Params {
   params: Promise<{ quizId: string }>;
@@ -19,6 +20,10 @@ export async function POST(req: Request, { params }: Params) {
   await runMigrations();
   const { quizId } = await params;
   const { count = 5 } = await req.json();
+  const safeCount = Math.max(
+    MIN_QUESTION_COUNT,
+    Math.min(MAX_QUESTION_COUNT, Math.floor(Number(count) || 5)),
+  );
 
   const quiz = await getQuiz(quizId);
   if (!quiz) return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -30,7 +35,7 @@ export async function POST(req: Request, { params }: Params) {
   const generated = await generateQuiz({
     topic: quiz.topic ?? undefined,
     material: quiz.sourceMaterial ?? undefined,
-    count,
+    count: safeCount,
     existingQuestions: existingTexts,
   });
 

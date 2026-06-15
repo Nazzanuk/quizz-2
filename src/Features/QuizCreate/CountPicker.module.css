@@ -14,7 +14,7 @@
 
 .chips {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
@@ -62,3 +62,12 @@
     box-shadow: var(--neo-shadow);
   }
 }
+
+.chip {
+  animation: softIn var(--motion-base) var(--ease-soft) backwards;
+}
+
+.chip:nth-child(2) { animation-delay: 45ms; }
+.chip:nth-child(3) { animation-delay: 90ms; }
+.chip:nth-child(4) { animation-delay: 135ms; }
+.chip:nth-child(5) { animation-delay: 180ms; }

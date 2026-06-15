@@ -87,6 +87,7 @@ export async function runMigrations(): Promise<void> {
   )`);
 
   for (const stmt of [
+    sql`ALTER TABLE quizzes ADD COLUMN questions_per_run INTEGER`,
     sql`ALTER TABLE questions ADD COLUMN image_url TEXT`,
     sql`ALTER TABLE questions ADD COLUMN option_images TEXT`,
     sql`ALTER TABLE questions ADD COLUMN image_prompt TEXT`,

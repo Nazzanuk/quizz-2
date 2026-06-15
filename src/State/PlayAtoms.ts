@@ -38,11 +38,17 @@ function getPlayFormat(question: Question): QuizFormat {
   return RANDOMISED_MCQ_FORMATS[Math.floor(Math.random() * RANDOMISED_MCQ_FORMATS.length)];
 }
 
-export const initPlayAtom = atom(null, (_get, set, questions: Question[]) => {
-  const shuffled = shuffleArray(questions.filter(isPlayableQuestion));
-  const order = shuffled.map((q) => q.id);
+export const initPlayAtom = atom(
+  null,
+  (_get, set, payload: { questions: Question[]; limit?: number | null }) => {
+  const shuffled = shuffleArray(payload.questions.filter(isPlayableQuestion));
+  // Pick `limit` at random (already shuffled) when set; otherwise ask them all.
+  const limited = payload.limit != null && payload.limit > 0
+    ? shuffled.slice(0, payload.limit)
+    : shuffled;
+  const order = limited.map((q) => q.id);
   const formats = new Map<string, QuizFormat>();
-  shuffled.forEach((q) => {
+  limited.forEach((q) => {
     formats.set(q.id, getPlayFormat(q));
   });
   set(questionOrderAtom, order);

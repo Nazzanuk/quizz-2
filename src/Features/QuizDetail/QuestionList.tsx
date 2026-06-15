@@ -11,9 +11,10 @@ interface QuestionListProps {
   editing: boolean;
   imagesPending: boolean;
   onUpdate: (questionId: string, data: Partial<Question>) => void;
+  onDelete?: (questionId: string) => void;
 }
 
-export default function QuestionList({ questions, quizId, editing, imagesPending, onUpdate }: QuestionListProps) {
+export default function QuestionList({ questions, quizId, editing, imagesPending, onUpdate, onDelete }: QuestionListProps) {
   if (questions.length === 0) {
     return <p className={styles.empty}>No questions yet.</p>;
   }
@@ -29,6 +30,7 @@ export default function QuestionList({ questions, quizId, editing, imagesPending
             editing={editing}
             imagesPending={imagesPending}
             onUpdate={onUpdate}
+            onDelete={onDelete}
           />
         </ScrollReveal>
       ))}

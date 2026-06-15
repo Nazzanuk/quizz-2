@@ -54,6 +54,7 @@ export async function insertQuiz(data: {
   sourceMaterial?: string;
   format: QuizFormat;
   questionCount?: number;
+  questionsPerRun?: number | null;
 }): Promise<Quiz> {
   const now = nowISO();
   const [row] = await db
@@ -101,7 +102,7 @@ export async function insertQuestions(items: InsertQuestion[]): Promise<void> {
 
 export async function updateQuiz(
   id: string,
-  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl' | 'questionCount'>>,
+  data: Partial<Pick<Quiz, 'title' | 'description' | 'coverImageUrl' | 'questionCount' | 'questionsPerRun'>>,
 ): Promise<Quiz | undefined> {
   const [row] = await db
     .update(quizzes)
@@ -138,6 +139,10 @@ export async function updateQuestion(
     .where(eq(questions.id, id))
     .returning();
   return row ? parseQuestion(row) : undefined;
+}
+
+export async function deleteQuestion(id: string): Promise<void> {
+  await db.delete(questions).where(eq(questions.id, id));
 }
 
 export async function updateQuestionHostMetadata(

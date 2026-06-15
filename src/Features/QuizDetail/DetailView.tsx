@@ -5,6 +5,7 @@ import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
 import { fetchQuizRuns, getResultsSummary } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
+import { DEFAULT_QUESTIONS_PER_RUN } from '@/Lib/Constants';
 import type { QuizRun, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import { addToastAtom } from '@/State/UiAtoms';
@@ -15,7 +16,6 @@ import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import QuizHeader from './QuizHeader';
-import QuestionList from './QuestionList';
 import styles from './DetailView.module.css';
 
 interface DetailViewProps {
@@ -23,7 +23,7 @@ interface DetailViewProps {
 }
 
 export default function DetailView({ quizId }: DetailViewProps) {
-  const { quiz, questions, imagesPending, patchQuestion } = useQuiz(quizId, { poll: true });
+  const { quiz, questions, imagesPending } = useQuiz(quizId, { poll: true });
   const [stats, setStats] = useState<ResultsSummary | null>(null);
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [runs, setRuns] = useState<QuizRun[]>([]);
@@ -82,6 +82,17 @@ export default function DetailView({ quizId }: DetailViewProps) {
             <Link href={`/quiz/${quizId}/play`} className={styles.playLink}>
               <Button variant="primary" fullWidth>Play quiz</Button>
             </Link>
+            {(() => {
+              const perRun = Math.min(
+                quiz.questionsPerRun ?? DEFAULT_QUESTIONS_PER_RUN,
+                questions.length,
+              );
+              return perRun < questions.length ? (
+                <p className={styles.runNote}>
+                  Each run picks <strong>{perRun}</strong> of {questions.length} questions at random.
+                </p>
+              ) : null;
+            })()}
             <div className={styles.metaRow}>
               {!statsLoaded ? (
                 <span className={`uiSkeleton ${styles.loadingStatsText}`} aria-hidden="true" />
@@ -139,21 +150,6 @@ export default function DetailView({ quizId }: DetailViewProps) {
         <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
           <Button variant="secondary" fullWidth>Edit quiz</Button>
         </Link>
-
-        <div className={styles.questionsHeader}>
-          <h2 className={styles.questionsTitle}>
-            Questions
-            <span className={styles.count}>{questions.length}</span>
-          </h2>
-        </div>
-
-        <QuestionList
-          questions={questions}
-          quizId={quizId}
-          editing={false}
-          imagesPending={imagesPending}
-          onUpdate={patchQuestion}
-        />
       </div>
     </AppShell>
   );

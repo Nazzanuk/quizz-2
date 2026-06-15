@@ -87,6 +87,24 @@
   box-shadow: none;
 }
 
+/* The gear is only present on top-level (and focused) screens, so it spins +
+   scales in on mount as you arrive. `backwards` keeps hover/active transforms
+   working once the entrance finishes. */
+.gearButton {
+  animation: gearIn var(--motion-base) var(--ease-soft) backwards;
+}
+
+@keyframes gearIn {
+  from {
+    opacity: 0;
+    transform: scale(0.6) rotate(-90deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
 .main {
   flex: 1;
   min-height: 0;

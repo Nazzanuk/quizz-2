@@ -121,3 +121,13 @@
     box-shadow: var(--neo-shadow);
   }
 }
+
+.item {
+  animation: riseIn var(--motion-base) var(--ease-soft) backwards;
+}
+
+.item:nth-child(2) { animation-delay: 55ms; }
+.item:nth-child(3) { animation-delay: 110ms; }
+.item:nth-child(4) { animation-delay: 165ms; }
+.item:nth-child(5) { animation-delay: 220ms; }
+.item:nth-child(6) { animation-delay: 275ms; }

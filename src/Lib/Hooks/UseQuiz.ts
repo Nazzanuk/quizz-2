@@ -90,5 +90,12 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     );
   }, [setQuestions, setQuiz]);
 
-  return { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions };
+  const removeQuestion = useCallback((questionId: string) => {
+    setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+    setQuiz((prev) =>
+      prev ? { ...prev, questionCount: Math.max(0, prev.questionCount - 1) } : prev,
+    );
+  }, [setQuestions, setQuiz]);
+
+  return { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion };
 }
