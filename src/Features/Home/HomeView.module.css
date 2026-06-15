@@ -85,6 +85,19 @@
   margin-top: 1.75rem;
 }
 
+.legal {
+  margin-top: 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--neo-ink);
+}
+
+.legal a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .noMatches {
   margin: 1rem 0 0;
   padding: 1rem;

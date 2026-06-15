@@ -56,6 +56,22 @@ export function updateUsername(username: string): Promise<{ username: string }> 
   });
 }
 
+export function deleteAccount(): Promise<{ ok: true }> {
+  return request('/account', { method: 'DELETE' });
+}
+
+// Fetches the user's data export as a Blob (for a client-triggered download).
+export async function fetchAccountExport(): Promise<Blob> {
+  const res = await fetch(`${BASE}/account/export`, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, body.error ?? `http_${res.status}`, body.error ?? 'Export failed');
+  }
+  return res.blob();
+}
+
 export function fetchLeaderboard(quizId: string, limit = 10): Promise<QuizLeaderboard> {
   return request(`/quizzes/${quizId}/leaderboard?limit=${limit}`);
 }

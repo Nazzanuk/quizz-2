@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSetAtom } from 'jotai';
 import Button from '@/Features/Shared/Button';
@@ -8,11 +9,18 @@ import Card from '@/Features/Shared/Card';
 import SignInButton from '@/Features/Shared/SignInButton';
 import { signOut } from '@/Lib/Auth/Client';
 import { useAccount } from '@/Lib/Hooks/UseAccount';
-import { ApiError, updateUsername } from '@/Lib/Api/Client';
+import { ApiError, deleteAccount, fetchAccountExport, updateUsername } from '@/Lib/Api/Client';
 import { USERNAME_MAX, validateUsername } from '@/Lib/Types';
-import { addToastAtom } from '@/State/UiAtoms';
+import { addToastAtom, confirmDialogAtom } from '@/State/UiAtoms';
 import { haptic } from '@/Features/Shared/Haptic';
 import styles from './AccountPanel.module.css';
+
+// localStorage keys holding device-local user state, cleared on account delete.
+const LOCAL_KEYS = [
+  'quizz.playerProfile',
+  'quizz.viewedQuizzes',
+  'quizz.installPromptDismissedAt',
+];
 
 // Account section in Settings: shows who's signed in, their credit balance, the
 // public username they use on leaderboards, and a sign-out button. Anonymous
@@ -20,7 +28,10 @@ import styles from './AccountPanel.module.css';
 export default function AccountPanel({ className }: { className?: string }) {
   const router = useRouter();
   const { account, loading, signedIn, reload } = useAccount();
+  const addToast = useSetAtom(addToastAtom);
+  const setConfirm = useSetAtom(confirmDialogAtom);
   const [signingOut, setSigningOut] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (loading) {
     return (
@@ -38,6 +49,7 @@ export default function AccountPanel({ className }: { className?: string }) {
           Sign in with Google to create quizzes and keep them in your library.
         </p>
         <SignInButton callbackURL="/settings" fullWidth />
+        <LegalLinks />
       </Card>
     );
   }
@@ -50,6 +62,47 @@ export default function AccountPanel({ className }: { className?: string }) {
     } finally {
       setSigningOut(false);
     }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const blob = await fetchAccountExport();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'quiz-dart-data.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      addToast({ message: 'Data export downloaded', type: 'success' });
+    } catch {
+      addToast({ message: 'Could not export your data', type: 'error' });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDelete = () => {
+    setConfirm({
+      title: 'Delete account',
+      message:
+        'This permanently deletes your account, your quizzes, and all your gameplay history. This cannot be undone.',
+      confirmLabel: 'Delete everything',
+      onConfirm: async () => {
+        try {
+          await deleteAccount();
+          for (const key of LOCAL_KEYS) localStorage.removeItem(key);
+          await signOut().catch(() => {});
+          addToast({ message: 'Your account has been deleted', type: 'success' });
+          router.replace('/');
+          router.refresh();
+        } catch {
+          addToast({ message: 'Could not delete your account', type: 'error' });
+        }
+      },
+    });
   };
 
   return (
@@ -72,7 +125,28 @@ export default function AccountPanel({ className }: { className?: string }) {
       <Button variant="secondary" fullWidth disabled={signingOut} onClick={handleSignOut}>
         {signingOut ? 'Signing out…' : 'Sign out'}
       </Button>
+
+      <div className={styles.dataActions}>
+        <button type="button" className={styles.dataLink} disabled={exporting} onClick={handleExport}>
+          {exporting ? 'Exporting…' : 'Export my data'}
+        </button>
+        <button type="button" className={styles.dangerLink} onClick={handleDelete}>
+          Delete account
+        </button>
+      </div>
+
+      <LegalLinks />
     </Card>
+  );
+}
+
+function LegalLinks() {
+  return (
+    <p className={styles.legal}>
+      <Link href="/privacy">Privacy</Link>
+      <span aria-hidden="true"> · </span>
+      <Link href="/terms">Terms</Link>
+    </p>
   );
 }
 

@@ -1,0 +1,103 @@
+.page {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: clamp(1rem, 5vw, 3rem) var(--content-pad);
+}
+
+.card {
+  width: 100%;
+  max-width: 720px;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background: var(--neo-white);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--font-accent);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  color: var(--neo-ink);
+}
+
+.brandMark {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+}
+
+.brandMark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.title {
+  margin: 1.25rem 0 0.35rem;
+  font-family: var(--font-accent);
+  font-size: clamp(2rem, 8vw, 3rem);
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.effective {
+  margin: 0 0 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--neo-ink);
+  opacity: 0.6;
+}
+
+.body {
+  color: var(--neo-ink);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.body h2 {
+  margin: 1.6rem 0 0.5rem;
+  font-family: var(--font-accent);
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.body p,
+.body li {
+  margin: 0 0 0.7rem;
+  font-weight: 500;
+}
+
+.body ul {
+  margin: 0 0 0.7rem;
+  padding-left: 1.2rem;
+}
+
+.body a {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.body strong {
+  font-weight: 700;
+}
+
+.back {
+  display: inline-block;
+  margin-top: 1.75rem;
+  padding: 0.55rem 0.9rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  color: var(--neo-ink);
+}

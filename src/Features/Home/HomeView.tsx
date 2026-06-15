@@ -106,6 +106,10 @@ function SignedOutPrompt() {
       <div className={styles.actions}>
         <SignInButton callbackURL="/" />
       </div>
+      <p className={styles.legal}>
+        By signing in you agree to our <Link href="/terms">Terms</Link> and{' '}
+        <Link href="/privacy">Privacy Policy</Link>.
+      </p>
     </Card>
   );
 }

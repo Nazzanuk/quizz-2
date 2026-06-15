@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  deleteUserAndData,
   getUserCredits,
   getUsername,
   isUsernameTaken,
@@ -68,4 +69,18 @@ export async function PATCH(req: Request) {
   }
 
   return NextResponse.json({ username });
+}
+
+// Permanently deletes the signed-in user's account and all their data. The
+// client is expected to sign out and clear local state afterward.
+export async function DELETE(req: Request) {
+  await runMigrations();
+
+  const sessionUser = await getSessionUser(req);
+  if (!sessionUser) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  await deleteUserAndData(sessionUser.id);
+  return NextResponse.json({ ok: true });
 }

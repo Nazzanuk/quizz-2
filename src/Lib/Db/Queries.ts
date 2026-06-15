@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user } from './Schema';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account } from './Schema';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
@@ -583,6 +583,89 @@ export async function isUsernameTaken(username: string, excludeUserId: string): 
 
 export async function setUsername(userId: string, username: string): Promise<void> {
   await db.update(user).set({ username }).where(eq(user.id, userId));
+}
+
+// --- Data export & account deletion (GDPR/CCPA) ----------------------------
+
+// Gathers everything tied to a user for a self-service data export.
+export async function exportUserData(userId: string): Promise<{
+  exportedAt: string;
+  account: { id: string; name: string; email: string; username: string | null } | null;
+  quizzes: Array<Quiz & { questions: Question[] }>;
+  runs: Array<QuizRun & { attempts: QuestionAttempt[] }>;
+}> {
+  const [account_] = await db
+    .select({ id: user.id, name: user.name, email: user.email, username: user.username })
+    .from(user)
+    .where(eq(user.id, userId));
+
+  const ownedQuizzes = await db
+    .select()
+    .from(quizzes)
+    .where(eq(quizzes.ownerId, userId))
+    .orderBy(desc(quizzes.updatedAt));
+  const quizIds = ownedQuizzes.map((row) => row.id);
+  const quizQuestions = quizIds.length > 0
+    ? await db.select().from(questions).where(inArray(questions.quizId, quizIds)).orderBy(questions.order)
+    : [];
+
+  const runs = await db
+    .select()
+    .from(quizRuns)
+    .where(eq(quizRuns.userId, userId))
+    .orderBy(desc(quizRuns.createdAt));
+  const runIds = runs.map((row) => row.id);
+  const attempts = runIds.length > 0
+    ? await db.select().from(questionAttempts).where(inArray(questionAttempts.runId, runIds))
+    : [];
+
+  return {
+    exportedAt: nowISO(),
+    account: account_ ?? null,
+    quizzes: ownedQuizzes.map((row) => ({
+      ...parseQuiz(row),
+      questions: quizQuestions.filter((q) => q.quizId === row.id).map(parseQuestion),
+    })),
+    runs: runs.map((row) => ({
+      ...parseQuizRun(row),
+      attempts: attempts.filter((a) => a.runId === row.id).map(parseQuestionAttempt),
+    })),
+  };
+}
+
+// Permanently erases a user and all their data. Child rows are deleted
+// explicitly rather than via FK cascade, since libsql does not enforce
+// foreign-key cascades by default.
+export async function deleteUserAndData(userId: string): Promise<void> {
+  const owned = await db.select({ id: quizzes.id }).from(quizzes).where(eq(quizzes.ownerId, userId));
+  const quizIds = owned.map((row) => row.id);
+  const userRuns = await db.select({ id: quizRuns.id }).from(quizRuns).where(eq(quizRuns.userId, userId));
+  const userRunIds = userRuns.map((row) => row.id);
+
+  // Attempts: those on the user's owned quizzes, plus those from the user's own
+  // runs on anyone's quiz.
+  if (quizIds.length > 0) {
+    await db.delete(questionAttempts).where(inArray(questionAttempts.quizId, quizIds));
+  }
+  if (userRunIds.length > 0) {
+    await db.delete(questionAttempts).where(inArray(questionAttempts.runId, userRunIds));
+  }
+
+  // Runs + results + questions + quizzes for the user's owned quizzes.
+  if (quizIds.length > 0) {
+    await db.delete(quizRuns).where(inArray(quizRuns.quizId, quizIds));
+    await db.delete(quizResults).where(inArray(quizResults.quizId, quizIds));
+    await db.delete(questions).where(inArray(questions.quizId, quizIds));
+    await db.delete(quizzes).where(inArray(quizzes.id, quizIds));
+  }
+
+  // The user's own runs on other people's quizzes.
+  await db.delete(quizRuns).where(eq(quizRuns.userId, userId));
+
+  // Auth rows, then the user record itself.
+  await db.delete(session).where(eq(session.userId, userId));
+  await db.delete(account).where(eq(account.userId, userId));
+  await db.delete(user).where(eq(user.id, userId));
 }
 
 export async function insertImage(id: string, data: string, mimeType: string): Promise<void> {

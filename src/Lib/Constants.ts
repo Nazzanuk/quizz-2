@@ -65,3 +65,10 @@ export const QUESTION_COUNT_OPTIONS = [10, 20, 30, 40, 50];
 // once per calendar month. One quiz generation (or "generate more" batch)
 // costs 1 credit.
 export const STARTER_CREDITS = 5;
+
+// --- Legal / contact -------------------------------------------------------
+// Shown on the privacy & terms pages. Point SUPPORT_EMAIL at a real, monitored
+// inbox before launch (it is the data-controller contact for privacy requests).
+export const SUPPORT_EMAIL = 'hello@quizdart.app';
+// Effective date shown on the legal pages; bump when the policies change.
+export const LEGAL_EFFECTIVE_DATE = 'June 15, 2026';
