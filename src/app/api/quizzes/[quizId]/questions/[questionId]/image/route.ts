@@ -3,6 +3,7 @@ import { generateQuestionImage } from '@/Lib/Ai/ImageGen';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getQuiz, updateQuestion } from '@/Lib/Db/Queries';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 
 interface Params {
   params: Promise<{ quizId: string; questionId: string }>;
@@ -25,6 +26,9 @@ export async function POST(req: Request, { params }: Params) {
   if (quiz.ownerId !== sessionUser.id) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
+
+  const limited = await enforceRateLimit(`gen:${sessionUser.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const { imagePrompt } = await req.json() as { imagePrompt?: string };
   const prompt = imagePrompt?.trim();

@@ -14,6 +14,7 @@ import {
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 import { MAX_QUESTION_COUNT, MIN_QUESTION_COUNT } from '@/Lib/Constants';
 
 interface Params {
@@ -40,6 +41,9 @@ export async function POST(req: Request, { params }: Params) {
   if (quiz.ownerId !== sessionUser.id) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
+
+  const limited = await enforceRateLimit(`gen:${sessionUser.id}`, 10, 60_000);
+  if (limited) return limited;
 
   // Adding questions runs the model again — meter it like quiz generation.
   await getUserCredits(sessionUser.id);

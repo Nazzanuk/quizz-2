@@ -51,6 +51,14 @@ export const quizReports = sqliteTable('quiz_reports', {
   createdAt: text('created_at').notNull(),
 });
 
+// Fixed-window rate-limit counters. Shared across instances via the DB, so the
+// limit holds regardless of which server handles a request.
+export const rateLimits = sqliteTable('rate_limits', {
+  key: text('key').primaryKey(),
+  count: integer('count').notNull(),
+  expiresAt: integer('expires_at').notNull(),
+});
+
 export const images = sqliteTable('images', {
   id: text('id').primaryKey(),
   data: text('data').notNull(),

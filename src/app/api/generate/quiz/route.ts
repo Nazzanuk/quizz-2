@@ -13,6 +13,7 @@ import {
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 import {
   DEFAULT_QUESTION_COUNT,
   DEFAULT_QUESTIONS_PER_RUN,
@@ -35,6 +36,9 @@ export async function POST(req: Request) {
   if (!sessionUser) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  const limited = await enforceRateLimit(`gen:${sessionUser.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const body = await req.json();
   const { topic, material, count } = body as {

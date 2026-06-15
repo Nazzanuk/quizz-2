@@ -3,6 +3,7 @@ import { generateCoverImage } from '@/Lib/Ai/ImageGen';
 import { getQuiz, updateQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 
 export async function POST(req: Request) {
   await runMigrations();
@@ -28,6 +29,9 @@ export async function POST(req: Request) {
   if (quiz.ownerId !== sessionUser.id) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
+
+  const limited = await enforceRateLimit(`gen:${sessionUser.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const imageUrl = await generateCoverImage(topic);
   await updateQuiz(quizId, { coverImageUrl: imageUrl });

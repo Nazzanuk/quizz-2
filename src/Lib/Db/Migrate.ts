@@ -53,6 +53,12 @@ export async function runMigrations(): Promise<void> {
     created_at TEXT NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS rate_limits (
+    key TEXT PRIMARY KEY,
+    count INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL
+  )`);
+
   await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_results (
     id TEXT PRIMARY KEY,
     quiz_id TEXT NOT NULL,
@@ -186,6 +192,13 @@ export async function runMigrations(): Promise<void> {
   // Speeds up the per-quiz, per-user run history and leaderboard aggregation.
   try {
     await db.run(sql`CREATE INDEX IF NOT EXISTS quiz_runs_quiz_user ON quiz_runs(quiz_id, user_id)`);
+  } catch {
+    // index already exists — ignore
+  }
+
+  // Cheap expiry sweep for rate-limit counters.
+  try {
+    await db.run(sql`CREATE INDEX IF NOT EXISTS rate_limits_expires ON rate_limits(expires_at)`);
   } catch {
     // index already exists — ignore
   }
