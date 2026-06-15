@@ -24,7 +24,7 @@ function buildDefaultProfile(): PlayerProfile {
     bestStreak: 0,
     fastestMs: null,
     lastPlayedAt: null,
-    preferredMode: 'default',
+    preferredMode: 'quick',
     hostVoiceEnabled: false,
     hideTextUi: false,
     selectedHost: 'sarcastic_pub_host',

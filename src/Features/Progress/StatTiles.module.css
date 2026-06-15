@@ -4,6 +4,12 @@
   gap: 0.75rem;
 }
 
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 .tile {
   min-height: 7rem;
   padding: 0.8rem;

@@ -336,6 +336,31 @@
   to { transform: translateY(100%); }
 }
 
+/* Desktop: the bottom sheet becomes a centered modal (drag-up affordance and
+   bottom-anchored framing don't make sense with a pointer). */
+@media (min-width: 900px) {
+  .backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    max-height: 86dvh;
+    padding-bottom: 1.35rem;
+    border-bottom: var(--neo-border);
+    box-shadow: var(--neo-shadow-lg);
+    animation: panelPopIn 180ms ease-out both;
+  }
+
+  .grabber {
+    display: none;
+  }
+}
+
+@keyframes panelPopIn {
+  from { transform: translateY(14px); }
+  to { transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .backdrop::before,
   .backdropClosing::before,

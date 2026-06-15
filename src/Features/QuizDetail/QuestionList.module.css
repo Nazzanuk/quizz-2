@@ -4,6 +4,14 @@
   gap: 1rem;
 }
 
+@media (min-width: 900px) {
+  .list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
 .empty {
   padding: 1rem;
   background: var(--neo-secondary);

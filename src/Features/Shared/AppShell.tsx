@@ -23,6 +23,17 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
   const releaseExitGuard = useAtomValue(playExitGuardAtom);
   const focused = variant === 'focused';
 
+  const handleBack = () => {
+    // Cold deep links (e.g. a shared /quiz/:id link) have no in-app history,
+    // so back() would dead-end to the external referrer. Send those home
+    // instead — a native-feeling "up" path that never leaves the app.
+    if (hasInAppHistory()) {
+      back();
+    } else {
+      replace('/');
+    }
+  };
+
   const handleExit = () => {
     const quizId = pathname.match(/^\/quiz\/([^/]+)\/play/)?.[1];
     const exitHref = quizId ? `/quiz/${quizId}` : '/';
@@ -63,7 +74,7 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
         ) : !isHome ? (
           <button
             className={styles.iconButton}
-            onClick={back}
+            onClick={handleBack}
             aria-label="Go back"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

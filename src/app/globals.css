@@ -25,6 +25,9 @@
   --content-max: 1100px;
   --content-pad: clamp(1rem, 5vw, 2rem);
 
+  --rail-width: 88px;
+  --shell-max: 760px;
+
   --motion-press: 100ms;
   --motion-fast: 160ms;
   --motion-base: 260ms;
@@ -116,6 +119,17 @@ body::after {
   color: transparent;
   -webkit-text-stroke: 3px var(--neo-ink);
   transform: rotate(-8deg);
+}
+
+/* On desktop the content card centers and shrinks relative to the viewport,
+   so rein in the viewport-fixed "QUIZZ" backdrop and tuck it into the right
+   gutter instead of letting 34vw blow it across the whole screen. */
+@media (min-width: 900px) {
+  body::after {
+    right: clamp(1rem, 4vw, 5rem);
+    bottom: 3rem;
+    font-size: clamp(8rem, 18vw, 16rem);
+  }
 }
 
 h1,

@@ -58,7 +58,7 @@ export const hideTextUiAtom = atom(
 );
 
 const baseHostModeAtom = atom<HostMode>(
-  typeof window !== 'undefined' ? getPlayerProfile().preferredMode : 'default',
+  typeof window !== 'undefined' ? getPlayerProfile().preferredMode : 'quick',
 );
 
 export const hostModeAtom = atom(

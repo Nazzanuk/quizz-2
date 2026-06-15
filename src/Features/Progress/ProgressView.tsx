@@ -61,8 +61,10 @@ export default function ProgressView() {
         ) : (
           <>
             <StatTiles totals={totals} />
-            <CategoryBars profile={profile} />
-            <RunHistory runs={stats?.runs ?? []} />
+            <div className={styles.sections}>
+              <CategoryBars profile={profile} />
+              <RunHistory runs={stats?.runs ?? []} />
+            </div>
           </>
         )}
       </div>

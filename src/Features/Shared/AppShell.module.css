@@ -115,3 +115,34 @@
     padding-top: calc(3.75rem + env(safe-area-inset-top));
   }
 }
+
+/* Desktop: unlock the 500px phone column, surface a persistent left nav rail
+   (TabBar becomes vertical — see TabBar.module.css), and let content breathe.
+   The focused (play) shell intentionally stays phone-width. */
+@media (min-width: 900px) {
+  .shell:not(.shellFocused) {
+    width: 100%;
+    max-width: var(--shell-max);
+    padding-left: var(--rail-width);
+  }
+
+  .shell:not(.shellFocused) .header {
+    width: 100%;
+    max-width: var(--shell-max);
+    padding-left: calc(var(--rail-width) + var(--content-pad));
+  }
+
+  .shell:not(.shellFocused) .main {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (min-width: 1280px) {
+  .shell:not(.shellFocused) {
+    max-width: var(--content-max);
+  }
+
+  .shell:not(.shellFocused) .header {
+    max-width: var(--content-max);
+  }
+}
