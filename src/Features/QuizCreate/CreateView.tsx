@@ -4,13 +4,16 @@ import { useState } from 'react';
 import { useAtom } from 'jotai';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { createTopicAtom, createMaterialAtom } from '@/State/QuizAtoms';
-import { generateQuiz } from '@/Lib/Api/Client';
+import { generateQuiz, ApiError } from '@/Lib/Api/Client';
+import { useAccount } from '@/Lib/Hooks/UseAccount';
 import { DEFAULT_QUESTION_COUNT } from '@/Lib/Constants';
 import type { Quiz } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import ScrollReveal from '@/Features/Shared/ScrollReveal';
 import Button from '@/Features/Shared/Button';
+import Card from '@/Features/Shared/Card';
+import SignInButton from '@/Features/Shared/SignInButton';
 import TopicInput from './TopicInput';
 import MaterialPaste from './MaterialPaste';
 import CountPicker from './CountPicker';
@@ -20,6 +23,7 @@ import styles from './CreateView.module.css';
 
 export default function CreateView() {
   const { navigate } = useTransitionRouter();
+  const { account, loading, signedIn, reload } = useAccount();
   const [topic, setTopic] = useAtom(createTopicAtom);
   const [material, setMaterial] = useAtom(createMaterialAtom);
   const [count, setCount] = useState(DEFAULT_QUESTION_COUNT);
@@ -27,7 +31,8 @@ export default function CreateView() {
   const [createdQuiz, setCreatedQuiz] = useState<Quiz | null>(null);
   const [error, setError] = useState('');
 
-  const canSubmit = (topic.trim() || material.trim()) && !generating;
+  const outOfCredits = account !== null && account.credits <= 0;
+  const canSubmit = (topic.trim() || material.trim()) && !generating && !outOfCredits;
 
   const handleGenerate = async () => {
     setError('');
@@ -41,9 +46,17 @@ export default function CreateView() {
       setTopic('');
       setMaterial('');
       setCreatedQuiz(quiz);
-      setGenerating(false);
+      reload(); // refresh the credit balance after a successful spend
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Generation failed');
+      if (err instanceof ApiError && err.code === 'out_of_credits') {
+        setError("You're out of credits. They refresh at the start of each month.");
+        reload();
+      } else if (err instanceof ApiError && err.status === 401) {
+        setError('Please sign in to generate a quiz.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Generation failed');
+      }
+    } finally {
       setGenerating(false);
     }
   };
@@ -85,22 +98,41 @@ export default function CreateView() {
           </p>
         </ScrollReveal>
 
-        <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
-          <TopicInput value={topic} onChange={setTopic} />
-          <MaterialPaste value={material} onChange={setMaterial} />
-          <CountPicker value={count} onChange={setCount} />
+        {!loading && !signedIn ? (
+          <Card color="lavender">
+            <p className={styles.kicker}>Sign in to create</p>
+            <p>
+              Generating a quiz uses AI, so it needs an account. New creators get a free
+              monthly bundle of credits to start.
+            </p>
+            <SignInButton callbackURL="/create" fullWidth />
+          </Card>
+        ) : (
+          <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+            <TopicInput value={topic} onChange={setTopic} />
+            <MaterialPaste value={material} onChange={setMaterial} />
+            <CountPicker value={count} onChange={setCount} />
 
-          {error && <p className={styles.error} role="alert">{error}</p>}
+            {account !== null && (
+              <p className={styles.credits} aria-live="polite">
+                {account.credits > 0
+                  ? `${account.credits} credit${account.credits === 1 ? '' : 's'} remaining`
+                  : 'No credits left — they refresh monthly.'}
+              </p>
+            )}
 
-          <Button
-            variant="primary"
-            fullWidth
-            disabled={!canSubmit}
-            onClick={handleGenerate}
-          >
-            Generate quiz
-          </Button>
-        </form>
+            {error && <p className={styles.error} role="alert">{error}</p>}
+
+            <Button
+              variant="primary"
+              fullWidth
+              disabled={!canSubmit}
+              onClick={handleGenerate}
+            >
+              Generate quiz
+            </Button>
+          </form>
+        )}
       </div>
     </AppShell>
   );

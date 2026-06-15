@@ -7,12 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate-sounds": "npx tsx scripts/generate-sounds.ts"
+    "generate-sounds": "npx tsx scripts/generate-sounds.ts",
+    "backfill-owner": "npx tsx scripts/backfill-owner.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@libsql/client": "^0.17.3",
     "@serwist/next": "^9.5.11",
+    "better-auth": "^1.6.18",
     "drizzle-orm": "^0.45.2",
     "jotai": "^2.20.0",
     "next": "16.2.6",

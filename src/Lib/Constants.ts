@@ -59,3 +59,9 @@ export const MIN_QUESTION_COUNT = 3;
 export const DEFAULT_QUESTIONS_PER_RUN = 20;
 // Preset choices offered when generating a quiz or picking questions per run.
 export const QUESTION_COUNT_OPTIONS = [10, 20, 30, 40, 50];
+
+// Credits gate the money-spending Creator actions (AI generation). New users
+// get this bundle on first sign-in, and it refreshes back up to this amount
+// once per calendar month. One quiz generation (or "generate more" batch)
+// costs 1 credit.
+export const STARTER_CREDITS = 5;

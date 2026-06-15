@@ -1,4 +1,5 @@
 import type {
+  AccountResponse,
   GenerateQuizRequest,
   HostRecapRequest,
   HostRecapResponse,
@@ -16,6 +17,19 @@ import type {
 
 const BASE = '/api';
 
+// Carries the HTTP status + machine-readable error code so callers can branch
+// on e.g. 401 (sign in) vs 403 'out_of_credits' without string-matching.
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly code: string,
+    message: string,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -23,9 +37,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? `Request failed: ${res.status}`);
+    const code = typeof body.error === 'string' ? body.error : `http_${res.status}`;
+    throw new ApiError(res.status, code, body.error ?? `Request failed: ${res.status}`);
   }
   return res.json();
+}
+
+export function fetchAccount(): Promise<AccountResponse> {
+  return request('/account');
 }
 
 export function fetchQuizzes(): Promise<Quiz[]> {

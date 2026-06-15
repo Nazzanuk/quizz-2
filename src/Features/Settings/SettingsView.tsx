@@ -3,6 +3,7 @@
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import SettingsControls from '@/Features/Shared/SettingsControls';
+import AccountPanel from './AccountPanel';
 import styles from './SettingsView.module.css';
 
 export default function SettingsView() {
@@ -19,6 +20,7 @@ export default function SettingsView() {
         <p className={styles.subhead}>
           Tune sound, haptics, host behavior, and play focus without leaving the main navigation.
         </p>
+        <AccountPanel className={styles.controls} />
         <SettingsControls className={styles.controls} />
       </div>
     </AppShell>

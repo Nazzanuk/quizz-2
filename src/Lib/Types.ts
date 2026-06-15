@@ -107,8 +107,31 @@ export function normalizeHostConfidenceLevel(
   return null;
 }
 
+export const QUIZ_VISIBILITIES = [
+  'private',
+  'unlisted',
+  'public',
+] as const;
+
+export type QuizVisibility = (typeof QUIZ_VISIBILITIES)[number];
+
+export function isQuizVisibility(value: string): value is QuizVisibility {
+  return (QUIZ_VISIBILITIES as readonly string[]).includes(value);
+}
+
+// Unlisted is the default for anything missing/unknown: playable by link,
+// hidden from feeds. Matches how legacy ownerless quizzes are treated.
+export function normalizeQuizVisibility(
+  value: string | null | undefined,
+): QuizVisibility {
+  if (value && isQuizVisibility(value)) return value;
+  return 'unlisted';
+}
+
 export interface Quiz {
   id: string;
+  ownerId: string | null;
+  visibility: QuizVisibility;
   title: string;
   description: string | null;
   topic: string | null;
@@ -231,6 +254,14 @@ export interface StatsTotals {
 export interface StatsResponse {
   runs: QuizRunWithTitle[];
   totals: StatsTotals;
+}
+
+export interface AccountResponse {
+  id: string;
+  name: string;
+  email: string;
+  image: string | null;
+  credits: number;
 }
 
 export interface GenerateQuizRequest {

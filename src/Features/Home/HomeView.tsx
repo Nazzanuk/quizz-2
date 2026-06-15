@@ -4,21 +4,20 @@ import Link from '@/Features/Shared/TransitionLink';
 import { useAtomValue } from 'jotai';
 import { filteredQuizListAtom, isLoadingAtom, quizListAtom } from '@/State/QuizAtoms';
 import { useQuizzes } from '@/Lib/Hooks/UseQuizzes';
+import { useSession } from '@/Lib/Auth/Client';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import ScrollReveal from '@/Features/Shared/ScrollReveal';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
+import SignInButton from '@/Features/Shared/SignInButton';
 import QuizList from './QuizList';
 import EmptyState from './EmptyState';
 import LibraryControls from './LibraryControls';
 import styles from './HomeView.module.css';
 
 export default function HomeView() {
-  useQuizzes();
-  const quizzes = useAtomValue(filteredQuizListAtom);
-  const allQuizzes = useAtomValue(quizListAtom);
-  const isLoading = useAtomValue(isLoadingAtom);
+  const { data: session, isPending } = useSession();
 
   return (
     <AppShell>
@@ -36,9 +35,13 @@ export default function HomeView() {
             short, high-energy sessions.
           </p>
           <div className={styles.actions}>
-            <Link href="/create">
-              <Button variant="primary">Create a quiz</Button>
-            </Link>
+            {session?.user ? (
+              <Link href="/create">
+                <Button variant="primary">Create a quiz</Button>
+              </Link>
+            ) : (
+              <SignInButton callbackURL="/" label="Sign in to build quizzes" />
+            )}
           </div>
         </ScrollReveal>
         <div className="neo-marquee" aria-hidden="true">
@@ -47,19 +50,55 @@ export default function HomeView() {
         </div>
       </section>
 
-      <section className={styles.list}>
-        {allQuizzes.length > 0 && <LibraryControls />}
-        {isLoading && allQuizzes.length === 0 ? (
+      {isPending ? (
+        <section className={styles.list}>
           <HomeLoadingState />
-        ) : allQuizzes.length === 0 ? (
-          <EmptyState />
-        ) : quizzes.length === 0 ? (
-          <p className={styles.noMatches}>No quizzes match that filter yet.</p>
-        ) : (
-          <QuizList quizzes={quizzes} />
-        )}
-      </section>
+        </section>
+      ) : session?.user ? (
+        <SignedInLibrary />
+      ) : (
+        <section className={styles.list}>
+          <SignedOutPrompt />
+        </section>
+      )}
     </AppShell>
+  );
+}
+
+function SignedInLibrary() {
+  useQuizzes();
+  const quizzes = useAtomValue(filteredQuizListAtom);
+  const allQuizzes = useAtomValue(quizListAtom);
+  const isLoading = useAtomValue(isLoadingAtom);
+
+  return (
+    <section className={styles.list}>
+      {allQuizzes.length > 0 && <LibraryControls />}
+      {isLoading && allQuizzes.length === 0 ? (
+        <HomeLoadingState />
+      ) : allQuizzes.length === 0 ? (
+        <EmptyState />
+      ) : quizzes.length === 0 ? (
+        <p className={styles.noMatches}>No quizzes match that filter yet.</p>
+      ) : (
+        <QuizList quizzes={quizzes} />
+      )}
+    </section>
+  );
+}
+
+function SignedOutPrompt() {
+  return (
+    <Card color="lavender">
+      <p className={styles.kicker}>Free to play, sign in to create</p>
+      <p>
+        Anyone can play a shared quiz link — no account needed. Sign in with Google to
+        generate your own quizzes and keep them in your library.
+      </p>
+      <div className={styles.actions}>
+        <SignInButton callbackURL="/" />
+      </div>
+    </Card>
   );
 }
 

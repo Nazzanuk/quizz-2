@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { generateQuestionImage } from '@/Lib/Ai/ImageGen';
 import { runMigrations } from '@/Lib/Db/Migrate';
-import { updateQuestion } from '@/Lib/Db/Queries';
+import { getQuiz, updateQuestion } from '@/Lib/Db/Queries';
+import { getSessionUser } from '@/Lib/Auth/Session';
 
 interface Params {
   params: Promise<{ quizId: string; questionId: string }>;
@@ -10,7 +11,21 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   await runMigrations();
 
-  const { questionId } = await params;
+  const { quizId, questionId } = await params;
+
+  const sessionUser = await getSessionUser(req);
+  if (!sessionUser) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  const quiz = await getQuiz(quizId);
+  if (!quiz) {
+    return NextResponse.json({ error: 'not found' }, { status: 404 });
+  }
+  if (quiz.ownerId !== sessionUser.id) {
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  }
+
   const { imagePrompt } = await req.json() as { imagePrompt?: string };
   const prompt = imagePrompt?.trim();
 

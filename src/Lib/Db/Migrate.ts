@@ -86,6 +86,59 @@ export async function runMigrations(): Promise<void> {
     FOREIGN KEY (run_id) REFERENCES quiz_runs(id) ON DELETE CASCADE
   )`);
 
+  // Better Auth tables (see src/Lib/Auth/Auth.ts). Timestamps + booleans are
+  // INTEGER because the Drizzle schema reads/writes them in timestamp/boolean
+  // mode; only Better Auth touches these tables, so the encoding stays internal.
+  await db.run(sql`CREATE TABLE IF NOT EXISTS user (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    email_verified INTEGER NOT NULL DEFAULT 0,
+    image TEXT,
+    credits INTEGER NOT NULL DEFAULT 0,
+    credits_refreshed_at TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`);
+
+  await db.run(sql`CREATE TABLE IF NOT EXISTS session (
+    id TEXT PRIMARY KEY,
+    expires_at INTEGER NOT NULL,
+    token TEXT NOT NULL UNIQUE,
+    ip_address TEXT,
+    user_agent TEXT,
+    user_id TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+  )`);
+
+  await db.run(sql`CREATE TABLE IF NOT EXISTS account (
+    id TEXT PRIMARY KEY,
+    account_id TEXT NOT NULL,
+    provider_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    access_token TEXT,
+    refresh_token TEXT,
+    id_token TEXT,
+    access_token_expires_at INTEGER,
+    refresh_token_expires_at INTEGER,
+    scope TEXT,
+    password TEXT,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE
+  )`);
+
+  await db.run(sql`CREATE TABLE IF NOT EXISTS verification (
+    id TEXT PRIMARY KEY,
+    identifier TEXT NOT NULL,
+    value TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at INTEGER,
+    updated_at INTEGER
+  )`);
+
   for (const stmt of [
     sql`ALTER TABLE quizzes ADD COLUMN questions_per_run INTEGER`,
     sql`ALTER TABLE questions ADD COLUMN image_url TEXT`,
@@ -96,6 +149,10 @@ export async function runMigrations(): Promise<void> {
     sql`ALTER TABLE questions ADD COLUMN explanation TEXT`,
     sql`ALTER TABLE questions ADD COLUMN fact_text TEXT`,
     sql`ALTER TABLE questions ADD COLUMN tags TEXT`,
+    // Ownership + visibility, added when auth landed. Existing rows get NULL
+    // owner (backfilled separately) and are treated as 'unlisted' at read time.
+    sql`ALTER TABLE quizzes ADD COLUMN owner_id TEXT`,
+    sql`ALTER TABLE quizzes ADD COLUMN visibility TEXT`,
   ]) {
     try {
       await db.run(stmt);

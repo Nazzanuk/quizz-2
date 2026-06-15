@@ -7,8 +7,12 @@ import {
   updateQuiz,
   updateQuestionImage,
   updateQuestionOptionImages,
+  getUserCredits,
+  deductCredit,
+  refundCredit,
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
+import { getSessionUser } from '@/Lib/Auth/Session';
 import {
   DEFAULT_QUESTION_COUNT,
   DEFAULT_QUESTIONS_PER_RUN,
@@ -25,6 +29,13 @@ function clampCount(value: number | undefined): number {
 export async function POST(req: Request) {
   await runMigrations();
 
+  // Creator-gated + metered: AI generation costs money, so require a signed-in
+  // user with at least one credit. Anonymous players never reach here.
+  const sessionUser = await getSessionUser(req);
+  if (!sessionUser) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
   const body = await req.json();
   const { topic, material, count } = body as {
     topic?: string;
@@ -39,16 +50,35 @@ export async function POST(req: Request) {
     );
   }
 
-  const generated = await generateQuiz({
-    topic,
-    material,
-    count: clampCount(count),
-  });
+  // Apply any due monthly refresh, then spend one credit up front. If the
+  // deduction fails the user is out of credits — bail before calling the model.
+  await getUserCredits(sessionUser.id);
+  const remaining = await deductCredit(sessionUser.id);
+  if (remaining === null) {
+    return NextResponse.json(
+      { error: 'out_of_credits' },
+      { status: 403 },
+    );
+  }
+
+  let generated;
+  try {
+    generated = await generateQuiz({
+      topic,
+      material,
+      count: clampCount(count),
+    });
+  } catch (err) {
+    // Refund the credit if generation never produced anything.
+    await refundCredit(sessionUser.id);
+    throw err;
+  }
 
   const quizId = crypto.randomUUID();
 
   const quiz = await insertQuiz({
     id: quizId,
+    ownerId: sessionUser.id,
     title: generated.title,
     description: generated.description,
     topic: topic ?? undefined,

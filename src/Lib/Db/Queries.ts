@@ -1,12 +1,13 @@
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults, quizRuns, questionAttempts } from './Schema';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user } from './Schema';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
   normalizeHostPersona,
   normalizeQuestionDifficulty,
   normalizeQuizFormat,
+  normalizeQuizVisibility,
   type HostMode,
   type HostPersona,
   type QuestionAttempt,
@@ -18,23 +19,27 @@ import {
   type QuizFormat,
   type QuizRun,
   type QuizRunWithTitle,
+  type QuizVisibility,
   type StatsTotals,
   type ResultsSummary,
   type SaveResultAttemptInput,
 } from '../Types';
+import { STARTER_CREDITS } from '../Constants';
 import { nowISO } from '../Utils';
 
-export async function listQuizzes(): Promise<Quiz[]> {
+// Owner-scoped: the dashboard only ever lists the signed-in creator's quizzes.
+export async function listQuizzes(ownerId: string): Promise<Quiz[]> {
   const rows = await db
     .select()
     .from(quizzes)
+    .where(eq(quizzes.ownerId, ownerId))
     .orderBy(desc(quizzes.updatedAt));
-  return rows as Quiz[];
+  return rows.map(parseQuiz);
 }
 
 export async function getQuiz(id: string): Promise<Quiz | undefined> {
   const [row] = await db.select().from(quizzes).where(eq(quizzes.id, id));
-  return row as Quiz | undefined;
+  return row ? parseQuiz(row) : undefined;
 }
 
 export async function getQuestions(quizId: string): Promise<Question[]> {
@@ -48,6 +53,8 @@ export async function getQuestions(quizId: string): Promise<Question[]> {
 
 export async function insertQuiz(data: {
   id: string;
+  ownerId?: string | null;
+  visibility?: QuizVisibility;
   title: string;
   description?: string;
   topic?: string;
@@ -59,9 +66,15 @@ export async function insertQuiz(data: {
   const now = nowISO();
   const [row] = await db
     .insert(quizzes)
-    .values({ ...data, createdAt: now, updatedAt: now })
+    .values({
+      ...data,
+      ownerId: data.ownerId ?? null,
+      visibility: data.visibility ?? 'unlisted',
+      createdAt: now,
+      updatedAt: now,
+    })
     .returning();
-  return row as Quiz;
+  return parseQuiz(row);
 }
 
 type InsertQuestion = {
@@ -443,6 +456,91 @@ export async function insertImage(id: string, data: string, mimeType: string): P
 export async function getImage(id: string): Promise<{ data: string; mimeType: string } | null> {
   const [row] = await db.select().from(images).where(eq(images.id, id));
   return row ? { data: row.data, mimeType: row.mimeType } : null;
+}
+
+// --- Credits ---------------------------------------------------------------
+
+// Reads a user's current credit balance, performing a lazy monthly refresh:
+// if the last refresh was in a previous calendar month, top the balance back
+// up to STARTER_CREDITS (never reducing an existing higher balance). Returns
+// null if the user does not exist.
+export async function getUserCredits(userId: string): Promise<number | null> {
+  const [row] = await db
+    .select({ credits: user.credits, refreshedAt: user.creditsRefreshedAt })
+    .from(user)
+    .where(eq(user.id, userId));
+  if (!row) return null;
+
+  const now = new Date();
+  const last = row.refreshedAt ? new Date(row.refreshedAt) : null;
+  const isNewMonth =
+    !last ||
+    last.getUTCFullYear() !== now.getUTCFullYear() ||
+    last.getUTCMonth() !== now.getUTCMonth();
+
+  if (isNewMonth) {
+    const refreshed = Math.max(row.credits, STARTER_CREDITS);
+    await db
+      .update(user)
+      .set({ credits: refreshed, creditsRefreshedAt: now.toISOString() })
+      .where(eq(user.id, userId));
+    return refreshed;
+  }
+
+  return row.credits;
+}
+
+export async function getUserByEmail(
+  email: string,
+): Promise<{ id: string; email: string; name: string } | null> {
+  const [row] = await db
+    .select({ id: user.id, email: user.email, name: user.name })
+    .from(user)
+    .where(eq(user.email, email));
+  return row ?? null;
+}
+
+// Atomically spends one credit. Returns the new balance, or null when the user
+// has none left (so the caller can return 403 before touching the AI provider).
+export async function deductCredit(userId: string): Promise<number | null> {
+  const rows = await db
+    .update(user)
+    .set({ credits: sql`${user.credits} - 1` })
+    .where(and(eq(user.id, userId), gt(user.credits, 0)))
+    .returning({ credits: user.credits });
+  return rows.length > 0 ? rows[0].credits : null;
+}
+
+// Returns a previously-spent credit, e.g. when generation throws before
+// producing a quiz. Best-effort; no-op if the user vanished.
+export async function refundCredit(userId: string): Promise<void> {
+  await db
+    .update(user)
+    .set({ credits: sql`${user.credits} + 1` })
+    .where(eq(user.id, userId));
+}
+
+// One-off backfill: assign every ownerless quiz to a user (admin) and stamp a
+// visibility. Used by scripts/backfill-owner.ts. Returns rows affected.
+export async function backfillQuizOwner(
+  ownerId: string,
+  visibility: QuizVisibility = 'unlisted',
+): Promise<number> {
+  const rows = await db
+    .update(quizzes)
+    .set({ ownerId, visibility })
+    .where(sql`${quizzes.ownerId} IS NULL`)
+    .returning({ id: quizzes.id });
+  return rows.length;
+}
+
+function parseQuiz(row: typeof quizzes.$inferSelect): Quiz {
+  return {
+    ...row,
+    ownerId: row.ownerId ?? null,
+    visibility: normalizeQuizVisibility(row.visibility),
+    questionCount: row.questionCount ?? 0,
+  } as Quiz;
 }
 
 function parseQuestion(row: typeof questions.$inferSelect): Question {
