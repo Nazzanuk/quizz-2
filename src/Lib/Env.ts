@@ -37,6 +37,9 @@ const schema = z.object({
   // Host voice (optional feature; absence degrades gracefully).
   ELEVENLABS_API_KEY: optionalString,
   ELEVENLABS_MODEL_ID: optionalString,
+
+  // Comma-separated list of admin emails (moderation access). Optional.
+  ADMIN_EMAILS: optionalString,
 });
 
 function parseEnv(): z.infer<typeof schema> {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getQuiz, getQuestions, updateQuiz, deleteQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { isAdminEmail } from '@/Lib/Auth/Admin';
 import { isQuizVisibility, type Quiz } from '@/Lib/Types';
 
 interface Params {
@@ -20,10 +21,13 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
   }
 
-  if (quiz.visibility === 'private') {
+  // Private and blocked (taken-down) quizzes are visible only to their owner or
+  // an admin; everyone else gets a 404 that doesn't leak their existence.
+  if (quiz.visibility === 'private' || quiz.status === 'blocked') {
     const sessionUser = await getSessionUser(req);
-    if (!sessionUser || sessionUser.id !== quiz.ownerId) {
-      // Don't leak existence of a private quiz.
+    const allowed = sessionUser != null &&
+      (sessionUser.id === quiz.ownerId || isAdminEmail(sessionUser.email));
+    if (!allowed) {
       return NextResponse.json({ error: 'not found' }, { status: 404 });
     }
   }

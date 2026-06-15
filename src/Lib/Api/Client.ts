@@ -10,7 +10,9 @@ import type {
   QuizLeaderboard,
   QuizRun,
   QuizRunDetail,
+  QuizStatus,
   QuizWithQuestions,
+  ReportedQuiz,
   ResultsSummary,
   SaveResultRequest,
   StatsResponse,
@@ -78,6 +80,24 @@ export function fetchLeaderboard(quizId: string, limit = 10): Promise<QuizLeader
 
 export function fetchTopQuizzes(limit = 5): Promise<TopQuiz[]> {
   return request(`/discover?limit=${limit}`);
+}
+
+export function reportQuiz(quizId: string, reason?: string): Promise<{ ok: true }> {
+  return request(`/quizzes/${quizId}/report`, {
+    method: 'POST',
+    body: JSON.stringify({ reason: reason ?? null }),
+  });
+}
+
+export function fetchReportedQuizzes(): Promise<ReportedQuiz[]> {
+  return request('/admin/reports');
+}
+
+export function setQuizStatus(quizId: string, status: QuizStatus): Promise<{ ok: true; status: QuizStatus }> {
+  return request(`/admin/quizzes/${quizId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status }),
+  });
 }
 
 export function fetchQuizzes(): Promise<Quiz[]> {

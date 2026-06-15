@@ -45,6 +45,14 @@ export async function runMigrations(): Promise<void> {
     mime_type TEXT NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_reports (
+    id TEXT PRIMARY KEY,
+    quiz_id TEXT NOT NULL,
+    reporter_id TEXT,
+    reason TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
   await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_results (
     id TEXT PRIMARY KEY,
     quiz_id TEXT NOT NULL,
@@ -157,6 +165,8 @@ export async function runMigrations(): Promise<void> {
     // give users a chosen public handle for leaderboards.
     sql`ALTER TABLE quiz_runs ADD COLUMN user_id TEXT`,
     sql`ALTER TABLE user ADD COLUMN username TEXT`,
+    // Moderation status for takedowns (null = active).
+    sql`ALTER TABLE quizzes ADD COLUMN status TEXT`,
   ]) {
     try {
       await db.run(stmt);

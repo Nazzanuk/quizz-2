@@ -14,6 +14,7 @@ function toQuiz(entry: ViewedQuiz): Quiz {
     id: entry.id,
     ownerId: null,
     visibility: 'unlisted',
+    status: 'active',
     title: entry.title,
     description: null,
     topic: null,

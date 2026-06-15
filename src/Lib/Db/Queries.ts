@@ -1,12 +1,13 @@
 import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account } from './Schema';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account, quizReports } from './Schema';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
   normalizeHostPersona,
   normalizeQuestionDifficulty,
   normalizeQuizFormat,
+  normalizeQuizStatus,
   normalizeQuizVisibility,
   type HostMode,
   type HostPersona,
@@ -18,6 +19,8 @@ import {
   type Quiz,
   type QuizAggregateStats,
   type QuizFormat,
+  type QuizStatus,
+  type ReportedQuiz,
   type TopQuiz,
   type QuizRun,
   type QuizRunWithTitle,
@@ -544,8 +547,12 @@ export async function getTopQuizzes(limit = 5): Promise<TopQuiz[]> {
     .select({ quiz: quizzes, plays: sql<number>`count(${quizRuns.id})` })
     .from(quizzes)
     .innerJoin(quizRuns, eq(quizRuns.quizId, quizzes.id))
-    // Discover lists only quizzes the creator explicitly made public.
-    .where(eq(quizzes.visibility, 'public'))
+    // Discover lists only quizzes the creator explicitly made public, and never
+    // anything taken down by moderation.
+    .where(and(
+      eq(quizzes.visibility, 'public'),
+      sql`(${quizzes.status} IS NULL OR ${quizzes.status} != 'blocked')`,
+    ))
     .groupBy(quizzes.id)
     .orderBy(desc(sql`count(${quizRuns.id})`))
     .limit(limit);
@@ -584,6 +591,57 @@ export async function isUsernameTaken(username: string, excludeUserId: string): 
 
 export async function setUsername(userId: string, username: string): Promise<void> {
   await db.update(user).set({ username }).where(eq(user.id, userId));
+}
+
+// --- Moderation: reports & takedowns ---------------------------------------
+
+export async function insertQuizReport(data: {
+  quizId: string;
+  reporterId: string | null;
+  reason: string | null;
+}): Promise<void> {
+  await db.insert(quizReports).values({
+    id: crypto.randomUUID(),
+    quizId: data.quizId,
+    reporterId: data.reporterId,
+    reason: data.reason,
+    createdAt: nowISO(),
+  });
+}
+
+export async function setQuizStatus(quizId: string, status: QuizStatus): Promise<void> {
+  await db.update(quizzes).set({ status, updatedAt: nowISO() }).where(eq(quizzes.id, quizId));
+}
+
+// Admin moderation view: every reported quiz with its report count, latest
+// report time, and the distinct reasons given.
+export async function listReportedQuizzes(): Promise<ReportedQuiz[]> {
+  const reports = await db.select().from(quizReports);
+  if (reports.length === 0) return [];
+
+  const quizIds = [...new Set(reports.map((r) => r.quizId))];
+  const quizRows = await db.select().from(quizzes).where(inArray(quizzes.id, quizIds));
+  const quizById = new Map(quizRows.map((row) => [row.id, parseQuiz(row)]));
+
+  const grouped = new Map<string, ReportedQuiz>();
+  for (const report of reports) {
+    const quiz = quizById.get(report.quizId);
+    const entry = grouped.get(report.quizId) ?? {
+      quizId: report.quizId,
+      title: quiz?.title ?? 'Deleted quiz',
+      status: quiz?.status ?? 'active',
+      visibility: quiz?.visibility ?? 'unlisted',
+      reportCount: 0,
+      lastReportedAt: report.createdAt,
+      reasons: [] as string[],
+    };
+    entry.reportCount += 1;
+    if (report.createdAt > entry.lastReportedAt) entry.lastReportedAt = report.createdAt;
+    if (report.reason && !entry.reasons.includes(report.reason)) entry.reasons.push(report.reason);
+    grouped.set(report.quizId, entry);
+  }
+
+  return [...grouped.values()].sort((a, b) => b.lastReportedAt.localeCompare(a.lastReportedAt));
 }
 
 // --- Data export & account deletion (GDPR/CCPA) ----------------------------
@@ -759,6 +817,7 @@ function parseQuiz(row: typeof quizzes.$inferSelect): Quiz {
     ...row,
     ownerId: row.ownerId ?? null,
     visibility: normalizeQuizVisibility(row.visibility),
+    status: normalizeQuizStatus(row.status),
     questionCount: row.questionCount ?? 0,
   } as Quiz;
 }

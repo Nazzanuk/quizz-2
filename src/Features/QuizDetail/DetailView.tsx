@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
-import { fetchQuizRuns, getResultsSummary } from '@/Lib/Api/Client';
+import { fetchQuizRuns, getResultsSummary, reportQuiz } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { useSession } from '@/Lib/Auth/Client';
 import { recordViewedQuiz } from '@/Lib/ViewedQuizzes';
 import { DEFAULT_QUESTIONS_PER_RUN } from '@/Lib/Constants';
 import type { QuizRun, QuizVisibility, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
-import { addToastAtom } from '@/State/UiAtoms';
+import { addToastAtom, confirmDialogAtom } from '@/State/UiAtoms';
 import { haptic } from '@/Features/Shared/Haptic';
 import { shareLink } from '@/Features/Shared/Share';
 import AppShell from '@/Features/Shared/AppShell';
@@ -39,6 +39,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
   const [runs, setRuns] = useState<QuizRun[]>([]);
   const [runsLoaded, setRunsLoaded] = useState(false);
   const addToast = useSetAtom(addToastAtom);
+  const setConfirm = useSetAtom(confirmDialogAtom);
 
   useEffect(() => {
     getResultsSummary(quizId)
@@ -80,6 +81,23 @@ export default function DetailView({ quizId }: DetailViewProps) {
       type: result === null ? 'error' : 'success',
     });
     haptic('tap');
+  };
+
+  const handleReport = () => {
+    setConfirm({
+      title: 'Report this quiz',
+      message: 'Flag this quiz for review if it looks harmful, abusive, or inappropriate. Our team will take a look.',
+      confirmLabel: 'Report',
+      onConfirm: async () => {
+        try {
+          await reportQuiz(quizId);
+          addToast({ message: 'Thanks — this quiz has been reported', type: 'success' });
+          haptic('tap');
+        } catch {
+          addToast({ message: 'Could not submit your report', type: 'error' });
+        }
+      },
+    });
   };
 
   if (!quiz) {
@@ -178,11 +196,15 @@ export default function DetailView({ quizId }: DetailViewProps) {
           )}
         </section>
 
-        {session?.user?.id === quiz.ownerId && (
+        {session?.user?.id === quiz.ownerId ? (
           <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
             <Button variant="secondary" fullWidth>Edit quiz</Button>
           </Link>
-        )}
+        ) : session?.user ? (
+          <button type="button" className={styles.reportBtn} onClick={handleReport}>
+            Report this quiz
+          </button>
+        ) : null}
       </div>
     </AppShell>
   );

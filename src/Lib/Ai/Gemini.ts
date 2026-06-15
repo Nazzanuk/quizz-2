@@ -1,6 +1,9 @@
 import {
   GoogleGenerativeAI,
+  HarmBlockThreshold,
+  HarmCategory,
   SchemaType,
+  type SafetySetting,
   type Schema,
 } from '@google/generative-ai';
 import {
@@ -218,9 +221,20 @@ export async function generateHostRecap(opts: {
   return parseLine(text);
 }
 
+// Block medium-and-above harmful content across categories. Generation that
+// trips these returns no candidates, surfacing as an error the caller refunds
+// the credit for.
+const SAFETY_SETTINGS: SafetySetting[] = [
+  HarmCategory.HARM_CATEGORY_HARASSMENT,
+  HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+  HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+  HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+].map((category) => ({ category, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE }));
+
 function getJsonModel(responseSchema: Schema, temperature?: number) {
   return getGenAI().getGenerativeModel({
     model: 'gemini-3-flash-preview',
+    safetySettings: SAFETY_SETTINGS,
     generationConfig: {
       responseMimeType: 'application/json',
       responseSchema,

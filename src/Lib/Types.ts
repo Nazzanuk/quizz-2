@@ -128,10 +128,27 @@ export function normalizeQuizVisibility(
   return 'unlisted';
 }
 
+// Moderation state. 'blocked' quizzes are hidden from Discover and unplayable by
+// anyone but the owner/admin (used for reported/taken-down content).
+export const QUIZ_STATUSES = ['active', 'blocked'] as const;
+
+export type QuizStatus = (typeof QUIZ_STATUSES)[number];
+
+export function isQuizStatus(value: string): value is QuizStatus {
+  return (QUIZ_STATUSES as readonly string[]).includes(value);
+}
+
+export function normalizeQuizStatus(value: string | null | undefined): QuizStatus {
+  if (value && isQuizStatus(value)) return value;
+  return 'active';
+}
+
 export interface Quiz {
   id: string;
   ownerId: string | null;
   visibility: QuizVisibility;
+  // Moderation status; 'active' unless taken down.
+  status: QuizStatus;
   title: string;
   description: string | null;
   topic: string | null;
@@ -170,6 +187,17 @@ export interface QuizWithQuestions extends Quiz {
 // A quiz in the Discover feed, carrying its total play count for ranking/display.
 export interface TopQuiz extends Quiz {
   plays: number;
+}
+
+// A reported quiz row for the admin moderation view.
+export interface ReportedQuiz {
+  quizId: string;
+  title: string;
+  status: QuizStatus;
+  visibility: QuizVisibility;
+  reportCount: number;
+  lastReportedAt: string;
+  reasons: string[];
 }
 
 export interface QuizResult {

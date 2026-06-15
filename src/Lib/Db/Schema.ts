@@ -8,6 +8,8 @@ export const quizzes = sqliteTable('quizzes', {
   // 'private' | 'unlisted' | 'public' — see QuizVisibility in Types.ts.
   // Unlisted is the default: playable by anyone with the link, hidden from feeds.
   visibility: text('visibility'),
+  // 'active' | 'blocked' — moderation status. null = active (see QuizStatus).
+  status: text('status'),
   title: text('title').notNull(),
   description: text('description'),
   topic: text('topic'),
@@ -38,6 +40,15 @@ export const questions = sqliteTable('questions', {
   factText: text('fact_text'),
   tags: text('tags'),
   order: integer('order').notNull(),
+});
+
+export const quizReports = sqliteTable('quiz_reports', {
+  id: text('id').primaryKey(),
+  quizId: text('quiz_id').notNull(),
+  // null when reported by an anonymous viewer (currently report requires auth).
+  reporterId: text('reporter_id'),
+  reason: text('reason'),
+  createdAt: text('created_at').notNull(),
 });
 
 export const images = sqliteTable('images', {
