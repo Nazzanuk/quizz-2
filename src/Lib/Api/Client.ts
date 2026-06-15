@@ -7,12 +7,14 @@ import type {
   PlayerProfile,
   Question,
   Quiz,
+  QuizLeaderboard,
   QuizRun,
   QuizRunDetail,
   QuizWithQuestions,
   ResultsSummary,
   SaveResultRequest,
   StatsResponse,
+  TopQuiz,
 } from '../Types';
 
 const BASE = '/api';
@@ -45,6 +47,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export function fetchAccount(): Promise<AccountResponse> {
   return request('/account');
+}
+
+export function updateUsername(username: string): Promise<{ username: string }> {
+  return request('/account', {
+    method: 'PATCH',
+    body: JSON.stringify({ username }),
+  });
+}
+
+export function fetchLeaderboard(quizId: string, limit = 10): Promise<QuizLeaderboard> {
+  return request(`/quizzes/${quizId}/leaderboard?limit=${limit}`);
+}
+
+export function fetchTopQuizzes(limit = 5): Promise<TopQuiz[]> {
+  return request(`/discover?limit=${limit}`);
 }
 
 export function fetchQuizzes(): Promise<Quiz[]> {

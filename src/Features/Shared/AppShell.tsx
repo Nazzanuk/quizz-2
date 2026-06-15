@@ -16,7 +16,7 @@ interface AppShellProps {
 
 // Settings is reachable directly from these top-level destinations; on deeper
 // screens (quiz detail, edit, results) the gear is hidden to reduce clutter.
-const TOP_LEVEL_ROUTES = new Set(['/', '/create', '/progress', '/settings']);
+const TOP_LEVEL_ROUTES = new Set(['/', '/discover', '/create', '/progress', '/settings']);
 
 export default function AppShell({ children, variant = 'tabs' }: AppShellProps) {
   const { back, navigate, replace } = useTransitionRouter();

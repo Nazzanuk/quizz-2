@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listRunsForQuiz } from '@/Lib/Db/Queries';
+import { getQuizLeaderboard } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
 
@@ -7,19 +7,16 @@ interface Params {
   params: Promise<{ quizId: string }>;
 }
 
+// Public per-quiz leaderboard + average score. Anyone can read it; a signed-in
+// viewer also gets their own rank so the UI can highlight their row.
 export async function GET(req: Request, { params }: Params) {
   await runMigrations();
   const { quizId } = await params;
-  // Run history is per-user. Anonymous viewers have no attributed runs, so the
-  // list is empty for them rather than exposing everyone's plays.
-  const sessionUser = await getSessionUser(req);
-  if (!sessionUser) {
-    return NextResponse.json([]);
-  }
   const url = new URL(req.url);
-  const limit = parseLimit(url.searchParams.get('limit'), 5);
-  const runs = await listRunsForQuiz(quizId, sessionUser.id, limit);
-  return NextResponse.json(runs);
+  const limit = parseLimit(url.searchParams.get('limit'), 10);
+  const sessionUser = await getSessionUser(req);
+  const leaderboard = await getQuizLeaderboard(quizId, limit, sessionUser?.id ?? null);
+  return NextResponse.json(leaderboard);
 }
 
 function parseLimit(value: string | null, fallback: number): number {

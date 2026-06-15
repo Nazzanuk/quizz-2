@@ -28,11 +28,19 @@ function toQuiz(entry: ViewedQuiz): Quiz {
 }
 
 interface SharedQuizzesProps {
-  // Quizzes already in the user's own library are skipped to avoid duplicates.
+  // Quizzes already shown elsewhere (own library, Discover top feed) are skipped.
   excludeIds: Set<string>;
+  kicker?: string;
+  title?: string;
+  subtitle?: string;
 }
 
-export default function SharedQuizzes({ excludeIds }: SharedQuizzesProps) {
+export default function SharedQuizzes({
+  excludeIds,
+  kicker = 'Shared with you',
+  title = 'Discovered',
+  subtitle = "Public quizzes you've opened from links. Jump back in anytime.",
+}: SharedQuizzesProps) {
   const [viewed, setViewed] = useState<ViewedQuiz[]>([]);
 
   useEffect(() => {
@@ -52,11 +60,9 @@ export default function SharedQuizzes({ excludeIds }: SharedQuizzesProps) {
   return (
     <section className={styles.section}>
       <div className={styles.header}>
-        <span className={styles.kicker}>Shared with you</span>
-        <h2 className={styles.title}>Discovered</h2>
-        <p className={styles.sub}>
-          Public quizzes you&apos;ve opened from links. Jump back in anytime.
-        </p>
+        <span className={styles.kicker}>{kicker}</span>
+        <h2 className={styles.title}>{title}</h2>
+        <p className={styles.sub}>{subtitle}</p>
       </div>
       <div className={styles.list}>
         {items.map((entry, index) => (

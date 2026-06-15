@@ -10,6 +10,7 @@ import {
   normalizeQuizVisibility,
   type HostMode,
   type HostPersona,
+  type LeaderboardEntry,
   type QuestionAttempt,
   type Question,
   type QuestionAggregateStats,
@@ -17,6 +18,7 @@ import {
   type Quiz,
   type QuizAggregateStats,
   type QuizFormat,
+  type TopQuiz,
   type QuizRun,
   type QuizRunWithTitle,
   type QuizVisibility,
@@ -217,6 +219,7 @@ export async function insertQuizResult(data: {
 export async function insertQuizRun(data: {
   id: string;
   quizId: string;
+  userId: string | null;
   mode: HostMode;
   hostPersona: HostPersona;
   correct: number;
@@ -230,6 +233,7 @@ export async function insertQuizRun(data: {
   await db.insert(quizRuns).values({
     id: data.id,
     quizId: data.quizId,
+    userId: data.userId,
     mode: data.mode,
     hostPersona: data.hostPersona,
     correct: data.correct,
@@ -297,17 +301,24 @@ export async function getRunAttempts(runId: string): Promise<QuestionAttempt[]> 
   return rows.map(parseQuestionAttempt);
 }
 
-export async function listRunsForQuiz(quizId: string, limit = 5): Promise<QuizRun[]> {
+// Scoped to a single player: each user only sees their own run history for the
+// quiz, never everyone else's.
+export async function listRunsForQuiz(
+  quizId: string,
+  userId: string,
+  limit = 5,
+): Promise<QuizRun[]> {
   const rows = await db
     .select()
     .from(quizRuns)
-    .where(eq(quizRuns.quizId, quizId))
+    .where(and(eq(quizRuns.quizId, quizId), eq(quizRuns.userId, userId)))
     .orderBy(desc(quizRuns.createdAt))
     .limit(limit);
   return rows.map(parseQuizRun);
 }
 
-export async function listRecentRuns(limit = 12): Promise<QuizRunWithTitle[]> {
+// The personal Progress feed: only the signed-in player's own runs.
+export async function listRecentRuns(userId: string, limit = 12): Promise<QuizRunWithTitle[]> {
   const rows = await db
     .select({
       id: quizRuns.id,
@@ -325,6 +336,7 @@ export async function listRecentRuns(limit = 12): Promise<QuizRunWithTitle[]> {
     })
     .from(quizRuns)
     .leftJoin(quizzes, eq(quizRuns.quizId, quizzes.id))
+    .where(eq(quizRuns.userId, userId))
     .orderBy(desc(quizRuns.createdAt))
     .limit(limit);
 
@@ -335,8 +347,9 @@ export async function listRecentRuns(limit = 12): Promise<QuizRunWithTitle[]> {
   }));
 }
 
-export async function getRunTotals(): Promise<StatsTotals> {
-  const rows = await db.select().from(quizRuns);
+// Personal lifetime totals for the Progress page, scoped to one player.
+export async function getRunTotals(userId: string): Promise<StatsTotals> {
+  const rows = await db.select().from(quizRuns).where(eq(quizRuns.userId, userId));
   if (rows.length === 0) {
     return {
       runs: 0,
@@ -364,7 +377,10 @@ export async function getRunTotals(): Promise<StatsTotals> {
     bestStreak = Math.max(bestStreak, row.bestStreak);
   });
 
-  const attempts = await db.select().from(questionAttempts);
+  const runIds = rows.map((row) => row.id);
+  const attempts = runIds.length > 0
+    ? await db.select().from(questionAttempts).where(inArray(questionAttempts.runId, runIds))
+    : [];
   const fastestMs = attempts.reduce<number | null>(
     (best, attempt) => best === null ? attempt.responseMs : Math.min(best, attempt.responseMs),
     null,
@@ -447,6 +463,126 @@ export async function getQuizAggregateStats(quizId: string): Promise<QuizAggrega
     bestPct,
     averagePct: Math.round(totalPct / rows.length),
   };
+}
+
+// Per-quiz leaderboard plus the quiz's average score. Averages and play counts
+// include anonymous runs (a true picture of how the quiz plays); the ranked
+// entries only include signed-in players, taking each player's single best run.
+// Aggregation happens in JS — fine at a quiz's run volume and far simpler than
+// SQL window functions through the query builder.
+export async function getQuizLeaderboard(
+  quizId: string,
+  limit = 10,
+  viewerId?: string | null,
+): Promise<{
+  averagePct: number | null;
+  totalPlays: number;
+  entries: LeaderboardEntry[];
+  yourRank: number | null;
+}> {
+  const runs = await db
+    .select({
+      userId: quizRuns.userId,
+      correct: quizRuns.correct,
+      total: quizRuns.total,
+      bestStreak: quizRuns.bestStreak,
+    })
+    .from(quizRuns)
+    .where(eq(quizRuns.quizId, quizId));
+
+  const scored = runs.filter((run) => run.total > 0);
+  const averagePct = scored.length > 0
+    ? Math.round(
+      scored.reduce((sum, run) => sum + (run.correct / run.total) * 100, 0) / scored.length,
+    )
+    : null;
+
+  const byUser = new Map<string, { bestRatio: number; plays: number; bestStreak: number }>();
+  for (const run of runs) {
+    if (!run.userId || run.total <= 0) continue;
+    const ratio = run.correct / run.total;
+    const current = byUser.get(run.userId);
+    if (!current) {
+      byUser.set(run.userId, { bestRatio: ratio, plays: 1, bestStreak: run.bestStreak });
+    } else {
+      current.bestRatio = Math.max(current.bestRatio, ratio);
+      current.plays += 1;
+      current.bestStreak = Math.max(current.bestStreak, run.bestStreak);
+    }
+  }
+
+  const names = await getUserDisplayNames([...byUser.keys()]);
+  const ranked: LeaderboardEntry[] = [...byUser.entries()]
+    .map(([userId, agg]) => ({
+      userId,
+      name: names.get(userId) ?? 'Player',
+      bestPct: Math.round(agg.bestRatio * 100),
+      plays: agg.plays,
+      bestStreak: agg.bestStreak,
+    }))
+    .sort((a, b) =>
+      b.bestPct - a.bestPct ||
+      b.bestStreak - a.bestStreak ||
+      b.plays - a.plays ||
+      a.name.localeCompare(b.name));
+
+  const yourIndex = viewerId ? ranked.findIndex((entry) => entry.userId === viewerId) : -1;
+
+  return {
+    averagePct,
+    totalPlays: runs.length,
+    entries: ranked.slice(0, limit),
+    yourRank: yourIndex >= 0 ? yourIndex + 1 : null,
+  };
+}
+
+// The Discover feed: most-played quizzes that anyone can open. Private quizzes
+// are excluded, and the inner join means only quizzes with at least one run
+// surface — so unplayed drafts never leak into the global feed.
+export async function getTopQuizzes(limit = 5): Promise<TopQuiz[]> {
+  const rows = await db
+    .select({ quiz: quizzes, plays: sql<number>`count(${quizRuns.id})` })
+    .from(quizzes)
+    .innerJoin(quizRuns, eq(quizRuns.quizId, quizzes.id))
+    .where(sql`${quizzes.visibility} IS NULL OR ${quizzes.visibility} != 'private'`)
+    .groupBy(quizzes.id)
+    .orderBy(desc(sql`count(${quizRuns.id})`))
+    .limit(limit);
+
+  return rows.map((row) => ({ ...parseQuiz(row.quiz), plays: Number(row.plays) }));
+}
+
+// Maps user ids to their public display name (chosen username, else Google name).
+async function getUserDisplayNames(userIds: string[]): Promise<Map<string, string>> {
+  if (userIds.length === 0) return new Map();
+  const rows = await db
+    .select({ id: user.id, name: user.name, username: user.username })
+    .from(user)
+    .where(inArray(user.id, userIds));
+  return new Map(rows.map((row) => [row.id, row.username?.trim() || row.name]));
+}
+
+// --- Usernames -------------------------------------------------------------
+
+export async function getUsername(userId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ username: user.username })
+    .from(user)
+    .where(eq(user.id, userId));
+  return row?.username ?? null;
+}
+
+// Case-insensitive availability check, ignoring the caller's own current handle.
+export async function isUsernameTaken(username: string, excludeUserId: string): Promise<boolean> {
+  const rows = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(sql`lower(${user.username}) = lower(${username})`);
+  return rows.some((row) => row.id !== excludeUserId);
+}
+
+export async function setUsername(userId: string, username: string): Promise<void> {
+  await db.update(user).set({ username }).where(eq(user.id, userId));
 }
 
 export async function insertImage(id: string, data: string, mimeType: string): Promise<void> {

@@ -167,6 +167,11 @@ export interface QuizWithQuestions extends Quiz {
   questions: Question[];
 }
 
+// A quiz in the Discover feed, carrying its total play count for ranking/display.
+export interface TopQuiz extends Quiz {
+  plays: number;
+}
+
 export interface QuizResult {
   id: string;
   quizId: string;
@@ -262,6 +267,39 @@ export interface AccountResponse {
   email: string;
   image: string | null;
   credits: number;
+  // Chosen public handle, shown on leaderboards. null until the user sets one.
+  username: string | null;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  // Display name: the chosen username, falling back to the account name.
+  name: string;
+  bestPct: number;
+  plays: number;
+  bestStreak: number;
+}
+
+export interface QuizLeaderboard {
+  // Average score across all runs, including anonymous plays. null if unplayed.
+  averagePct: number | null;
+  totalPlays: number;
+  entries: LeaderboardEntry[];
+  // Rank (1-based) of the requesting user, when signed in and on the board.
+  yourRank: number | null;
+}
+
+// Username constraints, shared by the client form and the server validator.
+export const USERNAME_MIN = 3;
+export const USERNAME_MAX = 20;
+export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
+
+export function validateUsername(value: string): string | null {
+  const trimmed = value.trim();
+  if (trimmed.length < USERNAME_MIN) return `At least ${USERNAME_MIN} characters`;
+  if (trimmed.length > USERNAME_MAX) return `At most ${USERNAME_MAX} characters`;
+  if (!USERNAME_PATTERN.test(trimmed)) return 'Letters, numbers, and underscores only';
+  return null;
 }
 
 export interface GenerateQuizRequest {

@@ -17,6 +17,7 @@ import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
+import Leaderboard from '@/Features/Shared/Leaderboard';
 import QuizHeader from './QuizHeader';
 import styles from './DetailView.module.css';
 
@@ -129,10 +130,12 @@ export default function DetailView({ quizId }: DetailViewProps) {
           </>
         )}
 
+        {questions.length > 0 && <Leaderboard quizId={quizId} />}
+
         <section className={styles.recentRuns}>
           <div className={styles.questionsHeader}>
             <h2 className={styles.questionsTitle}>
-              Recent runs
+              Your runs
               {runsLoaded && <span className={styles.count}>{runs.length}</span>}
             </h2>
           </div>

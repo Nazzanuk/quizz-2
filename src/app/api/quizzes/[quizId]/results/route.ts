@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getResultsSummary, insertQuizResult, insertQuizRun } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
+import { getSessionUser } from '@/Lib/Auth/Session';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
@@ -41,9 +42,12 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (body.runId && Array.isArray(body.attempts)) {
+    // Attribute the run to the signed-in player; null for anonymous plays.
+    const sessionUser = await getSessionUser(req);
     await insertQuizRun({
       id: body.runId,
       quizId,
+      userId: sessionUser?.id ?? null,
       mode: normalizeHostMode(body.mode),
       hostPersona: normalizeHostPersona(body.hostPersona),
       correct,

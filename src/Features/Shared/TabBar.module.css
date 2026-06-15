@@ -4,10 +4,10 @@
   bottom: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.45rem;
-  width: min(100%, 500px);
-  padding: 0.55rem 0.75rem calc(0.65rem + env(safe-area-inset-bottom));
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+  width: min(100%, 540px);
+  padding: 0.55rem 0.6rem calc(0.65rem + env(safe-area-inset-bottom));
   background: var(--neo-ink);
   border-top: var(--neo-border);
   transform: translateX(-50%);
@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.28rem;
-  padding: 0.4rem 0.25rem;
+  padding: 0.4rem 0.15rem;
   background: var(--neo-white);
   color: var(--neo-ink);
   border: var(--neo-border-thin);
@@ -47,8 +47,8 @@
 
 .icon {
   display: grid;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.75rem;
+  height: 1.75rem;
   place-items: center;
 }
 
@@ -62,9 +62,9 @@
   overflow: hidden;
   max-width: 100%;
   color: var(--neo-ink);
-  font-size: 0.66rem;
+  font-size: 0.58rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   line-height: 1;
   text-overflow: ellipsis;
   text-transform: uppercase;

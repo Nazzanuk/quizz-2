@@ -65,7 +65,10 @@ export default function HomeView() {
         </section>
       )}
 
-      <SharedQuizzes excludeIds={ownedIds} />
+      {/* Anonymous visitors have no library, so surface the quizzes they've
+          opened from shared links right here. Signed-in users browse these
+          (and the trending feed) from the Discover tab instead. */}
+      {!isPending && !session?.user && <SharedQuizzes excludeIds={ownedIds} />}
     </AppShell>
   );
 }

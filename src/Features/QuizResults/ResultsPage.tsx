@@ -18,6 +18,7 @@ import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Card from '@/Features/Shared/Card';
 import InstallPrompt from '@/Features/Shared/InstallPrompt';
+import Leaderboard from '@/Features/Shared/Leaderboard';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
 import { haptic } from '@/Features/Shared/Haptic';
 import { shareLink } from '@/Features/Shared/Share';
@@ -223,6 +224,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
             : undefined}
           onBack={() => navigate(`/quiz/${quizId}`)}
         />
+        <Leaderboard quizId={quizId} compact />
         {fresh && <InstallPrompt />}
         <AttemptBreakdown
           attempts={detail.attempts}

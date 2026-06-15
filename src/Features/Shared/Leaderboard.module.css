@@ -1,0 +1,180 @@
+.section {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(-1deg);
+}
+
+.title {
+  margin: 0;
+  color: var(--neo-ink);
+  font-size: 1.45rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.average {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.6rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.average strong {
+  margin: 0 0.2rem;
+  font-size: 0.95rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.1rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.you {
+  background: var(--neo-secondary);
+  border: var(--neo-border);
+}
+
+.rank {
+  display: grid;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  place-items: center;
+  background: var(--neo-ink);
+  border: var(--neo-border-thin);
+  border-radius: 9999px;
+  color: var(--neo-white);
+  font-family: var(--font-accent);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.rank1 {
+  background: var(--neo-secondary);
+  color: var(--neo-ink);
+}
+
+.rank2 {
+  background: var(--neo-muted);
+  color: var(--neo-ink);
+}
+
+.rank3 {
+  background: var(--neo-lime);
+  color: var(--neo-ink);
+}
+
+.name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  color: var(--neo-ink);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.youTag {
+  flex-shrink: 0;
+  padding: 0.1rem 0.4rem;
+  background: var(--neo-ink);
+  color: var(--neo-white);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.meta {
+  grid-column: 2;
+  grid-row: 2;
+  color: var(--neo-ink);
+  font-size: 0.72rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.score {
+  align-self: center;
+  grid-column: 3;
+  grid-row: 1 / span 2;
+  color: var(--neo-ink);
+  font-family: var(--font-accent);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.empty {
+  margin: 0;
+  padding: 0.85rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.yourRank {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  background: var(--neo-muted);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.skeleton {
+  height: 8rem;
+  border-radius: 0;
+}
+
+.compact .header {
+  transform: none;
+  padding: 0.6rem 0.7rem;
+}
+
+.compact .title {
+  font-size: 1.15rem;
+}

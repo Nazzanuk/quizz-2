@@ -58,6 +58,9 @@ export const quizResults = sqliteTable('quiz_results', {
 export const quizRuns = sqliteTable('quiz_runs', {
   id: text('id').primaryKey(),
   quizId: text('quiz_id').notNull(),
+  // null = anonymous play (shared link, signed out). Attributed runs power the
+  // per-user run history and the leaderboard.
+  userId: text('user_id'),
   mode: text('mode').notNull(),
   hostPersona: text('host_persona').notNull(),
   correct: integer('correct').notNull(),
@@ -80,6 +83,9 @@ export const user = sqliteTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: integer('email_verified', { mode: 'boolean' }).notNull().default(false),
   image: text('image'),
+  // App-specific public display handle, chosen by the user (see /api/account).
+  // null until set; shown on leaderboards in place of the Google name.
+  username: text('username'),
   credits: integer('credits').notNull().default(0),
   creditsRefreshedAt: text('credits_refreshed_at'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),

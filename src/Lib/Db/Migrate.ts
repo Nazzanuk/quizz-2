@@ -153,11 +153,30 @@ export async function runMigrations(): Promise<void> {
     // owner (backfilled separately) and are treated as 'unlisted' at read time.
     sql`ALTER TABLE quizzes ADD COLUMN owner_id TEXT`,
     sql`ALTER TABLE quizzes ADD COLUMN visibility TEXT`,
+    // Attribute runs to the signed-in player (null for anonymous plays), and
+    // give users a chosen public handle for leaderboards.
+    sql`ALTER TABLE quiz_runs ADD COLUMN user_id TEXT`,
+    sql`ALTER TABLE user ADD COLUMN username TEXT`,
   ]) {
     try {
       await db.run(stmt);
     } catch {
       // column already exists — ignore
     }
+  }
+
+  // Case-insensitive uniqueness for chosen usernames. NULLs are allowed to
+  // repeat in SQLite, so unset handles don't collide.
+  try {
+    await db.run(sql`CREATE UNIQUE INDEX IF NOT EXISTS user_username_unique ON user(lower(username))`);
+  } catch {
+    // index already exists — ignore
+  }
+
+  // Speeds up the per-quiz, per-user run history and leaderboard aggregation.
+  try {
+    await db.run(sql`CREATE INDEX IF NOT EXISTS quiz_runs_quiz_user ON quiz_runs(quiz_id, user_id)`);
+  } catch {
+    // index already exists — ignore
   }
 }
