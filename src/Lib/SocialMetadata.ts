@@ -18,8 +18,10 @@ export async function buildQuizMetadata(quizId: string): Promise<Metadata> {
   const title = `${quiz.title} quiz`;
   const description = buildQuizDescription(quiz);
   const url = `/quiz/${quiz.id}`;
-  const image = buildImage(quiz);
 
+  // og:image / twitter:image come from the colocated opengraph-image route
+  // (a generated PNG). We intentionally don't set an image here: the stored
+  // cover is WebP, which WhatsApp/Facebook previews refuse to render.
   return {
     title,
     description,
@@ -30,13 +32,11 @@ export async function buildQuizMetadata(quizId: string): Promise<Metadata> {
       url,
       siteName: SITE_NAME,
       type: 'website',
-      images: image ? [image] : undefined,
     },
     twitter: {
-      card: image ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: image ? [image.url] : undefined,
     },
   };
 }
@@ -55,8 +55,8 @@ export async function buildRunMetadata(quizId: string, runId: string): Promise<M
   const title = `${pct}% on ${detail.quiz.title}`;
   const description = buildRunDescription(detail.run, detail.attempts);
   const url = `/quiz/${quizId}/results/${runId}`;
-  const image = buildImage(detail.quiz);
 
+  // Image comes from the colocated opengraph-image route (generated PNG).
   return {
     title,
     description,
@@ -68,13 +68,11 @@ export async function buildRunMetadata(quizId: string, runId: string): Promise<M
       siteName: SITE_NAME,
       type: 'article',
       publishedTime: detail.run.createdAt,
-      images: image ? [image] : undefined,
     },
     twitter: {
-      card: image ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: image ? [image.url] : undefined,
     },
   };
 }
@@ -122,12 +120,4 @@ function buildRunDescription(run: QuizRun, attempts: QuestionAttempt[]): string 
 
 function scorePct(run: Pick<QuizRun, 'correct' | 'total'>): number {
   return run.total > 0 ? Math.round((run.correct / run.total) * 100) : 0;
-}
-
-function buildImage(quiz: Quiz): { url: string; alt: string } | undefined {
-  if (!quiz.coverImageUrl) return undefined;
-  return {
-    url: quiz.coverImageUrl,
-    alt: quiz.title,
-  };
 }
