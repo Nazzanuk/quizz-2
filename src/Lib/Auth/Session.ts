@@ -1,4 +1,4 @@
-import { auth } from './Auth';
+import { getAuth } from './Auth';
 
 export interface SessionUser {
   id: string;
@@ -13,7 +13,7 @@ export interface SessionUser {
 // caller is anonymous. This is the server-side security boundary used by the
 // gated route handlers — never trust client claims of identity.
 export async function getSessionUser(req: Request): Promise<SessionUser | null> {
-  const result = await auth.api.getSession({ headers: req.headers });
+  const result = await getAuth().api.getSession({ headers: req.headers });
   if (!result?.user) return null;
 
   const u = result.user as {
