@@ -3,6 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { nextCookies } from 'better-auth/next-js';
 import { db } from '@/Lib/Db/Client';
 import { user, session, account, verification } from '@/Lib/Db/Schema';
+import { requireServerEnv } from '@/Lib/Env';
 import { STARTER_CREDITS } from '@/Lib/Constants';
 
 // Server-only Better Auth instance. Auth data lives in the same Turso DB as the
@@ -15,8 +16,10 @@ import { STARTER_CREDITS } from '@/Lib/Constants';
 // to the first request guarantees the runtime env is present.
 function createAuth() {
   return betterAuth({
-    secret: process.env.BETTER_AUTH_SECRET,
-    baseURL: process.env.BETTER_AUTH_URL,
+    // Validated at first use: a missing secret/URL/credential now throws a clear
+    // error instead of silently constructing a broken auth instance.
+    secret: requireServerEnv('BETTER_AUTH_SECRET'),
+    baseURL: requireServerEnv('BETTER_AUTH_URL'),
     database: drizzleAdapter(db, {
       provider: 'sqlite',
       schema: { user, session, account, verification },
@@ -25,8 +28,8 @@ function createAuth() {
     telemetry: { enabled: false },
     socialProviders: {
       google: {
-        clientId: process.env.GOOGLE_CLIENT_ID ?? '',
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+        clientId: requireServerEnv('GOOGLE_CLIENT_ID'),
+        clientSecret: requireServerEnv('GOOGLE_CLIENT_SECRET'),
       },
     },
     user: {

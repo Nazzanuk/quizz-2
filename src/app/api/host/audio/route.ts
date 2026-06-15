@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
+import { env } from '@/Lib/Env';
 
 // ElevenLabs "v3" is the `eleven_v3` model ID. The public TTS REST endpoints
 // remain under `/v1/text-to-speech/...` per the official docs.
-const DEFAULT_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? 'eleven_v3';
+const DEFAULT_MODEL_ID = env.ELEVENLABS_MODEL_ID ?? 'eleven_v3';
 // Hardcoded so a bad deploy-time env override cannot break the host voice.
 const HOST_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
 
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const apiKey = env.ELEVENLABS_API_KEY;
   if (!apiKey) {
     console.error('[host audio] ELEVENLABS_API_KEY is missing');
     return errorResponse(503, {

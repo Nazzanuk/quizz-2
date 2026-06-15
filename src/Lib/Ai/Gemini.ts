@@ -12,8 +12,17 @@ import {
   type QuestionDifficulty,
   type QuizFormat,
 } from '../Types';
+import { requireServerEnv } from '../Env';
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY!);
+// Constructed lazily so a missing key surfaces at generation time with a clear
+// error, rather than crashing module import during build.
+let genAIInstance: GoogleGenerativeAI | null = null;
+function getGenAI(): GoogleGenerativeAI {
+  if (!genAIInstance) {
+    genAIInstance = new GoogleGenerativeAI(requireServerEnv('GOOGLE_AI_API_KEY'));
+  }
+  return genAIInstance;
+}
 
 const quizResponseSchema: Schema = {
   type: SchemaType.OBJECT,
@@ -210,7 +219,7 @@ export async function generateHostRecap(opts: {
 }
 
 function getJsonModel(responseSchema: Schema, temperature?: number) {
-  return genAI.getGenerativeModel({
+  return getGenAI().getGenerativeModel({
     model: 'gemini-3-flash-preview',
     generationConfig: {
       responseMimeType: 'application/json',

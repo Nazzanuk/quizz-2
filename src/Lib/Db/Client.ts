@@ -1,12 +1,14 @@
 import { drizzle } from 'drizzle-orm/libsql';
 import { createClient } from '@libsql/client';
+import { env } from '@/Lib/Env';
 import * as schema from './Schema';
 
-const url = process.env.TURSO_DATABASE_URL || 'file:local.db';
+// No Turso URL configured → fall back to a local SQLite file for dev.
+const url = env.TURSO_DATABASE_URL ?? 'file:local.db';
 
 const client = createClient({
   url,
-  authToken: process.env.TURSO_AUTH_TOKEN,
+  authToken: env.TURSO_AUTH_TOKEN,
 });
 
 export const db = drizzle(client, { schema });

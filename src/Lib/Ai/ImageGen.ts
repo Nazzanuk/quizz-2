@@ -1,9 +1,16 @@
 import Replicate from 'replicate';
 import { insertImage } from '@/Lib/Db/Queries';
+import { requireServerEnv } from '@/Lib/Env';
 
-const replicate = new Replicate({
-  auth: process.env.REPLICATE_API_TOKEN!,
-});
+// Constructed lazily so a missing token surfaces at image-generation time with a
+// clear error, rather than crashing module import during build.
+let replicateInstance: Replicate | null = null;
+function getReplicate(): Replicate {
+  if (!replicateInstance) {
+    replicateInstance = new Replicate({ auth: requireServerEnv('REPLICATE_API_TOKEN') });
+  }
+  return replicateInstance;
+}
 
 // Matches the app's neo-brutalist UI: thick black borders, flat saturated
 // colors on cream (#fffdf5), hard offset shadows, sticker-like shapes.
@@ -55,7 +62,7 @@ async function generateWithRetry(
 }
 
 async function runAndStore(prompt: string, aspect_ratio: string): Promise<string> {
-  const output = await replicate.run('openai/gpt-image-2', {
+  const output = await getReplicate().run('openai/gpt-image-2', {
     input: {
       prompt,
       aspect_ratio,
