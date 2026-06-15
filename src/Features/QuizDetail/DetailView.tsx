@@ -168,9 +168,11 @@ export default function DetailView({ quizId }: DetailViewProps) {
           )}
         </section>
 
-        <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
-          <Button variant="secondary" fullWidth>Edit quiz</Button>
-        </Link>
+        {session?.user?.id === quiz.ownerId && (
+          <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
+            <Button variant="secondary" fullWidth>Edit quiz</Button>
+          </Link>
+        )}
       </div>
     </AppShell>
   );

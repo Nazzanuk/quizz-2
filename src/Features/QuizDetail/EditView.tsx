@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSetAtom } from 'jotai';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
+import { useSession } from '@/Lib/Auth/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import {
   createQuestion,
@@ -27,10 +28,19 @@ interface EditViewProps {
 
 export default function EditView({ quizId }: EditViewProps) {
   const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion } = useQuiz(quizId, { poll: true });
+  const { data: session, isPending } = useSession();
   const [addingQuestions, setAddingQuestions] = useState(false);
   const [addingManual, setAddingManual] = useState(false);
-  const { navigate, back } = useTransitionRouter();
+  const { navigate, back, replace } = useTransitionRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);
+
+  // Editing is owner-only (the API enforces this too). Anyone else who reaches
+  // /edit directly is bounced back to the read-only detail page.
+  const isOwner = Boolean(session?.user && quiz && quiz.ownerId === session.user.id);
+  useEffect(() => {
+    if (isPending || !quiz) return;
+    if (!isOwner) replace(`/quiz/${quizId}`);
+  }, [isPending, quiz, isOwner, quizId, replace]);
 
   const handleDelete = () => {
     setConfirm({
@@ -79,7 +89,9 @@ export default function EditView({ quizId }: EditViewProps) {
     await updateQuiz(quizId, { questionsPerRun: value }).catch(() => {});
   };
 
-  if (!quiz) {
+  // Hold the loading state until ownership is confirmed so the edit UI never
+  // flashes for a non-owner (who is being redirected away).
+  if (!quiz || isPending || !isOwner) {
     return (
       <AppShell>
         <BlobField />
