@@ -5,6 +5,8 @@ import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
 import { fetchQuizRuns, getResultsSummary } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
+import { useSession } from '@/Lib/Auth/Client';
+import { recordViewedQuiz } from '@/Lib/ViewedQuizzes';
 import { DEFAULT_QUESTIONS_PER_RUN } from '@/Lib/Constants';
 import type { QuizRun, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
@@ -24,6 +26,7 @@ interface DetailViewProps {
 
 export default function DetailView({ quizId }: DetailViewProps) {
   const { quiz, questions, imagesPending } = useQuiz(quizId, { poll: true });
+  const { data: session } = useSession();
   const [stats, setStats] = useState<ResultsSummary | null>(null);
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [runs, setRuns] = useState<QuizRun[]>([]);
@@ -40,6 +43,21 @@ export default function DetailView({ quizId }: DetailViewProps) {
       .catch(() => {})
       .finally(() => setRunsLoaded(true));
   }, [quizId]);
+
+  // Quizzes opened from a shared link (i.e. not owned by the viewer) are logged
+  // locally so they surface in the home screen's "Discovered" section.
+  useEffect(() => {
+    if (!quiz) return;
+    const userId = session?.user?.id ?? null;
+    if (userId && quiz.ownerId === userId) return;
+    recordViewedQuiz({
+      id: quiz.id,
+      title: quiz.title,
+      coverImageUrl: quiz.coverImageUrl,
+      questionCount: quiz.questionCount,
+      createdAt: quiz.createdAt,
+    });
+  }, [quiz, session?.user?.id]);
 
   const handleShare = async () => {
     const url = `${window.location.origin}/quiz/${quizId}`;

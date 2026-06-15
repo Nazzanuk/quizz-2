@@ -14,10 +14,13 @@ import SignInButton from '@/Features/Shared/SignInButton';
 import QuizList from './QuizList';
 import EmptyState from './EmptyState';
 import LibraryControls from './LibraryControls';
+import SharedQuizzes from './SharedQuizzes';
 import styles from './HomeView.module.css';
 
 export default function HomeView() {
   const { data: session, isPending } = useSession();
+  const allQuizzes = useAtomValue(quizListAtom);
+  const ownedIds = new Set(allQuizzes.map((quiz) => quiz.id));
 
   return (
     <AppShell>
@@ -61,6 +64,8 @@ export default function HomeView() {
           <SignedOutPrompt />
         </section>
       )}
+
+      <SharedQuizzes excludeIds={ownedIds} />
     </AppShell>
   );
 }

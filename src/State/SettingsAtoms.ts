@@ -34,7 +34,7 @@ export const hapticEnabledAtom = atom(
 );
 
 const baseHostVoiceEnabledAtom = atom(
-  typeof window !== 'undefined' ? getPlayerProfile().hostVoiceEnabled : false,
+  typeof window !== 'undefined' ? getPlayerProfile().hostVoiceEnabled : true,
 );
 
 export const hostVoiceEnabledAtom = atom(
@@ -46,7 +46,7 @@ export const hostVoiceEnabledAtom = atom(
 );
 
 const baseHideTextUiAtom = atom(
-  typeof window !== 'undefined' ? getPlayerProfile().hideTextUi : false,
+  typeof window !== 'undefined' ? getPlayerProfile().hideTextUi : true,
 );
 
 export const hideTextUiAtom = atom(

@@ -1,0 +1,89 @@
+.card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(-1deg);
+  animation: riseIn var(--motion-base) var(--ease-spring) both;
+}
+
+.mark {
+  flex-shrink: 0;
+  display: grid;
+  width: 3.25rem;
+  height: 3.25rem;
+  place-items: center;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+}
+
+.mark svg {
+  width: 80%;
+  height: 80%;
+  display: block;
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.kicker {
+  width: fit-content;
+  margin: 0 0 0.4rem;
+  padding: 0.2rem 0.55rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border-thin);
+  color: var(--neo-ink);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 0 0 0.35rem;
+  color: var(--neo-ink);
+  font-size: 1.3rem;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sub,
+.help {
+  margin: 0 0 0.85rem;
+  color: var(--neo-ink);
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.help strong {
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.dismiss {
+  padding: 0.4rem 0.2rem;
+  background: transparent;
+  border: 0;
+  color: var(--neo-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}

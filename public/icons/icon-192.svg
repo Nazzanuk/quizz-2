@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"><rect width="192" height="192" rx="38.400000000000006" fill="#FFB7B2"/><text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="sans-serif" font-weight="700" font-size="76.80000000000001" fill="#292524">Q</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 512 512">  <rect width="512" height="512" fill="#FFD93D"/>
+  <circle cx="256" cy="256" r="178" fill="#000000"/>
+  <circle cx="256" cy="256" r="160" fill="#FFFDF5"/>
+  <circle cx="256" cy="256" r="128" fill="#000000"/>
+  <circle cx="256" cy="256" r="110" fill="#FF5A5F"/>
+  <circle cx="256" cy="256" r="66"  fill="#FFFDF5"/>
+  <circle cx="256" cy="256" r="46"  fill="#000000"/>
+  <circle cx="256" cy="256" r="30"  fill="#FF5A5F"/></svg>

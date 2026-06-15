@@ -5,6 +5,7 @@ import Toast from '@/Features/Shared/Toast';
 import AudioAlerts from '@/Features/Shared/AudioAlerts';
 import ConfirmDialog from '@/Features/Shared/ConfirmDialog';
 import SettingsPanel from '@/Features/Shared/SettingsPanel';
+import InstallPromptListener from '@/Features/Shared/InstallPromptListener';
 import { getSiteUrl } from '@/Lib/SiteUrl';
 import './globals.css';
 
@@ -67,6 +68,7 @@ export default function RootLayout({
           <AudioAlerts />
           <ConfirmDialog />
           <SettingsPanel />
+          <InstallPromptListener />
         </Provider>
       </body>
     </html>
