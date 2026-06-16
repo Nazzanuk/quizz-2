@@ -15,6 +15,10 @@ import { nowISO } from './Utils';
 const STORAGE_KEY = 'quizz.playerProfile';
 const MAX_RECENT_RECAPS = 6;
 
+// Bump when a preference default changes and existing players should pick up
+// the new default once. v1: "hide text UI" became the default for all users.
+const CURRENT_PREFS_VERSION = 1;
+
 function buildDefaultProfile(): PlayerProfile {
   return {
     totalRuns: 0,
@@ -26,9 +30,10 @@ function buildDefaultProfile(): PlayerProfile {
     lastPlayedAt: null,
     preferredMode: 'quick',
     hostVoiceEnabled: true,
-    // New players see the full HUD (countdown number, "Question N of M", score,
-    // streak, host panel). "Hide text UI" is an opt-in minimal mode.
-    hideTextUi: false,
+    // The minimal HUD (no countdown number, "Question N of M", score/streak
+    // text, or host panel) is the default for everyone. Players can switch the
+    // full text UI back on in settings.
+    hideTextUi: true,
     readQuestionsAloud: true,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
@@ -36,7 +41,27 @@ function buildDefaultProfile(): PlayerProfile {
     recentRecaps: [],
     anonId: '',
     username: null,
+    prefsVersion: CURRENT_PREFS_VERSION,
   };
+}
+
+// Apply one-time preference migrations to a profile loaded from storage.
+// `parsed` is the raw stored object so we can read its (possibly absent)
+// version without the merged defaults masking it.
+function migrateProfile(
+  profile: PlayerProfile,
+  parsed: Partial<PlayerProfile>,
+): PlayerProfile {
+  let next = profile;
+  if ((parsed.prefsVersion ?? 0) < 1) {
+    // The minimal HUD became the default for everyone. Flip existing players
+    // on once; the bumped version (persisted on the next save) means anyone
+    // who turns it back off afterwards stays off.
+    next = { ...next, hideTextUi: true };
+  }
+  return next.prefsVersion === CURRENT_PREFS_VERSION
+    ? next
+    : { ...next, prefsVersion: CURRENT_PREFS_VERSION };
 }
 
 // A stable per-device guest id, created lazily on the first anonymous run so a
@@ -76,7 +101,7 @@ export function getPlayerProfile(): PlayerProfile {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return buildDefaultProfile();
     const parsed = JSON.parse(raw) as Partial<PlayerProfile>;
-    return {
+    const merged = {
       ...buildDefaultProfile(),
       ...parsed,
       preferredMode: normalizeHostMode(parsed.preferredMode),
@@ -85,6 +110,7 @@ export function getPlayerProfile(): PlayerProfile {
       quizzes: parsed.quizzes ?? {},
       recentRecaps: parsed.recentRecaps ?? [],
     };
+    return migrateProfile(merged, parsed);
   } catch {
     return buildDefaultProfile();
   }
