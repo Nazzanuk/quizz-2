@@ -1,25 +1,41 @@
-.card {
-  position: relative;
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9990;
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1rem;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.55);
+  animation: installFade var(--motion-base) ease-out both;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.5rem;
+  padding: 1.6rem 1.4rem;
   background: var(--neo-secondary);
   border: var(--neo-border);
-  box-shadow: var(--neo-shadow);
-  transform: rotate(-1deg);
-  animation: riseIn var(--motion-base) var(--ease-spring) both;
+  box-shadow: var(--neo-shadow-lg);
+  animation: installPop var(--motion-base) var(--ease-spring) both;
 }
 
 .mark {
-  flex-shrink: 0;
   display: grid;
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 4rem;
+  height: 4rem;
   place-items: center;
+  margin-bottom: 0.25rem;
   background: var(--neo-white);
-  border: var(--neo-border-thin);
+  border: var(--neo-border);
   box-shadow: var(--neo-shadow-sm);
+  transform: rotate(-3deg);
 }
 
 .mark svg {
@@ -28,15 +44,10 @@
   display: block;
 }
 
-.body {
-  flex: 1;
-  min-width: 0;
-}
-
 .kicker {
   width: fit-content;
-  margin: 0 0 0.4rem;
-  padding: 0.2rem 0.55rem;
+  margin: 0;
+  padding: 0.2rem 0.6rem;
   background: var(--neo-cyan);
   border: var(--neo-border-thin);
   color: var(--neo-ink);
@@ -47,20 +58,20 @@
 }
 
 .title {
-  margin: 0 0 0.35rem;
+  margin: 0;
   color: var(--neo-ink);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   line-height: 1;
   text-transform: uppercase;
 }
 
 .sub,
 .help {
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.4rem;
   color: var(--neo-ink);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   font-weight: 500;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .help strong {
@@ -69,13 +80,14 @@
 
 .actions {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.6rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  width: 100%;
 }
 
 .dismiss {
-  padding: 0.4rem 0.2rem;
+  padding: 0.5rem 0.2rem;
   background: transparent;
   border: 0;
   color: var(--neo-ink);
@@ -86,4 +98,22 @@
   text-decoration: underline;
   text-underline-offset: 3px;
   cursor: pointer;
+}
+
+@keyframes installFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes installPop {
+  0% { opacity: 0; transform: scale(0.85) rotate(-1deg); }
+  70% { transform: scale(1.03) rotate(0.5deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .panel {
+    animation: none;
+  }
 }
