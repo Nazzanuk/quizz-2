@@ -25,7 +25,12 @@
 }
 
 .liveContent {
-  height: 100%;
+  /* flex (not height:100%) so the cage is bound by the focused main's flex
+     box — see .mainFocused. This lets .options become the real scroll
+     container instead of overflowing the page, so a vertical swipe that
+     starts on an answer scrolls the list (with touch-action: pan-y) rather
+     than being trapped by a non-scrolling overscroll-contain box. */
+  flex: 1;
   min-height: 0;
   overflow: hidden;
   gap: 0.7rem;

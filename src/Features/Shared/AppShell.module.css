@@ -99,6 +99,14 @@
 
 .mainFocused {
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  /* Bound the focused (play) screen to the viewport via flex rather than a
+     percentage height. `.main` is sized by flex:1 against the shell's
+     min-height, which isn't a "definite" height — so a child's height:100%
+     would collapse to auto and the cage would leak, letting the answer list
+     overflow the page instead of scrolling inside its own box. Flexing the
+     child avoids percentage resolution entirely. */
+  display: flex;
+  flex-direction: column;
 }
 
 @media (max-width: 640px) {
