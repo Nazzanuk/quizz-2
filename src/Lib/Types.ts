@@ -223,6 +223,43 @@ export interface ReportedQuiz {
   reasons: string[];
 }
 
+// --- Admin dashboard rows (client-safe; do not import from Db/Queries) ------
+
+export interface AdminUserRow {
+  id: string;
+  name: string;
+  email: string;
+  username: string | null;
+  credits: number;
+  createdAt: string;
+  quizCount: number;
+  runCount: number;
+}
+
+export interface AdminQuizRow {
+  id: string;
+  title: string;
+  topic: string | null;
+  visibility: QuizVisibility;
+  status: QuizStatus;
+  ownerId: string | null;
+  ownerName: string | null;
+  ownerEmail: string | null;
+  questionCount: number;
+  runCount: number;
+  reportCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// A cluster of duplicate quizzes (same owner + topic, created in a burst).
+export interface DedupeBurst {
+  topic: string;
+  ownerId: string | null;
+  keep: { id: string; title: string; createdAt: string; questionCount: number };
+  remove: { id: string; title: string; createdAt: string; questionCount: number }[];
+}
+
 export interface QuizResult {
   id: string;
   quizId: string;
@@ -325,6 +362,8 @@ export interface AccountResponse {
   credits: number;
   // Chosen public handle, shown on leaderboards. null until the user sets one.
   username: string | null;
+  // True when the signed-in email is an admin (gates the Settings admin entry).
+  isAdmin: boolean;
 }
 
 export interface LeaderboardEntry {

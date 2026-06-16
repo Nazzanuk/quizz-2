@@ -1,6 +1,9 @@
 import type {
   AccountResponse,
+  AdminQuizRow,
+  AdminUserRow,
   AnalyticsSummary,
+  DedupeBurst,
   GenerateQuizRequest,
   HostRecapRequest,
   HostRecapResponse,
@@ -12,6 +15,7 @@ import type {
   QuizRun,
   QuizRunDetail,
   QuizStatus,
+  QuizVisibility,
   QuizWithQuestions,
   ReportedQuiz,
   ResultsSummary,
@@ -144,6 +148,68 @@ export function setQuizStatus(quizId: string, status: QuizStatus): Promise<{ ok:
   return request(`/admin/quizzes/${quizId}`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
+  });
+}
+
+// --- Admin dashboard -------------------------------------------------------
+
+export function fetchAdminUsers(): Promise<AdminUserRow[]> {
+  return request('/admin/users');
+}
+
+export function setUserCredits(userId: string, credits: number): Promise<{ ok: true; credits: number }> {
+  return request(`/admin/users/${userId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ credits }),
+  });
+}
+
+export function deleteAdminUser(userId: string): Promise<{ ok: true }> {
+  return request(`/admin/users/${userId}`, { method: 'DELETE' });
+}
+
+export function fetchAdminQuizzes(search?: string, limit = 100): Promise<AdminQuizRow[]> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (search?.trim()) params.set('search', search.trim());
+  return request(`/admin/quizzes?${params.toString()}`);
+}
+
+export function setQuizVisibility(quizId: string, visibility: QuizVisibility): Promise<{ ok: true }> {
+  return request(`/admin/quizzes/${quizId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ visibility }),
+  });
+}
+
+export function deleteAdminQuiz(quizId: string): Promise<{ ok: true }> {
+  return request(`/admin/quizzes/${quizId}`, { method: 'DELETE' });
+}
+
+export function previewDedupe(windowMin?: number): Promise<{ bursts: DedupeBurst[]; totalToDelete: number }> {
+  return request('/admin/maintenance', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'dedupe-preview', windowMin }),
+  });
+}
+
+export function applyDedupe(windowMin?: number): Promise<{ deleted: number }> {
+  return request('/admin/maintenance', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'dedupe-apply', windowMin }),
+  });
+}
+
+export function resetAllCredits(): Promise<{ users: number }> {
+  return request('/admin/maintenance', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'reset-credits' }),
+  });
+}
+
+export function backfillOwners(): Promise<{ assigned: number }> {
+  return request('/admin/maintenance', {
+    method: 'POST',
+    body: JSON.stringify({ action: 'backfill-owners' }),
   });
 }
 

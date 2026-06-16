@@ -1,5 +1,5 @@
-import AdminView from '@/Features/Admin/AdminView';
+import AdminDashboard from '@/Features/Admin/AdminDashboard';
 
 export default function AdminPage() {
-  return <AdminView />;
+  return <AdminDashboard />;
 }
