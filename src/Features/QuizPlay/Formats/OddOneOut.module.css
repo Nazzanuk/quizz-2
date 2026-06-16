@@ -3,8 +3,6 @@
   flex-direction: column;
   gap: 1rem;
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
   animation: settle 180ms ease-out both;
 }
 
@@ -71,10 +69,6 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-content: start;
   gap: 0.85rem;
-  flex: 0 1 auto;
-  min-height: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
   padding: 0.25rem 0.4rem 0.45rem 0;
 }
 
