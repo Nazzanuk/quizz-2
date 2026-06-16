@@ -2,10 +2,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { fetchStats } from '@/Lib/Api/Client';
+import { useSession } from '@/Lib/Auth/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type { PlayerProfile, StatsResponse } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
+import Card from '@/Features/Shared/Card';
+import SignInButton from '@/Features/Shared/SignInButton';
 import EmptyState from '@/Features/Home/EmptyState';
 import CategoryBars from './CategoryBars';
 import RunHistory from './RunHistory';
@@ -13,6 +16,7 @@ import StatTiles from './StatTiles';
 import styles from './ProgressView.module.css';
 
 export default function ProgressView() {
+  const { data: session, isPending } = useSession();
   const [profile] = useState<PlayerProfile>(() => getPlayerProfile());
   const [stats, setStats] = useState<StatsResponse | null>(null);
 
@@ -44,7 +48,8 @@ export default function ProgressView() {
   const empty = totals.runs === 0 && (stats?.runs.length ?? 0) === 0;
   // Local profile data renders immediately; only block on the API when the
   // profile is empty, so "no runs yet" can't flash while stats are in flight.
-  const loading = !statsLoaded && empty;
+  const loading = (!statsLoaded || isPending) && empty;
+  const signedIn = Boolean(session?.user);
 
   return (
     <AppShell>
@@ -57,7 +62,18 @@ export default function ProgressView() {
         {loading ? (
           <ProgressLoadingState />
         ) : empty ? (
-          <EmptyState />
+          signedIn ? (
+            <EmptyState />
+          ) : (
+            <Card color="lavender">
+              <p className={styles.kicker}>Sign in to track progress</p>
+              <p>
+                Your run history, streaks, and accuracy stats live here. Sign in with Google
+                so they follow you across devices.
+              </p>
+              <SignInButton callbackURL="/progress" fullWidth />
+            </Card>
+          )
         ) : (
           <>
             <StatTiles totals={totals} />

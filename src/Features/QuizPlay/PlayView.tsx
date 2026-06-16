@@ -39,6 +39,7 @@ import { confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
+import QuizUnavailable from '@/Features/Shared/QuizUnavailable';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { usePlayExitGuard } from './UsePlayExitGuard';
 import PlayProgress from './PlayProgress';
@@ -75,7 +76,7 @@ interface AnswerCommit {
 const HOST_PERSONA = 'sarcastic_pub_host' as const;
 
 export default function PlayView({ quizId }: PlayViewProps) {
-  const { quiz, questions, patchQuestion } = useQuiz(quizId);
+  const { quiz, questions, patchQuestion, error, notFound } = useQuiz(quizId);
   const searchParams = useSearchParams();
   const practiceRunId = searchParams.get('practice');
   const { navigate, replace } = useTransitionRouter();
@@ -624,6 +625,10 @@ export default function PlayView({ quizId }: PlayViewProps) {
       streak,
     ],
   );
+
+  if (!quiz && error) {
+    return <QuizUnavailable notFound={notFound} />;
+  }
 
   if (!quiz || !practiceReady || (hasPlayableQuestions && !playSessionReady)) {
     return (

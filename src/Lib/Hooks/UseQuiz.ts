@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAtom, useSetAtom } from 'jotai';
 import { currentQuizAtom, currentQuestionsAtom, isLoadingAtom } from '@/State/QuizAtoms';
-import { fetchQuiz } from '@/Lib/Api/Client';
+import { ApiError, fetchQuiz } from '@/Lib/Api/Client';
 import type { Quiz, Question, QuizWithQuestions } from '@/Lib/Types';
 
 const POLL_INTERVAL_MS = 3000;
@@ -23,11 +23,17 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
   const [storedQuestions, setQuestions] = useAtom(currentQuestionsAtom);
   const setLoading = useSetAtom(isLoadingAtom);
   const [imagesPending, setImagesPending] = useState(false);
+  // Tracks a failed initial fetch (e.g. the quiz was deleted/made private, or a
+  // network error) so consumers can show a real error screen instead of an
+  // endless loading skeleton. Keyed by id so it self-resets when id changes.
+  const [errorState, setErrorState] = useState<{ id: string; error: ApiError | Error } | null>(null);
+  const error = errorState?.id === id ? errorState.error : null;
   const quiz = storedQuiz?.id === id ? storedQuiz : null;
   const questions = quiz ? storedQuestions : [];
 
   useEffect(() => {
     let cancelled = false;
+    let loaded = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const pollStartedAt = Date.now();
     let lastSnapshot: string | null = null;
@@ -38,8 +44,23 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     setQuestions([]);
 
     const tick = async () => {
-      const data = await fetchQuiz(id);
+      let data: QuizWithQuestions;
+      try {
+        data = await fetchQuiz(id);
+      } catch (err) {
+        if (cancelled) return;
+        // Keep any already-loaded quiz on screen if a later poll fails; only
+        // surface the error when the initial fetch never succeeded.
+        setLoading(false);
+        setImagesPending(false);
+        if (!loaded) {
+          setErrorState({ id, error: err instanceof Error ? err : new Error('Failed to load quiz') });
+        }
+        return;
+      }
       if (cancelled) return;
+      loaded = true;
+      setErrorState((prev) => (prev?.id === id ? null : prev));
       setQuiz(data);
       setQuestions(data.questions);
       setLoading(false);
@@ -97,5 +118,7 @@ export function useQuiz(id: string, options: { poll?: boolean } = {}) {
     );
   }, [setQuestions, setQuiz]);
 
-  return { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion };
+  const notFound = error instanceof ApiError && error.status === 404;
+
+  return { quiz, questions, imagesPending, error, notFound, patchQuiz, patchQuestion, addQuestions, removeQuestion };
 }

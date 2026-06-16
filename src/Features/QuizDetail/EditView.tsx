@@ -14,11 +14,12 @@ import {
 } from '@/Lib/Api/Client';
 import { DEFAULT_QUESTIONS_PER_RUN, QUESTION_COUNT_OPTIONS } from '@/Lib/Constants';
 import type { QuizVisibility } from '@/Lib/Types';
-import { confirmDialogAtom } from '@/State/UiAtoms';
+import { addToastAtom, confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
+import QuizUnavailable from '@/Features/Shared/QuizUnavailable';
 import QuizHeader from './QuizHeader';
 import QuestionList from './QuestionList';
 import styles from './DetailView.module.css';
@@ -40,12 +41,13 @@ const VISIBILITY_HINT: Record<QuizVisibility, string> = {
 };
 
 export default function EditView({ quizId }: EditViewProps) {
-  const { quiz, questions, imagesPending, patchQuiz, patchQuestion, addQuestions, removeQuestion } = useQuiz(quizId, { poll: true });
+  const { quiz, questions, imagesPending, error, notFound, patchQuiz, patchQuestion, addQuestions, removeQuestion } = useQuiz(quizId, { poll: true });
   const { data: session, isPending } = useSession();
   const [addingQuestions, setAddingQuestions] = useState(false);
   const [addingManual, setAddingManual] = useState(false);
   const { navigate, back, replace } = useTransitionRouter();
   const setConfirm = useSetAtom(confirmDialogAtom);
+  const addToast = useSetAtom(addToastAtom);
 
   // Editing is owner-only (the API enforces this too). Anyone else who reaches
   // /edit directly is bounced back to the read-only detail page.
@@ -77,6 +79,8 @@ export default function EditView({ quizId }: EditViewProps) {
     try {
       const newQuestions = await generateMoreQuestions(quizId, 5);
       addQuestions(newQuestions);
+    } catch {
+      addToast({ message: "Couldn't generate more questions — try again.", type: 'error' });
     } finally {
       setAddingQuestions(false);
     }
@@ -87,25 +91,54 @@ export default function EditView({ quizId }: EditViewProps) {
     try {
       const created = await createQuestion(quizId);
       addQuestions([created]);
+    } catch {
+      addToast({ message: "Couldn't add a question — try again.", type: 'error' });
     } finally {
       setAddingManual(false);
     }
   };
 
-  const handleDeleteQuestion = async (questionId: string) => {
-    removeQuestion(questionId);
-    await deleteQuestion(quizId, questionId).catch(() => {});
+  const handleDeleteQuestion = (questionId: string) => {
+    setConfirm({
+      title: 'Delete question',
+      message: 'This removes the question from the quiz. This cannot be undone.',
+      confirmLabel: 'Delete',
+      onConfirm: async () => {
+        try {
+          await deleteQuestion(quizId, questionId);
+          removeQuestion(questionId);
+        } catch {
+          addToast({ message: "Couldn't delete that question — try again.", type: 'error' });
+        }
+      },
+    });
   };
 
   const handleSetPerRun = async (value: number) => {
+    const previous = quiz?.questionsPerRun ?? DEFAULT_QUESTIONS_PER_RUN;
     patchQuiz({ questionsPerRun: value });
-    await updateQuiz(quizId, { questionsPerRun: value }).catch(() => {});
+    try {
+      await updateQuiz(quizId, { questionsPerRun: value });
+    } catch {
+      patchQuiz({ questionsPerRun: previous });
+      addToast({ message: "Couldn't update questions per run — try again.", type: 'error' });
+    }
   };
 
   const handleSetVisibility = async (value: QuizVisibility) => {
+    const previous = quiz?.visibility;
     patchQuiz({ visibility: value });
-    await updateQuiz(quizId, { visibility: value }).catch(() => {});
+    try {
+      await updateQuiz(quizId, { visibility: value });
+    } catch {
+      if (previous) patchQuiz({ visibility: previous });
+      addToast({ message: "Couldn't update visibility — try again.", type: 'error' });
+    }
   };
+
+  if (!quiz && error) {
+    return <QuizUnavailable notFound={notFound} />;
+  }
 
   // Hold the loading state until ownership is confirmed so the edit UI never
   // flashes for a non-owner (who is being redirected away).

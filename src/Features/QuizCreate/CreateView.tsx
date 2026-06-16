@@ -98,7 +98,7 @@ export default function CreateView() {
           </p>
         </ScrollReveal>
 
-        {!loading && !signedIn ? (
+        {loading ? null : !signedIn ? (
           <Card color="lavender">
             <p className={styles.kicker}>Sign in to create</p>
             <p>
@@ -108,7 +108,15 @@ export default function CreateView() {
             <SignInButton callbackURL="/create" fullWidth />
           </Card>
         ) : (
-          <form className={styles.form} onSubmit={(e) => e.preventDefault()}>
+          <form
+            className={styles.form}
+            onSubmit={(e) => {
+              // Drive generation from submit so the mobile keyboard's "Go" key
+              // works, not just a tap on the button.
+              e.preventDefault();
+              if (canSubmit) handleGenerate();
+            }}
+          >
             <TopicInput value={topic} onChange={setTopic} />
             <MaterialPaste value={material} onChange={setMaterial} />
             <CountPicker value={count} onChange={setCount} />
@@ -124,10 +132,10 @@ export default function CreateView() {
             {error && <p className={styles.error} role="alert">{error}</p>}
 
             <Button
+              type="submit"
               variant="primary"
               fullWidth
               disabled={!canSubmit}
-              onClick={handleGenerate}
             >
               Generate quiz
             </Button>

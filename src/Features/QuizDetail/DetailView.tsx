@@ -18,6 +18,7 @@ import BlobField from '@/Features/Shared/BlobField';
 import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import Leaderboard from '@/Features/Shared/Leaderboard';
+import QuizUnavailable from '@/Features/Shared/QuizUnavailable';
 import QuizHeader from './QuizHeader';
 import styles from './DetailView.module.css';
 
@@ -32,7 +33,7 @@ const VISIBILITY_LABEL: Record<QuizVisibility, string> = {
 };
 
 export default function DetailView({ quizId }: DetailViewProps) {
-  const { quiz, questions, imagesPending } = useQuiz(quizId, { poll: true });
+  const { quiz, questions, imagesPending, error, notFound } = useQuiz(quizId, { poll: true });
   const { data: session } = useSession();
   const [stats, setStats] = useState<ResultsSummary | null>(null);
   const [statsLoaded, setStatsLoaded] = useState(false);
@@ -101,6 +102,10 @@ export default function DetailView({ quizId }: DetailViewProps) {
       },
     });
   };
+
+  if (!quiz && error) {
+    return <QuizUnavailable notFound={notFound} />;
+  }
 
   if (!quiz) {
     return (

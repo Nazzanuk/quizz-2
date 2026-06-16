@@ -43,7 +43,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const code = typeof body.error === 'string' ? body.error : `http_${res.status}`;
-    throw new ApiError(res.status, code, body.error ?? `Request failed: ${res.status}`);
+    // Prefer a human-readable `message` (e.g. the 429 limiter copy) over the
+    // machine-readable `error` code so raw tokens like "rate_limited" never
+    // reach the user.
+    const message =
+      typeof body.message === 'string'
+        ? body.message
+        : typeof body.error === 'string'
+          ? body.error
+          : `Request failed: ${res.status}`;
+    throw new ApiError(res.status, code, message);
   }
   return res.json();
 }
