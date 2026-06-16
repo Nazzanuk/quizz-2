@@ -4,7 +4,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import Link from '@/Features/Shared/TransitionLink';
 import { useSearchParams } from 'next/navigation';
-import { DEFAULT_QUESTIONS_PER_RUN, HOST_MODE_CONFIG, PLAY_TIMER_SECONDS, PLAY_TIMINGS, STREAK_MILESTONES } from '@/Lib/Constants';
+import {
+  DEFAULT_QUESTIONS_PER_RUN,
+  HOST_MODE_CONFIG,
+  PLAY_TIMER_SECONDS,
+  PLAY_TIMINGS,
+  STREAK_MILESTONES,
+  TIMER_READ_ALLOWANCE_MAX_MS,
+  TIMER_READ_ALOUD_MS_PER_WORD,
+  TIMER_READ_SILENT_MS_PER_WORD,
+} from '@/Lib/Constants';
 import { fetchHostSession, fetchRun, getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { recordPlayerRun, getPlayerProfile } from '@/Lib/PlayerProfile';
@@ -473,6 +482,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
         streakBefore,
         streakAfter: nextStreak,
         wasFinalQuestion: idx + 1 >= questionOrder.length,
+        playFormat: questionFormats.get(questionId) ?? 'mcq',
       };
       const nextAttempts = [...attemptsRef.current, attempt];
       attemptsRef.current = nextAttempts;
@@ -615,6 +625,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       previousBest,
       previousWasWrong,
       questionById,
+      questionFormats,
       questionOrder,
       questionStats,
       questions,
@@ -767,6 +778,18 @@ function ActiveQuestion({
 }: ActiveQuestionProps) {
   const [interactionLocked, setInteractionLocked] = useState(false);
   const addToast = useSetAtom(addToastAtom);
+  const readQuestionsAloud = useAtomValue(readQuestionsAloudAtom);
+  // Give longer questions more time: per-format thinking time plus a reading
+  // allowance scaled by word count (larger when read aloud), so the clock can't
+  // expire before the question has even been read out.
+  const timerSeconds = useMemo(() => {
+    const words = current.questionText.trim().split(/\s+/).filter(Boolean).length;
+    const perWord = readQuestionsAloud
+      ? TIMER_READ_ALOUD_MS_PER_WORD
+      : TIMER_READ_SILENT_MS_PER_WORD;
+    const allowanceMs = Math.min(words * perWord, TIMER_READ_ALLOWANCE_MAX_MS);
+    return PLAY_TIMER_SECONDS[format] + Math.round(allowanceMs / 1000);
+  }, [current.questionText, format, readQuestionsAloud]);
   // Pause the countdown while an overlay (leave-run confirm, settings sheet)
   // covers the question — answering is impossible behind it.
   const confirmOpen = useAtomValue(confirmDialogAtom) !== null;
@@ -873,16 +896,16 @@ function ActiveQuestion({
     onAnswer({
       correct: false,
       phase: 'timed-out',
-      responseMs: PLAY_TIMER_SECONDS[format] * 1000,
+      responseMs: timerSeconds * 1000,
       selectedAnswer: null,
       timedOut: true,
     });
-  }, [format, interactionLocked, onAnswer, setAnswerPhase]);
+  }, [interactionLocked, onAnswer, setAnswerPhase, timerSeconds]);
 
   return (
     <>
       <PlayTimer
-        seconds={PLAY_TIMER_SECONDS[format]}
+        seconds={timerSeconds}
         phase={answerPhase}
         paused={interactionLocked || confirmOpen || settingsOpen || backgrounded}
         hideTextUi={hideTextUi}
@@ -939,6 +962,7 @@ function toQuestionAttempts(args: {
     streakAfter: attempt.streakAfter,
     wasFinalQuestion: attempt.wasFinalQuestion,
     hostMode: args.hostMode,
+    playFormat: attempt.playFormat,
     createdAt: args.createdAt,
   }));
 }

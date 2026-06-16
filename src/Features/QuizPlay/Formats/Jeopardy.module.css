@@ -251,3 +251,8 @@
     transform: none;
   }
 }
+
+/* Let a vertical swipe starting on a button scroll the answer list. */
+.option {
+  touch-action: pan-y;
+}

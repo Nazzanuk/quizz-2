@@ -16,6 +16,13 @@ export const PLAY_TIMER_SECONDS: Record<QuizFormat, number> = {
   true_false: 10,
 };
 
+// Long questions (especially read aloud) can eat the whole countdown before the
+// player has even absorbed them. Add reading time scaled by word count on top of
+// the per-format thinking time. Aloud is slower since you can't skim ahead.
+export const TIMER_READ_ALOUD_MS_PER_WORD = 360;
+export const TIMER_READ_SILENT_MS_PER_WORD = 200;
+export const TIMER_READ_ALLOWANCE_MAX_MS = 12_000;
+
 export const PLAY_TIMINGS = {
   answerRevealDelayMs: 140,
   answerRevealHoldMs: 520,
