@@ -374,6 +374,9 @@ export interface GenerateQuizRequest {
   topic?: string;
   material?: string;
   count?: number;
+  // Stable per-attempt key so a retried generation returns the existing quiz
+  // instead of creating a duplicate.
+  idempotencyKey?: string;
 }
 
 export interface GenerateImageRequest {

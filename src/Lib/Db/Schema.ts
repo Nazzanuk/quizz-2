@@ -18,6 +18,9 @@ export const quizzes = sqliteTable('quizzes', {
   format: text('format').notNull(),
   questionCount: integer('question_count').default(0),
   questionsPerRun: integer('questions_per_run'),
+  // Client-supplied key that makes "generate quiz" safe to retry: a repeated
+  // request with the same key returns the existing quiz instead of a duplicate.
+  idempotencyKey: text('idempotency_key'),
   createdAt: text('created_at').notNull(),
   updatedAt: text('updated_at').notNull(),
 });

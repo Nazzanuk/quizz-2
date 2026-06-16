@@ -69,6 +69,7 @@ export async function insertQuiz(data: {
   format: QuizFormat;
   questionCount?: number;
   questionsPerRun?: number | null;
+  idempotencyKey?: string | null;
 }): Promise<Quiz> {
   const now = nowISO();
   const [row] = await db
@@ -77,11 +78,25 @@ export async function insertQuiz(data: {
       ...data,
       ownerId: data.ownerId ?? null,
       visibility: data.visibility ?? 'unlisted',
+      idempotencyKey: data.idempotencyKey ?? null,
       createdAt: now,
       updatedAt: now,
     })
     .returning();
   return parseQuiz(row);
+}
+
+// Looks up a quiz previously created with this generation key by this owner, so
+// a retried request can return it instead of generating a duplicate.
+export async function getQuizByIdempotencyKey(
+  ownerId: string,
+  key: string,
+): Promise<Quiz | null> {
+  const [row] = await db
+    .select()
+    .from(quizzes)
+    .where(and(eq(quizzes.idempotencyKey, key), eq(quizzes.ownerId, ownerId)));
+  return row ? parseQuiz(row) : null;
 }
 
 type InsertQuestion = {
