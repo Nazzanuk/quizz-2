@@ -92,7 +92,8 @@ export default function AppShell({ children, variant = 'tabs' }: AppShellProps) 
         )}
         {showGear ? (
           <button
-            className={`${styles.iconButton} ${styles.gearButton}`}
+            className={styles.iconButton}
+            data-vt="gear"
             onClick={() => focused ? setSettingsOpen(true) : navigate('/settings')}
             aria-label="Settings"
           >

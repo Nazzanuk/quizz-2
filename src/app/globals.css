@@ -485,6 +485,31 @@ a {
   animation: none;
 }
 
+/* The settings gear morphs silently when it's on both screens (most
+   navigations). The `:only-child` selectors match only when it's added or
+   removed — so it spins in on appear and out on disappear, never on every nav.
+   Set the name from global CSS (not the module, which hashes the name). */
+[data-vt="gear"] {
+  view-transition-name: quizz-gear;
+}
+
+::view-transition-group(quizz-gear) {
+  animation-duration: var(--motion-base);
+}
+
+::view-transition-new(quizz-gear):only-child {
+  animation: gearIn var(--motion-base) var(--ease-soft);
+}
+
+::view-transition-old(quizz-gear):only-child {
+  animation: gearIn var(--motion-base) var(--ease-soft) reverse;
+}
+
+@keyframes gearIn {
+  from { opacity: 0; transform: scale(0.6) rotate(-90deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
 /* Smooth crossfade between pages (no zoom — the old scale read as an abrupt
    zoom-in on every navigation). */
 @keyframes vtFadeOut {
