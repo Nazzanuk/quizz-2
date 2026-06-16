@@ -16,7 +16,10 @@ import {
   type Question,
   type QuestionAggregateStats,
   type QuestionDifficulty,
+  type AdminUserRow,
+  type AdminQuizRow,
   type AnalyticsSummary,
+  type DedupeBurst,
   type Quiz,
   type QuizAggregateStats,
   type QuizFormat,
@@ -1063,6 +1066,197 @@ export async function backfillQuizOwner(
     .where(sql`${quizzes.ownerId} IS NULL`)
     .returning({ id: quizzes.id });
   return rows.length;
+}
+
+// --- Admin dashboard -------------------------------------------------------
+
+export async function listUsers(): Promise<AdminUserRow[]> {
+  const rows = await db
+    .select({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      username: user.username,
+      credits: user.credits,
+      createdAt: user.createdAt,
+    })
+    .from(user)
+    .orderBy(desc(user.createdAt));
+
+  // Per-user counts merged in JS (small scale; mirrors computeLeaderboardCore).
+  const quizCounts = await db
+    .select({ ownerId: quizzes.ownerId, n: sql<number>`count(*)` })
+    .from(quizzes)
+    .groupBy(quizzes.ownerId);
+  const runCounts = await db
+    .select({ userId: quizRuns.userId, n: sql<number>`count(*)` })
+    .from(quizRuns)
+    .groupBy(quizRuns.userId);
+  const quizByOwner = new Map(quizCounts.map((r) => [r.ownerId, Number(r.n)]));
+  const runByUser = new Map(runCounts.map((r) => [r.userId, Number(r.n)]));
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    username: r.username,
+    credits: r.credits,
+    // user.createdAt is a timestamp column (Date) — normalize to ISO string.
+    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : String(r.createdAt),
+    quizCount: quizByOwner.get(r.id) ?? 0,
+    runCount: runByUser.get(r.id) ?? 0,
+  }));
+}
+
+export async function getUserById(
+  id: string,
+): Promise<{ id: string; email: string; name: string } | null> {
+  const [row] = await db
+    .select({ id: user.id, email: user.email, name: user.name })
+    .from(user)
+    .where(eq(user.id, id));
+  return row ?? null;
+}
+
+// Sets a user's credit balance and stamps the refresh time so the lazy monthly
+// top-up in getUserCredits doesn't overwrite the admin value this month.
+export async function setUserCredits(userId: string, credits: number): Promise<number | null> {
+  const rows = await db
+    .update(user)
+    .set({ credits, creditsRefreshedAt: nowISO() })
+    .where(eq(user.id, userId))
+    .returning({ credits: user.credits });
+  return rows.length > 0 ? rows[0].credits : null;
+}
+
+export async function listAllQuizzes(opts?: {
+  search?: string;
+  limit?: number;
+}): Promise<AdminQuizRow[]> {
+  const limit = Math.min(opts?.limit ?? 100, 200);
+  const search = opts?.search?.trim().toLowerCase();
+  const like = search ? `%${search}%` : null;
+  const where = like
+    ? sql`lower(${quizzes.title}) LIKE ${like}
+        OR lower(coalesce(${quizzes.topic}, '')) LIKE ${like}
+        OR lower(coalesce(${user.email}, '')) LIKE ${like}`
+    : undefined;
+
+  const rows = await db
+    .select({ quiz: quizzes, ownerName: user.name, ownerEmail: user.email })
+    .from(quizzes)
+    .leftJoin(user, eq(quizzes.ownerId, user.id))
+    .where(where)
+    .orderBy(desc(quizzes.updatedAt))
+    .limit(limit);
+
+  const ids = rows.map((r) => r.quiz.id);
+  const runCounts = ids.length
+    ? await db
+      .select({ quizId: quizRuns.quizId, n: sql<number>`count(*)` })
+      .from(quizRuns)
+      .where(inArray(quizRuns.quizId, ids))
+      .groupBy(quizRuns.quizId)
+    : [];
+  const reportCounts = ids.length
+    ? await db
+      .select({ quizId: quizReports.quizId, n: sql<number>`count(*)` })
+      .from(quizReports)
+      .where(inArray(quizReports.quizId, ids))
+      .groupBy(quizReports.quizId)
+    : [];
+  const runByQuiz = new Map(runCounts.map((r) => [r.quizId, Number(r.n)]));
+  const reportByQuiz = new Map(reportCounts.map((r) => [r.quizId, Number(r.n)]));
+
+  return rows.map((r) => {
+    const quiz = parseQuiz(r.quiz);
+    return {
+      id: quiz.id,
+      title: quiz.title,
+      topic: quiz.topic,
+      visibility: quiz.visibility,
+      status: quiz.status,
+      ownerId: quiz.ownerId,
+      ownerName: r.ownerName ?? null,
+      ownerEmail: r.ownerEmail ?? null,
+      questionCount: quiz.questionCount,
+      runCount: runByQuiz.get(quiz.id) ?? 0,
+      reportCount: reportByQuiz.get(quiz.id) ?? 0,
+      createdAt: quiz.createdAt,
+      updatedAt: quiz.updatedAt,
+    };
+  });
+}
+
+// Server-side mirror of scripts/dedupe-quizzes.ts: groups by owner + topic,
+// splits into bursts within `windowMin`, keeps the earliest of each burst.
+export async function previewDedupe(windowMin = 30): Promise<DedupeBurst[]> {
+  const windowMs = windowMin * 60_000;
+  const rows = await db
+    .select({
+      id: quizzes.id,
+      ownerId: quizzes.ownerId,
+      title: quizzes.title,
+      topic: quizzes.topic,
+      createdAt: quizzes.createdAt,
+      questionCount: quizzes.questionCount,
+    })
+    .from(quizzes);
+
+  const groups = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const topic = (row.topic ?? '').trim().toLowerCase();
+    if (!topic) continue;
+    const key = `${row.ownerId ?? 'none'}::${topic}`;
+    const list = groups.get(key) ?? [];
+    list.push(row);
+    groups.set(key, list);
+  }
+
+  const bursts: DedupeBurst[] = [];
+  for (const list of groups.values()) {
+    if (list.length < 2) continue;
+    const sorted = [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    let burst = [sorted[0]];
+    const flush = () => {
+      if (burst.length < 2) return;
+      const [keep, ...remove] = burst;
+      bursts.push({
+        topic: (keep.topic ?? '').trim(),
+        ownerId: keep.ownerId,
+        keep: { id: keep.id, title: keep.title, createdAt: keep.createdAt, questionCount: keep.questionCount ?? 0 },
+        remove: remove.map((r) => ({ id: r.id, title: r.title, createdAt: r.createdAt, questionCount: r.questionCount ?? 0 })),
+      });
+    };
+    for (let i = 1; i < sorted.length; i += 1) {
+      const gap = new Date(sorted[i].createdAt).getTime() - new Date(sorted[i - 1].createdAt).getTime();
+      if (gap <= windowMs) burst.push(sorted[i]);
+      else { flush(); burst = [sorted[i]]; }
+    }
+    flush();
+  }
+  return bursts;
+}
+
+// Recomputes the preview server-side (never trusts client ids) then deletes the
+// non-earliest copies with full cleanup.
+export async function applyDedupe(windowMin = 30): Promise<{ deleted: number }> {
+  const bursts = await previewDedupe(windowMin);
+  let deleted = 0;
+  for (const burst of bursts) {
+    for (const row of burst.remove) {
+      await deleteQuiz(row.id);
+      deleted += 1;
+    }
+  }
+  return { deleted };
+}
+
+// Mirror of scripts/reset-credits.ts: set every user to the current default.
+export async function resetAllCredits(): Promise<{ users: number }> {
+  const rows = await db.select({ id: user.id }).from(user);
+  await db.update(user).set({ credits: STARTER_CREDITS, creditsRefreshedAt: nowISO() });
+  return { users: rows.length };
 }
 
 function parseQuiz(row: typeof quizzes.$inferSelect): Quiz {

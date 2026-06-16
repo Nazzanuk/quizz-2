@@ -8,6 +8,7 @@ import {
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { isAdminEmail } from '@/Lib/Auth/Admin';
 import { enforceRateLimit } from '@/Lib/RateLimit';
 import { validateUsername } from '@/Lib/Types';
 
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
     image: sessionUser.image,
     credits: credits ?? 0,
     username,
+    isAdmin: isAdminEmail(sessionUser.email),
   });
 }
 

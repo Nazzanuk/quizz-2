@@ -1,0 +1,168 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.state {
+  padding: 1rem;
+  font-weight: 700;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search {
+  flex: 1;
+  min-height: 44px;
+  padding: 0.6rem 0.8rem;
+  border: var(--neo-border-thin);
+  background: var(--neo-white);
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.search:focus-visible {
+  outline: 3px solid var(--neo-ink);
+  outline-offset: 2px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.9rem;
+}
+
+.rowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.name {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--neo-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--neo-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sub {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--neo-ink);
+  opacity: 0.75;
+  word-break: break-word;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.badge {
+  padding: 0.2rem 0.5rem;
+  background: var(--neo-secondary);
+  border: var(--neo-border-thin);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.badgeWarn {
+  background: var(--neo-accent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.input {
+  width: 5.5rem;
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border: var(--neo-border-thin);
+  background: var(--neo-white);
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.select {
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border: var(--neo-border-thin);
+  background: var(--neo-white);
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.danger {
+  margin-left: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--neo-ink);
+  font-family: var(--font-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Maintenance */
+.maintTitle {
+  margin: 0 0 0.3rem;
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.maintHint {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.burst {
+  padding: 0.6rem 0.7rem;
+  margin-bottom: 0.5rem;
+  border: var(--neo-border-thin);
+  background: var(--neo-white);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.keep {
+  color: var(--neo-ink);
+}
+
+.remove {
+  color: var(--neo-ink);
+  opacity: 0.7;
+}
