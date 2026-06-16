@@ -10,6 +10,10 @@
 
 import { writeFile, mkdir } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
+import { loadEnvConfig } from '@next/env';
+
+// Pick up ELEVENLABS_API_KEY from .env.local like the app does.
+loadEnvConfig(process.cwd());
 
 interface SoundSpec {
   name: string;
@@ -18,36 +22,38 @@ interface SoundSpec {
   promptInfluence?: number;
 }
 
+// Arcade-forward, high-"juice" SFX: punchy chiptune/8-bit synths with strong
+// transients, the satisfying snap of a polished mobile arcade game.
 const SOUNDS: SoundSpec[] = [
   {
     name: 'tap',
-    prompt: 'Juicy tactile mobile game tap. Soft rounded click with a tiny pop, clean and satisfying, very short, no harsh attack.',
+    prompt: 'Snappy arcade UI blip: a short bright 8-bit square-wave click with a punchy transient and tiny pitch pop, crisp and satisfying, retro video-game menu select, very short.',
     durationSeconds: 0.5,
-    promptInfluence: 0.55,
+    promptInfluence: 0.8,
   },
   {
     name: 'correct',
-    prompt: 'Juicy arcade correct answer sound. Bright pop into a fast two-note ascending sparkle, warm, rewarding, playful, polished mobile game feel.',
+    prompt: 'Juicy arcade correct-answer chime: a fast bright ascending chiptune arpeggio with a coin-collect sparkle on top, punchy attack, rewarding and upbeat, classic retro video game power-up.',
     durationSeconds: 0.7,
-    promptInfluence: 0.6,
+    promptInfluence: 0.8,
   },
   {
     name: 'wrong',
-    prompt: 'Playful wrong answer sound for a polished quiz game. Short soft descending bloop with a tiny rubbery bonk, gentle and light, not punishing or buzzy.',
-    durationSeconds: 0.55,
-    promptInfluence: 0.58,
+    prompt: 'Arcade wrong-answer buzz: a short comedic descending chiptune bonk with a retro square-wave error blip, playful and bouncy, classic video-game miss, not harsh.',
+    durationSeconds: 0.5,
+    promptInfluence: 0.78,
   },
   {
     name: 'complete',
-    prompt: 'Compact mobile game completion stinger. Energetic celebratory fanfare with bright layered chimes, confident finish, punchy and polished, under two seconds.',
-    durationSeconds: 1.1,
-    promptInfluence: 0.58,
+    prompt: 'Arcade level-complete jingle: an upbeat punchy chiptune victory fanfare, layered square-wave melody with a bright ascending finish and a sparkle tail, energetic 16-bit game stage clear.',
+    durationSeconds: 1.2,
+    promptInfluence: 0.78,
   },
   {
     name: 'newBest',
-    prompt: 'Big juicy new high score celebration for a mobile quiz game. Punchy rising arpeggio, sparkling shimmer tail, exciting but classy, premium arcade reward.',
-    durationSeconds: 1.35,
-    promptInfluence: 0.62,
+    prompt: 'Epic arcade high-score fanfare: a triumphant rising chiptune arpeggio with layered harmonies, shimmering 8-bit sparkles and a powerful punchy finish, celebratory premium retro-game new-record reward.',
+    durationSeconds: 1.5,
+    promptInfluence: 0.82,
   },
 ];
 
