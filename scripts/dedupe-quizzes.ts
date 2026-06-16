@@ -1,20 +1,21 @@
 /**
- * Removes accidental duplicate quizzes (e.g. created when a slow "generate"
- * appeared to fail and the user retried). Groups quizzes by owner + title and
- * keeps the EARLIEST in each group, deleting the rest with the app's full
- * cleanup (questions, runs, results, attempts, images).
+ * Removes accidental duplicate quizzes — the ones created when a slow "generate"
+ * appeared to fail and the user retried. Retries produce a *different* AI title
+ * each time but keep the same topic, so duplicates are detected by
+ * (owner + topic) AND being created within a short time window of each other
+ * (a retry burst). The EARLIEST in each burst is kept; the rest are deleted with
+ * the app's full cleanup (questions, runs, results, attempts, images).
  *
  * DRY RUN BY DEFAULT — it only prints what it would do. Review the output, then
  * re-run with --apply to actually delete.
  *
- * Heads-up: two genuinely different quizzes that share an owner and title will
- * be treated as duplicates, so always check the dry-run list first.
+ * Quizzes with no topic are skipped (can't be matched reliably). Same-topic
+ * quizzes created far apart are treated as separate, intentional quizzes.
  *
- * Usage (against production):
- *   TURSO_DATABASE_URL=libsql://... TURSO_AUTH_TOKEN=... \
- *     npx tsx scripts/dedupe-quizzes.ts            # dry run
- *   TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... \
- *     npx tsx scripts/dedupe-quizzes.ts --apply    # delete
+ * Usage (against production — .env.local is auto-loaded):
+ *   pnpm dedupe-quizzes            # dry run
+ *   pnpm dedupe-quizzes -- --apply # delete
+ *   pnpm dedupe-quizzes -- --window=10   # change the burst window (minutes)
  */
 
 import './load-env'; // must run before any module that reads env at import time
@@ -27,12 +28,22 @@ interface Row {
   id: string;
   ownerId: string | null;
   title: string;
+  topic: string | null;
   createdAt: string;
   questionCount: number | null;
 }
 
+const DEFAULT_WINDOW_MIN = 30;
+
+function parseWindowMin(): number {
+  const arg = process.argv.find((a) => a.startsWith('--window='));
+  const value = arg ? Number(arg.split('=')[1]) : NaN;
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_WINDOW_MIN;
+}
+
 async function main() {
   const apply = process.argv.includes('--apply');
+  const windowMs = parseWindowMin() * 60_000;
   await runMigrations();
 
   const rows: Row[] = await db
@@ -40,14 +51,18 @@ async function main() {
       id: quizzes.id,
       ownerId: quizzes.ownerId,
       title: quizzes.title,
+      topic: quizzes.topic,
       createdAt: quizzes.createdAt,
       questionCount: quizzes.questionCount,
     })
     .from(quizzes);
 
+  // Group by owner + normalized topic (skip quizzes without a topic).
   const groups = new Map<string, Row[]>();
   for (const row of rows) {
-    const key = `${row.ownerId ?? 'none'}::${row.title.trim().toLowerCase()}`;
+    const topic = (row.topic ?? '').trim().toLowerCase();
+    if (!topic) continue;
+    const key = `${row.ownerId ?? 'none'}::${topic}`;
     const list = groups.get(key) ?? [];
     list.push(row);
     groups.set(key, list);
@@ -57,13 +72,30 @@ async function main() {
   for (const list of groups.values()) {
     if (list.length < 2) continue;
     const sorted = [...list].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    const [keep, ...extras] = sorted;
-    console.log(`\nDuplicate group "${keep.title}" (owner ${keep.ownerId ?? 'none'}): ${list.length} copies`);
-    console.log(`  KEEP   ${keep.id}  ${keep.createdAt}  (${keep.questionCount ?? 0} Qs)`);
-    for (const extra of extras) {
-      console.log(`  DELETE ${extra.id}  ${extra.createdAt}  (${extra.questionCount ?? 0} Qs)`);
-      toDelete.push(extra);
+
+    // Split the group into bursts: a new burst starts when the gap from the
+    // previous quiz exceeds the window.
+    let burst: Row[] = [sorted[0]];
+    const flush = () => {
+      if (burst.length < 2) return;
+      const [keep, ...extras] = burst;
+      console.log(`\nDuplicate burst — topic "${keep.topic}" (owner ${keep.ownerId ?? 'none'}): ${burst.length} copies`);
+      console.log(`  KEEP   ${keep.id}  ${keep.createdAt}  ${keep.questionCount ?? 0} Qs  "${keep.title}"`);
+      for (const extra of extras) {
+        console.log(`  DELETE ${extra.id}  ${extra.createdAt}  ${extra.questionCount ?? 0} Qs  "${extra.title}"`);
+        toDelete.push(extra);
+      }
+    };
+    for (let i = 1; i < sorted.length; i += 1) {
+      const gap = new Date(sorted[i].createdAt).getTime() - new Date(sorted[i - 1].createdAt).getTime();
+      if (gap <= windowMs) {
+        burst.push(sorted[i]);
+      } else {
+        flush();
+        burst = [sorted[i]];
+      }
     }
+    flush();
   }
 
   if (toDelete.length === 0) {
@@ -72,7 +104,7 @@ async function main() {
   }
 
   if (!apply) {
-    console.log(`\nDry run: ${toDelete.length} quiz(zes) would be deleted. Re-run with --apply to delete.`);
+    console.log(`\nDry run: ${toDelete.length} quiz(zes) would be deleted (window ${parseWindowMin()} min). Re-run with --apply to delete.`);
     return;
   }
 
