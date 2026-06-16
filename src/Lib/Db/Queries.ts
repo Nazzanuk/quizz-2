@@ -130,8 +130,63 @@ export async function updateQuiz(
   return row ? parseQuiz(row) : undefined;
 }
 
+// Extracts the stored image id from an /api/images/:id URL, else null.
+function imageIdFromUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const match = /\/api\/images\/([^/?#]+)/.exec(url);
+  return match ? match[1] : null;
+}
+
+// Collects every image id referenced by a set of cover URLs and question rows
+// (question image + option images). Operates on raw rows (optionImages is JSON).
+function collectImageIds(params: {
+  coverImageUrls?: (string | null)[];
+  questions?: { imageUrl: string | null; optionImages: string | null }[];
+}): string[] {
+  const ids = new Set<string>();
+  for (const url of params.coverImageUrls ?? []) {
+    const id = imageIdFromUrl(url);
+    if (id) ids.add(id);
+  }
+  for (const question of params.questions ?? []) {
+    const id = imageIdFromUrl(question.imageUrl);
+    if (id) ids.add(id);
+    if (question.optionImages) {
+      try {
+        const urls = JSON.parse(question.optionImages) as (string | null)[];
+        for (const optionUrl of urls) {
+          const optionId = imageIdFromUrl(optionUrl);
+          if (optionId) ids.add(optionId);
+        }
+      } catch {
+        // malformed JSON — nothing to collect
+      }
+    }
+  }
+  return [...ids];
+}
+
+async function deleteImagesByIds(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await db.delete(images).where(inArray(images.id, ids));
+}
+
+// Fully removes a quiz and everything tied to it. FK cascades are off in libsql,
+// so questions/runs/results/attempts and stored images are deleted explicitly.
 export async function deleteQuiz(id: string): Promise<void> {
+  const [quizRow] = await db.select().from(quizzes).where(eq(quizzes.id, id));
+  const questionRows = await db.select().from(questions).where(eq(questions.quizId, id));
+  const imageIds = collectImageIds({
+    coverImageUrls: [quizRow?.coverImageUrl ?? null],
+    questions: questionRows,
+  });
+
+  await db.delete(questionAttempts).where(eq(questionAttempts.quizId, id));
+  await db.delete(quizRuns).where(eq(quizRuns.quizId, id));
+  await db.delete(quizResults).where(eq(quizResults.quizId, id));
+  await db.delete(questions).where(eq(questions.quizId, id));
   await db.delete(quizzes).where(eq(quizzes.id, id));
+  await deleteImagesByIds(imageIds);
 }
 
 export async function updateQuestion(
@@ -160,7 +215,11 @@ export async function updateQuestion(
 }
 
 export async function deleteQuestion(id: string): Promise<void> {
+  const [row] = await db.select().from(questions).where(eq(questions.id, id));
   await db.delete(questions).where(eq(questions.id, id));
+  if (row) {
+    await deleteImagesByIds(collectImageIds({ questions: [row] }));
+  }
 }
 
 export async function updateQuestionHostMetadata(
@@ -696,8 +755,15 @@ export async function exportUserData(userId: string): Promise<{
 // explicitly rather than via FK cascade, since libsql does not enforce
 // foreign-key cascades by default.
 export async function deleteUserAndData(userId: string): Promise<void> {
-  const owned = await db.select({ id: quizzes.id }).from(quizzes).where(eq(quizzes.ownerId, userId));
-  const quizIds = owned.map((row) => row.id);
+  const ownedQuizRows = await db.select().from(quizzes).where(eq(quizzes.ownerId, userId));
+  const quizIds = ownedQuizRows.map((row) => row.id);
+  const ownedQuestionRows = quizIds.length > 0
+    ? await db.select().from(questions).where(inArray(questions.quizId, quizIds))
+    : [];
+  const imageIds = collectImageIds({
+    coverImageUrls: ownedQuizRows.map((row) => row.coverImageUrl ?? null),
+    questions: ownedQuestionRows,
+  });
   const userRuns = await db.select({ id: quizRuns.id }).from(quizRuns).where(eq(quizRuns.userId, userId));
   const userRunIds = userRuns.map((row) => row.id);
 
@@ -710,12 +776,13 @@ export async function deleteUserAndData(userId: string): Promise<void> {
     await db.delete(questionAttempts).where(inArray(questionAttempts.runId, userRunIds));
   }
 
-  // Runs + results + questions + quizzes for the user's owned quizzes.
+  // Runs + results + questions + quizzes + images for the user's owned quizzes.
   if (quizIds.length > 0) {
     await db.delete(quizRuns).where(inArray(quizRuns.quizId, quizIds));
     await db.delete(quizResults).where(inArray(quizResults.quizId, quizIds));
     await db.delete(questions).where(inArray(questions.quizId, quizIds));
     await db.delete(quizzes).where(inArray(quizzes.id, quizIds));
+    await deleteImagesByIds(imageIds);
   }
 
   // The user's own runs on other people's quizzes.
