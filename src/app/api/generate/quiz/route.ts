@@ -5,6 +5,7 @@ import {
   insertQuiz,
   insertQuestions,
   getUserCredits,
+  getQuizByIdempotencyKey,
   deductCredit,
   refundCredit,
 } from '@/Lib/Db/Queries';
@@ -41,22 +42,32 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   const body = await req.json();
-  const { topic: rawTopic, material: rawMaterial, count } = body as {
+  const { topic: rawTopic, material: rawMaterial, count, idempotencyKey: rawKey } = body as {
     topic?: string;
     material?: string;
     count?: number;
+    idempotencyKey?: string;
   };
 
   // Cap the free-text fields before they reach the model — they drive token
   // cost, and an unbounded paste shouldn't be billable to one credit.
   const topic = typeof rawTopic === 'string' ? rawTopic.slice(0, MAX_TOPIC_LENGTH) : undefined;
   const material = typeof rawMaterial === 'string' ? rawMaterial.slice(0, MAX_MATERIAL_LENGTH) : undefined;
+  const idempotencyKey = typeof rawKey === 'string' && rawKey.trim() ? rawKey.trim().slice(0, 64) : null;
 
   if (!topic?.trim() && !material?.trim()) {
     return NextResponse.json(
       { error: 'Provide a topic or material' },
       { status: 400 },
     );
+  }
+
+  // Safe retry: if this exact attempt already produced a quiz (e.g. the previous
+  // response was lost and the user hit Generate again), return it without
+  // generating again or spending another credit.
+  if (idempotencyKey) {
+    const existing = await getQuizByIdempotencyKey(sessionUser.id, idempotencyKey);
+    if (existing) return NextResponse.json(existing, { status: 200 });
   }
 
   // Apply any due monthly refresh, then spend one credit up front. If the
@@ -85,17 +96,33 @@ export async function POST(req: Request) {
 
   const quizId = crypto.randomUUID();
 
-  const quiz = await insertQuiz({
-    id: quizId,
-    ownerId: sessionUser.id,
-    title: generated.title,
-    description: generated.description,
-    topic: topic ?? undefined,
-    sourceMaterial: material ?? undefined,
-    format: 'mcq',
-    questionCount: generated.questions.length,
-    questionsPerRun: DEFAULT_QUESTIONS_PER_RUN,
-  });
+  let quiz;
+  try {
+    quiz = await insertQuiz({
+      id: quizId,
+      ownerId: sessionUser.id,
+      title: generated.title,
+      description: generated.description,
+      topic: topic ?? undefined,
+      sourceMaterial: material ?? undefined,
+      format: 'mcq',
+      questionCount: generated.questions.length,
+      questionsPerRun: DEFAULT_QUESTIONS_PER_RUN,
+      idempotencyKey,
+    });
+  } catch (err) {
+    // A concurrent request with the same key won the unique index — return its
+    // quiz and refund this request's credit so the retry isn't double-charged.
+    if (idempotencyKey) {
+      const existing = await getQuizByIdempotencyKey(sessionUser.id, idempotencyKey);
+      if (existing) {
+        await refundCredit(sessionUser.id);
+        return NextResponse.json(existing, { status: 200 });
+      }
+    }
+    await refundCredit(sessionUser.id);
+    throw err;
+  }
 
   const questionRows = generated.questions.map((q, i) => ({
     id: crypto.randomUUID(),

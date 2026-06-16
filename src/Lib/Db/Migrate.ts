@@ -190,6 +190,9 @@ export async function runMigrations(): Promise<void> {
     // How each question was presented in a run (mcq shown as jeopardy/true_false
     // at random), so the results breakdown can render it the way it was played.
     sql`ALTER TABLE question_attempts ADD COLUMN play_format TEXT`,
+    // Idempotency key so a retried "generate quiz" returns the existing quiz
+    // instead of creating a duplicate (and double-spending a credit).
+    sql`ALTER TABLE quizzes ADD COLUMN idempotency_key TEXT`,
   ]) {
     try {
       await db.run(stmt);
@@ -209,6 +212,14 @@ export async function runMigrations(): Promise<void> {
   // Speeds up the per-quiz, per-user run history and leaderboard aggregation.
   try {
     await db.run(sql`CREATE INDEX IF NOT EXISTS quiz_runs_quiz_user ON quiz_runs(quiz_id, user_id)`);
+  } catch {
+    // index already exists — ignore
+  }
+
+  // Enforce idempotency: at most one quiz per generation key. Partial so the many
+  // legacy/ownerless quizzes with a NULL key don't collide.
+  try {
+    await db.run(sql`CREATE UNIQUE INDEX IF NOT EXISTS quizzes_idempotency ON quizzes(idempotency_key) WHERE idempotency_key IS NOT NULL`);
   } catch {
     // index already exists — ignore
   }

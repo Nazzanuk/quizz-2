@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "generate-sounds": "npx tsx scripts/generate-sounds.ts",
-    "backfill-owner": "npx tsx scripts/backfill-owner.ts"
+    "backfill-owner": "npx tsx scripts/backfill-owner.ts",
+    "dedupe-quizzes": "npx tsx scripts/dedupe-quizzes.ts"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
