@@ -8,9 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "generate-sounds": "npx tsx scripts/generate-sounds.ts",
-    "backfill-owner": "npx tsx scripts/backfill-owner.ts",
-    "dedupe-quizzes": "npx tsx scripts/dedupe-quizzes.ts"
+    "generate-sounds": "tsx scripts/generate-sounds.ts",
+    "backfill-owner": "tsx scripts/backfill-owner.ts",
+    "dedupe-quizzes": "tsx scripts/dedupe-quizzes.ts"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
@@ -33,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "serwist": "^9.5.11",
+    "tsx": "^4.22.4",
     "typescript": "^5"
   }
 }
