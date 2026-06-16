@@ -84,8 +84,32 @@ export async function fetchAccountExport(): Promise<Blob> {
   return res.blob();
 }
 
-export function fetchLeaderboard(quizId: string, limit = 10): Promise<QuizLeaderboard> {
-  return request(`/quizzes/${quizId}/leaderboard?limit=${limit}`);
+export function fetchLeaderboard(
+  quizId: string,
+  limit = 10,
+  anonId?: string,
+): Promise<QuizLeaderboard> {
+  const anon = anonId ? `&anonId=${encodeURIComponent(anonId)}` : '';
+  return request(`/quizzes/${quizId}/leaderboard?limit=${limit}${anon}`);
+}
+
+// Sets a guest's public leaderboard name.
+export function setAnonName(anonId: string, username: string): Promise<{ username: string }> {
+  return request('/anon', {
+    method: 'PATCH',
+    body: JSON.stringify({ anonId, username }),
+  });
+}
+
+// After sign-in, migrate a guest's runs (and optionally adopt their name).
+export function claimAnon(
+  anonId: string,
+  username?: string,
+): Promise<{ claimed: number; usernameSet: boolean }> {
+  return request('/account/claim', {
+    method: 'POST',
+    body: JSON.stringify({ anonId, username }),
+  });
 }
 
 export function fetchTopQuizzes(limit = 5): Promise<TopQuiz[]> {

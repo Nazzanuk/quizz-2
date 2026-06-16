@@ -161,6 +161,14 @@ export const verification = sqliteTable('verification', {
   updatedAt: integer('updated_at', { mode: 'timestamp' }),
 });
 
+// Guest (signed-out) players who appear on leaderboards. `id` matches the
+// anonId stored in their browser; runs are attributed via quiz_runs.user_id.
+export const anonPlayers = sqliteTable('anon_players', {
+  id: text('id').primaryKey(),
+  username: text('username'),
+  createdAt: text('created_at').notNull(),
+});
+
 export const questionAttempts = sqliteTable('question_attempts', {
   id: text('id').primaryKey(),
   runId: text('run_id')

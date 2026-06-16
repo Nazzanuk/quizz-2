@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getResultsSummary, insertQuizResult, insertQuizRun } from '@/Lib/Db/Queries';
+import { getResultsSummary, insertQuizResult, insertQuizRun, upsertAnonPlayer } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
 import { clientIp, enforceRateLimit } from '@/Lib/RateLimit';
@@ -58,12 +58,21 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (body.runId && Array.isArray(body.attempts)) {
-    // Attribute the run to the signed-in player; null for anonymous plays.
+    // Signed-in player wins; otherwise attribute to the stable guest id so the
+    // run can appear on the leaderboard (and migrate on sign-in).
     const sessionUser = await getSessionUser(req);
+    const anonId = typeof body.anonId === 'string' && body.anonId.trim() ? body.anonId.trim() : null;
+    const userId = sessionUser?.id ?? anonId;
+    if (!sessionUser && anonId) {
+      const playerName = typeof body.playerName === 'string' && body.playerName.trim()
+        ? body.playerName.trim().slice(0, 40)
+        : null;
+      await upsertAnonPlayer(anonId, playerName);
+    }
     await insertQuizRun({
       id: body.runId,
       quizId,
-      userId: sessionUser?.id ?? null,
+      userId,
       mode: normalizeHostMode(body.mode),
       hostPersona: normalizeHostPersona(body.hostPersona),
       correct,

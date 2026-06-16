@@ -350,11 +350,23 @@ export const USERNAME_MIN = 3;
 export const USERNAME_MAX = 20;
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
 
+// Substrings blocked in public names (guest names are unauthenticated, so this
+// is a light first line of defence — not a complete moderation system).
+const BANNED_NAME_SUBSTRINGS = [
+  'admin', 'fuck', 'shit', 'cunt', 'nigger', 'faggot', 'rape', 'bitch', 'slut',
+];
+
+export function containsBannedWord(value: string): boolean {
+  const lower = value.toLowerCase();
+  return BANNED_NAME_SUBSTRINGS.some((word) => lower.includes(word));
+}
+
 export function validateUsername(value: string): string | null {
   const trimmed = value.trim();
   if (trimmed.length < USERNAME_MIN) return `At least ${USERNAME_MIN} characters`;
   if (trimmed.length > USERNAME_MAX) return `At most ${USERNAME_MAX} characters`;
   if (!USERNAME_PATTERN.test(trimmed)) return 'Letters, numbers, and underscores only';
+  if (containsBannedWord(trimmed)) return 'Please choose a different name';
   return null;
 }
 
@@ -416,6 +428,10 @@ export interface SaveResultRequest {
   recap: string | null;
   perQuestion: Record<string, string>;
   attempts: SaveResultAttemptInput[];
+  // Set by signed-out players so the run can be attributed to a stable guest
+  // identity on the leaderboard. Ignored when a session is present.
+  anonId?: string;
+  playerName?: string | null;
 }
 
 export interface HostRecapRequest {
@@ -477,4 +493,11 @@ export interface PlayerProfile {
   categories: Record<string, PlayerCategoryProfile>;
   quizzes: Record<string, PlayerQuizProfile>;
   recentRecaps: string[];
+  // Stable per-device id used to attribute anonymous runs to a single "guest"
+  // on the leaderboard. Empty until the first anonymous run is saved.
+  anonId: string;
+  // Local public name chosen by a guest. Becomes their account username when
+  // they sign in (if still available). null until they pick one. Cleared (along
+  // with anonId) once migrated into a signed-in account.
+  username: string | null;
 }
