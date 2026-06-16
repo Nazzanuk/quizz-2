@@ -76,7 +76,7 @@ export const QUESTION_COUNT_OPTIONS = [10, 20, 30, 40, 50];
 // get this bundle on first sign-in, and it refreshes back up to this amount
 // once per calendar month. One quiz generation (or "generate more" batch)
 // costs 1 credit.
-export const STARTER_CREDITS = 5;
+export const STARTER_CREDITS = 15;
 
 // --- Abuse / cost limits ---------------------------------------------------
 // Hard ceiling on AI images generated per quiz-generation request (cover +

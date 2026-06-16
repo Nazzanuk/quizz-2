@@ -10,7 +10,8 @@
     "lint": "eslint",
     "generate-sounds": "tsx scripts/generate-sounds.ts",
     "backfill-owner": "tsx scripts/backfill-owner.ts",
-    "dedupe-quizzes": "tsx scripts/dedupe-quizzes.ts"
+    "dedupe-quizzes": "tsx scripts/dedupe-quizzes.ts",
+    "reset-credits": "tsx scripts/reset-credits.ts"
   },
   "dependencies": {
     "@google/genai": "^2.8.0",
