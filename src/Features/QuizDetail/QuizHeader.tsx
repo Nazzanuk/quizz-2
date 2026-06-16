@@ -66,7 +66,12 @@ function EditableHeaderFields({ quiz, onSave }: EditableHeaderFieldsProps) {
     const trimmedTitle = title.trim();
     const trimmedDesc = desc.trim();
 
-    if (!trimmedTitle) return;
+    // A blank title can't be saved — restore the last good title instead of
+    // leaving the field empty (which looks like it saved an empty name).
+    if (!trimmedTitle) {
+      setTitle(quiz.title);
+      return;
+    }
     if (trimmedTitle === quiz.title && trimmedDesc === (quiz.description ?? '')) return;
 
     setSaving(true);

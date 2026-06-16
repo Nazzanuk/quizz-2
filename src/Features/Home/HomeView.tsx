@@ -46,6 +46,12 @@ export default function HomeView() {
               <SignInButton callbackURL="/" label="Sign in to build quizzes" />
             )}
           </div>
+          {!session?.user && (
+            <p className={styles.legal}>
+              By signing in you agree to our <Link href="/terms">Terms</Link> and{' '}
+              <Link href="/privacy">Privacy Policy</Link>.
+            </p>
+          )}
         </ScrollReveal>
         <div className="neo-marquee" aria-hidden="true">
           <span>quizzes * streaks * recall * questions * </span>
@@ -100,15 +106,8 @@ function SignedOutPrompt() {
     <Card color="lavender">
       <p className={styles.kicker}>Free to play, sign in to create</p>
       <p>
-        Anyone can play a shared quiz link — no account needed. Sign in with Google to
-        generate your own quizzes and keep them in your library.
-      </p>
-      <div className={styles.actions}>
-        <SignInButton callbackURL="/" />
-      </div>
-      <p className={styles.legal}>
-        By signing in you agree to our <Link href="/terms">Terms</Link> and{' '}
-        <Link href="/privacy">Privacy Policy</Link>.
+        Anyone can play a shared quiz link — no account needed. Sign in with Google
+        (above) to generate your own quizzes and keep them in your library.
       </p>
     </Card>
   );

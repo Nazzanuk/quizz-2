@@ -68,6 +68,16 @@
   width: 1.9rem;
   height: 1.9rem;
   place-items: center;
+}
+
+/* Extend the touch target to ~48px without enlarging the visible circle. */
+.remove::before {
+  content: '';
+  position: absolute;
+  inset: -0.6rem;
+}
+
+.remove {
   background: var(--neo-white);
   border: var(--neo-border-thin);
   border-radius: 9999px;

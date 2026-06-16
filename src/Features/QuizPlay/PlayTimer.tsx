@@ -51,15 +51,21 @@ export default function PlayTimer({
   const secondsLeft = Math.max(0, Math.ceil(remainingMs / 1000));
   const isTimedOut = phase === 'timed-out';
 
+  // Trigger on whichever comes first: a fraction of the bar OR an absolute
+  // number of seconds left. On short timers (10s true/false) the percentage
+  // alone leaves almost no runway, so the absolute floor gives a real warning.
+  const isCritical = !isTimedOut && (progress <= 0.15 || secondsLeft <= 3);
+  const isWarning = !isTimedOut && !isCritical && (progress <= 0.33 || secondsLeft <= 6);
+
   let fillClass = styles.fill;
   if (isTimedOut) fillClass = `${styles.fill} ${styles.timedOut}`;
-  else if (progress <= 0.15) fillClass = `${styles.fill} ${styles.critical}`;
-  else if (progress <= 0.33) fillClass = `${styles.fill} ${styles.warning}`;
+  else if (isCritical) fillClass = `${styles.fill} ${styles.critical}`;
+  else if (isWarning) fillClass = `${styles.fill} ${styles.warning}`;
 
   const valueClass = [
     styles.value,
-    progress <= 0.15 && !isTimedOut ? styles.valueCritical : '',
-    progress <= 0.15 && !isTimedOut ? styles.valuePulse : '',
+    isCritical ? styles.valueCritical : '',
+    isCritical ? styles.valuePulse : '',
   ].join(' ');
 
   return (

@@ -74,11 +74,20 @@ export default function EditView({ quizId }: EditViewProps) {
     patchQuiz(updated);
   };
 
+  // New questions append to the end of the list; nudge it into view so the user
+  // can see what was added instead of nothing visibly changing.
+  const scrollToNewQuestions = () => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  };
+
   const handleAddQuestions = async () => {
     setAddingQuestions(true);
     try {
       const newQuestions = await generateMoreQuestions(quizId, 5);
       addQuestions(newQuestions);
+      scrollToNewQuestions();
     } catch {
       addToast({ message: "Couldn't generate more questions — try again.", type: 'error' });
     } finally {
@@ -91,6 +100,7 @@ export default function EditView({ quizId }: EditViewProps) {
     try {
       const created = await createQuestion(quizId);
       addQuestions([created]);
+      scrollToNewQuestions();
     } catch {
       addToast({ message: "Couldn't add a question — try again.", type: 'error' });
     } finally {
