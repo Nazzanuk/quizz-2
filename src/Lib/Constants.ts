@@ -5,6 +5,7 @@ export const FORMAT_LABELS: Record<QuizFormat, string> = {
   fill_blank: 'Fill in the blank',
   odd_one_out: 'Odd one out',
   jeopardy: 'Jeopardy',
+  true_false: 'True or false',
 };
 
 export const PLAY_TIMER_SECONDS: Record<QuizFormat, number> = {
@@ -12,6 +13,7 @@ export const PLAY_TIMER_SECONDS: Record<QuizFormat, number> = {
   fill_blank: 12,
   odd_one_out: 15,
   jeopardy: 20,
+  true_false: 10,
 };
 
 export const PLAY_TIMINGS = {

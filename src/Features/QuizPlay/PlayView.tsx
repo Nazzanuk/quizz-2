@@ -44,6 +44,7 @@ import { usePlayExitGuard } from './UsePlayExitGuard';
 import PlayProgress from './PlayProgress';
 import ResultsView from './ResultsView';
 import FormatRenderer from './FormatRenderer';
+import { getTrueFalseClaim } from './Formats/trueFalseClaim';
 import PlayTimer from './PlayTimer';
 import HostStage, { type HostCue } from './HostStage';
 import { notifyHostAudioInteraction } from './HostVoice';
@@ -367,12 +368,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
       ? preRenderedQuestionOpeners[current.id] ?? dynamicOpener
       : dynamicOpener;
     // When "read questions aloud" is on, the host speaks the prompt itself
-    // instead of arbitrary banter. In Jeopardy the prompt is the answer and the
-    // player must guess the question, so read the answer — never the question
-    // (which would give it away).
+    // instead of arbitrary banter. The presentation comes from the play `format`
+    // (not the stored question.format), since mcq questions are shown as
+    // jeopardy/true_false at random. Never read a value that gives the answer away.
     const line = readQuestionsAloud
-      ? (current.format === 'jeopardy'
+      ? (format === 'jeopardy'
         ? `The answer is: ${current.answerText}. What is the correct question?`
+        : format === 'true_false'
+        ? `${current.questionText} Is the answer ${getTrueFalseClaim(current).claim}? True or false?`
         : current.questionText)
       : [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
@@ -385,6 +388,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   }, [
     answerPhase,
     current,
+    format,
     hostIntro,
     hostMode,
     idx,
@@ -743,7 +747,10 @@ function ActiveQuestion({
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const transitionIdsRef = useRef<number[]>([]);
   const questionStartedAtRef = useRef(0);
-  const correctValue = format === 'jeopardy' ? current.questionText : current.answerText;
+  const correctValue =
+    format === 'jeopardy' ? current.questionText
+      : format === 'true_false' ? (getTrueFalseClaim(current).isTrue ? 'True' : 'False')
+        : current.answerText;
 
   useEffect(() => {
     questionStartedAtRef.current = Date.now();

@@ -5,6 +5,7 @@ import FillBlank from './Formats/FillBlank';
 import Jeopardy from './Formats/Jeopardy';
 import MultipleChoice from './Formats/MultipleChoice';
 import OddOneOut from './Formats/OddOneOut';
+import TrueFalse from './Formats/TrueFalse';
 
 interface FormatRendererProps {
   question: Question;
@@ -67,6 +68,20 @@ export default function FormatRenderer({
         <Jeopardy
           question={question}
           allQuestions={allQuestions}
+          answerPhase={answerPhase}
+          pressedValue={pressedValue}
+          selectedValue={selectedValue}
+          locked={locked}
+          hideTextUi={hideTextUi}
+          onOptionPress={onOptionPress}
+          onOptionCancelPress={onOptionCancelPress}
+          onOptionSelect={onOptionSelect}
+        />
+      );
+    case 'true_false':
+      return (
+        <TrueFalse
+          question={question}
           answerPhase={answerPhase}
           pressedValue={pressedValue}
           selectedValue={selectedValue}

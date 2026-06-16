@@ -21,7 +21,9 @@ export const scoreAtom = atom((get) => {
   return { correct, total: answers.size };
 });
 
-const RANDOMISED_MCQ_FORMATS: QuizFormat[] = ['mcq', 'jeopardy'];
+// mcq-format questions are presented at play time as one of these, at random,
+// for variety. jeopardy and true_false reuse the same question data.
+const RANDOMISED_MCQ_FORMATS: QuizFormat[] = ['mcq', 'jeopardy', 'true_false'];
 
 export function isPlayableQuestion(question: Question): boolean {
   if (!Array.isArray(question.options) || question.options.length !== 4) return false;

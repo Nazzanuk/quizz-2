@@ -3,6 +3,7 @@ export const QUIZ_FORMATS = [
   'fill_blank',
   'odd_one_out',
   'jeopardy',
+  'true_false',
 ] as const;
 
 export type QuizFormat = (typeof QUIZ_FORMATS)[number];

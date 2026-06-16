@@ -1,0 +1,41 @@
+.claimCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1rem;
+  background: var(--neo-cyan);
+  border: var(--neo-border);
+  box-shadow: var(--neo-shadow);
+  transform: rotate(-1deg);
+}
+
+.claimLabel {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--neo-ink);
+  opacity: 0.75;
+}
+
+.claim {
+  margin: 0;
+  font-family: var(--font-accent);
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  line-height: 1.05;
+  color: var(--neo-ink);
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.tfOption {
+  min-height: 5rem;
+  font-family: var(--font-accent);
+  font-size: 1.4rem;
+  text-transform: uppercase;
+}
