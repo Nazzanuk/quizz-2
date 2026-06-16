@@ -8,14 +8,20 @@ import {
   updateQuestionHostMetadata,
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
+import { clientIp, enforceRateLimit } from '@/Lib/RateLimit';
 
 interface Params {
   params: Promise<{ quizId: string }>;
 }
 
-export async function POST(_req: Request, { params }: Params) {
+export async function POST(req: Request, { params }: Params) {
   await runMigrations();
   const { quizId } = await params;
+
+  // Public + can trigger a Gemini metadata call, so rate-limit by IP.
+  const limited = await enforceRateLimit(`hostsession:${clientIp(req)}`, 20, 60_000);
+  if (limited) return limited;
+
   const quiz = await getQuiz(quizId);
   if (!quiz) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });

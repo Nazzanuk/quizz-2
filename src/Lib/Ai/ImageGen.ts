@@ -1,6 +1,8 @@
 import Replicate from 'replicate';
 import { insertImage } from '@/Lib/Db/Queries';
 import { requireServerEnv } from '@/Lib/Env';
+import { withTimeout } from '@/Lib/AsyncTimeout';
+import { AI_IMAGE_TIMEOUT_MS } from '@/Lib/Constants';
 
 // Constructed lazily so a missing token surfaces at image-generation time with a
 // clear error, rather than crashing module import during build.
@@ -62,21 +64,27 @@ async function generateWithRetry(
 }
 
 async function runAndStore(prompt: string, aspect_ratio: string): Promise<string> {
-  const output = await getReplicate().run('openai/gpt-image-2', {
-    input: {
-      prompt,
-      aspect_ratio,
-      quality: 'low',
-      number_of_images: 1,
-      output_format: 'webp',
-    },
-  });
+  // Bound the model call so a stuck generation can't keep a background image
+  // task (and its event-loop handle) alive indefinitely.
+  const output = await withTimeout(
+    getReplicate().run('openai/gpt-image-2', {
+      input: {
+        prompt,
+        aspect_ratio,
+        quality: 'low',
+        number_of_images: 1,
+        output_format: 'webp',
+      },
+    }),
+    AI_IMAGE_TIMEOUT_MS,
+    'Replicate image generation',
+  );
 
   const result = output as unknown[];
   if (!result?.[0]) throw new Error('No image URL in response');
 
   const replicateUrl = String(result[0]);
-  const res = await fetch(replicateUrl);
+  const res = await fetch(replicateUrl, { signal: AbortSignal.timeout(AI_IMAGE_TIMEOUT_MS) });
   if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
 
   const buffer = await res.arrayBuffer();

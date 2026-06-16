@@ -8,9 +8,50 @@ import {
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import {
+  MAX_ANSWER_TEXT_LENGTH,
+  MAX_OPTIONS_COUNT,
+  MAX_OPTION_LENGTH,
+  MAX_QUESTION_TEXT_LENGTH,
+} from '@/Lib/Constants';
 
 interface Params {
   params: Promise<{ quizId: string; questionId: string }>;
+}
+
+interface QuestionPatch {
+  questionText?: string;
+  answerText?: string;
+  options?: string[];
+  imagePrompt?: string | null;
+}
+
+// Whitelist + bound the editable fields. Anything else in the body is ignored,
+// and over-long strings are clamped rather than written to the DB unbounded.
+function sanitizeQuestionPatch(body: unknown): QuestionPatch | null {
+  if (!body || typeof body !== 'object') return null;
+  const input = body as Record<string, unknown>;
+  const patch: QuestionPatch = {};
+
+  if (typeof input.questionText === 'string') {
+    patch.questionText = input.questionText.slice(0, MAX_QUESTION_TEXT_LENGTH);
+  }
+  if (typeof input.answerText === 'string') {
+    patch.answerText = input.answerText.slice(0, MAX_ANSWER_TEXT_LENGTH);
+  }
+  if (Array.isArray(input.options)) {
+    patch.options = input.options
+      .filter((option): option is string => typeof option === 'string')
+      .slice(0, MAX_OPTIONS_COUNT)
+      .map((option) => option.slice(0, MAX_OPTION_LENGTH));
+  }
+  if (typeof input.imagePrompt === 'string') {
+    patch.imagePrompt = input.imagePrompt.slice(0, MAX_QUESTION_TEXT_LENGTH);
+  } else if (input.imagePrompt === null) {
+    patch.imagePrompt = null;
+  }
+
+  return patch;
 }
 
 export async function PUT(req: Request, { params }: Params) {
@@ -30,8 +71,11 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   }
 
-  const body = await req.json();
-  const updated = await updateQuestion(questionId, body);
+  const patch = sanitizeQuestionPatch(await req.json().catch(() => null));
+  if (!patch) {
+    return NextResponse.json({ error: 'invalid body' }, { status: 400 });
+  }
+  const updated = await updateQuestion(questionId, patch);
 
   if (!updated) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });

@@ -8,6 +8,7 @@ import {
 } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 import { validateUsername } from '@/Lib/Types';
 
 // Returns the signed-in creator's account + a fresh, monthly-refreshed credit
@@ -46,6 +47,10 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
+  // Throttle username churn (each attempt hits the uniqueness index).
+  const limited = await enforceRateLimit(`username:${sessionUser.id}`, 15, 60_000);
+  if (limited) return limited;
+
   const body = await req.json().catch(() => ({})) as { username?: unknown };
   if (typeof body.username !== 'string') {
     return NextResponse.json({ error: 'username is required' }, { status: 400 });
@@ -80,6 +85,9 @@ export async function DELETE(req: Request) {
   if (!sessionUser) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  const limited = await enforceRateLimit(`account-delete:${sessionUser.id}`, 5, 60_000);
+  if (limited) return limited;
 
   await deleteUserAndData(sessionUser.id);
   return NextResponse.json({ ok: true });

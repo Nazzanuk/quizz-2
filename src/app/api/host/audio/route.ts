@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/Lib/Env';
+import { clientIp, enforceRateLimit } from '@/Lib/RateLimit';
+import { MAX_HOST_TEXT_LENGTH, TTS_TIMEOUT_MS } from '@/Lib/Constants';
 
 // ElevenLabs "v3" is the `eleven_v3` model ID. The public TTS REST endpoints
 // remain under `/v1/text-to-speech/...` per the official docs.
@@ -21,6 +23,11 @@ interface HostAudioErrorBody {
 }
 
 export async function POST(req: Request) {
+  // Public (anonymous players use host voice mid-game), so guard the paid TTS
+  // provider with a per-IP rate limit instead of auth.
+  const limited = await enforceRateLimit(`tts:${clientIp(req)}`, 40, 60_000);
+  if (limited) return limited;
+
   const body = await req.json().catch(() => null);
   if (!body || typeof body !== 'object') {
     return errorResponse(400, {
@@ -31,8 +38,8 @@ export async function POST(req: Request) {
     });
   }
 
-  const text = typeof body.text === 'string' ? body.text.trim() : '';
-  if (!text) {
+  const rawText = typeof body.text === 'string' ? body.text.trim() : '';
+  if (!rawText) {
     return errorResponse(400, {
       error: 'text is required',
       stage: 'request',
@@ -40,6 +47,8 @@ export async function POST(req: Request) {
       detail: 'The audio endpoint needs a non-empty text string to generate speech.',
     });
   }
+  // Cap the characters billed to the TTS provider on any single call.
+  const text = rawText.slice(0, MAX_HOST_TEXT_LENGTH);
 
   const apiKey = env.ELEVENLABS_API_KEY;
   if (!apiKey) {
@@ -74,6 +83,7 @@ export async function POST(req: Request) {
             use_speaker_boost: true,
           },
         }),
+        signal: AbortSignal.timeout(TTS_TIMEOUT_MS),
       },
     );
   } catch (error: unknown) {

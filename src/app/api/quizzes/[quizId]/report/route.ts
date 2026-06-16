@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getQuiz, insertQuizReport } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { enforceRateLimit } from '@/Lib/RateLimit';
 
 interface Params {
   params: Promise<{ quizId: string }>;
@@ -19,6 +20,10 @@ export async function POST(req: Request, { params }: Params) {
   if (!sessionUser) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
+
+  // Keep report spam from flooding the moderation queue.
+  const limited = await enforceRateLimit(`report:${sessionUser.id}`, 10, 60_000);
+  if (limited) return limited;
 
   const quiz = await getQuiz(quizId);
   if (!quiz) {

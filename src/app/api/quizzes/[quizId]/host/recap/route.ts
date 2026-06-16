@@ -2,12 +2,24 @@ import { NextResponse } from 'next/server';
 import { generateHostRecap } from '@/Lib/Ai/Gemini';
 import { getQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
+import { clientIp, enforceRateLimit } from '@/Lib/RateLimit';
+import { MAX_HOST_LIST_ITEMS, MAX_HOST_LIST_ITEM_LENGTH } from '@/Lib/Constants';
 import {
   normalizeHostMode,
   normalizeHostPersona,
   type HostRecapRequest,
   type PlayerProfile,
 } from '@/Lib/Types';
+
+// Keep the model prompt bounded: cap how many context items a request can pass
+// and how long each can be.
+function boundList(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .slice(0, MAX_HOST_LIST_ITEMS)
+    .map((item) => item.slice(0, MAX_HOST_LIST_ITEM_LENGTH));
+}
 
 interface Params {
   params: Promise<{ quizId: string }>;
@@ -16,6 +28,11 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   await runMigrations();
   const { quizId } = await params;
+
+  // Public + expensive (a Gemini call), so rate-limit by IP.
+  const limited = await enforceRateLimit(`recap:${clientIp(req)}`, 20, 60_000);
+  if (limited) return limited;
+
   const quiz = await getQuiz(quizId);
   if (!quiz) {
     return NextResponse.json({ error: 'not found' }, { status: 404 });
@@ -36,8 +53,8 @@ export async function POST(req: Request, { params }: Params) {
     averageAnswerMs: body.summary.averageAnswerMs,
     previousBest: body.summary.previousBest,
     isNewBest: body.summary.isNewBest,
-    strengths: body.strengths,
-    weaknesses: body.weaknesses,
+    strengths: boundList(body.strengths),
+    weaknesses: boundList(body.weaknesses),
     profile: {
       ...profile,
       selectedHost: normalizeHostPersona(body.hostPersona),

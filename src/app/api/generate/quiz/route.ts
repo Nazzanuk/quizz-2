@@ -1,12 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateQuiz } from '@/Lib/Ai/Gemini';
-import { generateCoverImage, generateQuestionImage } from '@/Lib/Ai/ImageGen';
+import { scheduleQuizImages } from '@/Lib/Ai/QuizImages';
 import {
   insertQuiz,
   insertQuestions,
-  updateQuiz,
-  updateQuestionImage,
-  updateQuestionOptionImages,
   getUserCredits,
   deductCredit,
   refundCredit,
@@ -18,7 +15,9 @@ import { track } from '@/Lib/Analytics';
 import {
   DEFAULT_QUESTION_COUNT,
   DEFAULT_QUESTIONS_PER_RUN,
+  MAX_MATERIAL_LENGTH,
   MAX_QUESTION_COUNT,
+  MAX_TOPIC_LENGTH,
   MIN_QUESTION_COUNT,
 } from '@/Lib/Constants';
 
@@ -42,13 +41,18 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   const body = await req.json();
-  const { topic, material, count } = body as {
+  const { topic: rawTopic, material: rawMaterial, count } = body as {
     topic?: string;
     material?: string;
     count?: number;
   };
 
-  if (!topic && !material) {
+  // Cap the free-text fields before they reach the model — they drive token
+  // cost, and an unbounded paste shouldn't be billable to one credit.
+  const topic = typeof rawTopic === 'string' ? rawTopic.slice(0, MAX_TOPIC_LENGTH) : undefined;
+  const material = typeof rawMaterial === 'string' ? rawMaterial.slice(0, MAX_MATERIAL_LENGTH) : undefined;
+
+  if (!topic?.trim() && !material?.trim()) {
     return NextResponse.json(
       { error: 'Provide a topic or material' },
       { status: 400 },
@@ -113,48 +117,14 @@ export async function POST(req: Request) {
 
   await insertQuestions(questionRows);
 
-  // All image generation is fire-and-forget — doesn't block the response
-  const imageTopic = topic ?? generated.title;
-  generateCoverImage(imageTopic)
-    .then((url) => updateQuiz(quizId, { coverImageUrl: url }))
-    .catch((err) =>
-      console.warn(`[quiz/${quizId}] cover image failed:`, err instanceof Error ? err.message : err),
-    );
-
-  generated.questions.forEach((q, i) => {
-    const row = questionRows[i];
-
-    if (q.imageDescription) {
-      generateQuestionImage(q.imageDescription)
-        .then((url) => updateQuestionImage(row.id, url))
-        .catch((err) =>
-          console.warn(`[quiz/${quizId}] question image failed for "${truncate(q.questionText, 60)}":`, err instanceof Error ? err.message : err),
-        );
-    }
-
-    if (q.optionImageDescriptions?.some(d => d)) {
-      Promise.all(
-        q.optionImageDescriptions.map((desc) =>
-          desc ? generateQuestionImage(desc).catch(() => null) : Promise.resolve(null),
-        ),
-      )
-        .then((urls) => {
-          // Only store if every slot has a URL — partial sets cause broken image grids.
-          // ImageGen retries internally with a sanitized fallback before giving up.
-          if (urls.every((u) => u != null)) {
-            updateQuestionOptionImages(row.id, urls as string[]);
-          } else {
-            const missing = urls.filter((u) => u == null).length;
-            console.warn(`[quiz/${quizId}] option images for "${truncate(q.questionText, 60)}": ${missing}/4 failed — falling back to text options`);
-          }
-        });
-    }
+  // Fire-and-forget image generation, bounded by a hard per-quiz image budget.
+  scheduleQuizImages({
+    quizId,
+    coverTopic: topic ?? generated.title,
+    questions: generated.questions,
+    rowIds: questionRows.map((row) => row.id),
   });
 
   await track('quiz_created', { userId: sessionUser.id, quizId: quiz.id });
   return NextResponse.json(quiz, { status: 201 });
-}
-
-function truncate(s: string, n: number): string {
-  return s.length <= n ? s : `${s.slice(0, n)}…`;
 }

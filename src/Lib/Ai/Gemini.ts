@@ -16,6 +16,10 @@ import {
   type QuizFormat,
 } from '../Types';
 import { requireServerEnv } from '../Env';
+import { AI_TEXT_TIMEOUT_MS } from '../Constants';
+
+// Applied to every model call so a hung Gemini request can't pin a server worker.
+const REQUEST_OPTIONS = { timeout: AI_TEXT_TIMEOUT_MS } as const;
 
 // Constructed lazily so a missing key surfaces at generation time with a clear
 // error, rather than crashing module import during build.
@@ -149,7 +153,7 @@ export async function generateQuiz(opts: {
 }): Promise<GeneratedQuiz> {
   const model = getJsonModel(quizResponseSchema);
   const prompt = buildPrompt(opts);
-  const result = await model.generateContent(prompt);
+  const result = await model.generateContent(prompt, REQUEST_OPTIONS);
   const text = result.response.text();
   return parseGeneratedQuiz(text);
 }
@@ -160,7 +164,7 @@ export async function generateQuestionMetadata(opts: {
   questions: Question[];
 }): Promise<GeneratedQuestionMetadata[]> {
   const model = getJsonModel(metadataResponseSchema);
-  const result = await model.generateContent(buildMetadataPrompt(opts));
+  const result = await model.generateContent(buildMetadataPrompt(opts), REQUEST_OPTIONS);
   const text = result.response.text();
   const parsed = JSON.parse(text) as {
     questions: Array<{
@@ -193,7 +197,7 @@ export async function generateHostSessionIntro(opts: {
   hardCount: number;
 }): Promise<string> {
   const model = getJsonModel(lineResponseSchema, 1.1);
-  const result = await model.generateContent(buildHostIntroPrompt(opts));
+  const result = await model.generateContent(buildHostIntroPrompt(opts), REQUEST_OPTIONS);
   const text = result.response.text();
   return parseLine(text);
 }
@@ -216,7 +220,7 @@ export async function generateHostRecap(opts: {
   profile: PlayerProfile;
 }): Promise<string> {
   const model = getJsonModel(lineResponseSchema, 1.1);
-  const result = await model.generateContent(buildHostRecapPrompt(opts));
+  const result = await model.generateContent(buildHostRecapPrompt(opts), REQUEST_OPTIONS);
   const text = result.response.text();
   return parseLine(text);
 }
