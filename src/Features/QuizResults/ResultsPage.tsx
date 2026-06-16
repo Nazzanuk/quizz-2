@@ -227,7 +227,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
           recap={recap}
           onShare={handleShareResult}
           onRetry={() => navigate(`/quiz/${quizId}/play`)}
-          onPracticeWeak={wrongCount > 0
+          onPracticeWeak={fresh && wrongCount > 0
             ? () => navigate(`/quiz/${quizId}/play?practice=${runId}`)
             : undefined}
           onBack={() => navigate(`/quiz/${quizId}`)}
