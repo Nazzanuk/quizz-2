@@ -496,8 +496,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
         });
       }
 
+      const baseHoldMs = event.correct
+        ? PLAY_TIMINGS.answerRevealHoldMs
+        : Math.max(
+            PLAY_TIMINGS.wrongRevealHoldMs,
+            event.timedOut ? PLAY_TIMINGS.timeoutRevealHoldMs : 0,
+          );
       const beatDelayMs = Math.max(
-        event.timedOut ? PLAY_TIMINGS.timeoutRevealHoldMs : PLAY_TIMINGS.answerRevealHoldMs,
+        baseHoldMs,
         HOST_MODE_CONFIG[hostMode].answerBeatMs,
       );
 
@@ -764,6 +770,14 @@ function ActiveQuestion({
   // covers the question — answering is impossible behind it.
   const confirmOpen = useAtomValue(confirmDialogAtom) !== null;
   const settingsOpen = useAtomValue(settingsOpenAtom);
+  // Auto-pause when the app is backgrounded (a call, notification, or app
+  // switch) so the timer can't run a question down while the player is away.
+  const [backgrounded, setBackgrounded] = useState(false);
+  useEffect(() => {
+    const onVisibility = () => setBackgrounded(document.visibilityState === 'hidden');
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, []);
   const [pressedValue, setPressedValue] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const transitionIdsRef = useRef<number[]>([]);
@@ -852,7 +866,7 @@ function ActiveQuestion({
       <PlayTimer
         seconds={PLAY_TIMER_SECONDS[format]}
         phase={answerPhase}
-        paused={interactionLocked || confirmOpen || settingsOpen}
+        paused={interactionLocked || confirmOpen || settingsOpen || backgrounded}
         hideTextUi={hideTextUi}
         onExpire={handleTimeout}
       />

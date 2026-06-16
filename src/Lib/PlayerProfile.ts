@@ -26,7 +26,9 @@ function buildDefaultProfile(): PlayerProfile {
     lastPlayedAt: null,
     preferredMode: 'quick',
     hostVoiceEnabled: true,
-    hideTextUi: true,
+    // New players see the full HUD (countdown number, "Question N of M", score,
+    // streak, host panel). "Hide text UI" is an opt-in minimal mode.
+    hideTextUi: false,
     readQuestionsAloud: true,
     selectedHost: 'sarcastic_pub_host',
     categories: {},

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAtom } from 'jotai';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import { createTopicAtom, createMaterialAtom } from '@/State/QuizAtoms';
@@ -33,6 +33,18 @@ export default function CreateView() {
 
   const outOfCredits = account !== null && account.credits <= 0;
   const canSubmit = (topic.trim() || material.trim()) && !generating && !outOfCredits;
+
+  // Warn before leaving (tab close / refresh) while a quiz is generating — the
+  // request is blocking and the spent credit isn't refunded on navigation.
+  useEffect(() => {
+    if (!generating) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [generating]);
 
   const handleGenerate = async () => {
     setError('');

@@ -35,7 +35,7 @@
 }
 
 .valueCritical {
-  color: var(--neo-accent);
+  color: var(--neo-accent-ink);
 }
 
 .valuePulse {

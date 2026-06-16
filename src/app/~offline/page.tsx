@@ -7,13 +7,13 @@ import styles from './page.module.css';
 
 export default function OfflinePage() {
   return (
-    <AppShell>
+    <AppShell variant="focused">
       <div className={styles.container}>
         <Card color="lavender" className={styles.card}>
           <h1 className={styles.heading}>You are offline</h1>
           <p className={styles.body}>
-            Check your connection and try again.
-            Quizzes you have already loaded may still be playable.
+            Quiz Dart needs a connection to load quizzes. Check your network and
+            try again.
           </p>
           <div className={styles.actions}>
             <Button variant="primary" fullWidth onClick={() => window.location.reload()}>

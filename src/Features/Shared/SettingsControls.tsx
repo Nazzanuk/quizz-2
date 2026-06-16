@@ -111,12 +111,21 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
         </span>
       </button>
 
-      <button type="button" className={styles.row} onClick={toggleReadQuestionsAloud}>
+      <button
+        type="button"
+        className={styles.row}
+        onClick={toggleReadQuestionsAloud}
+        disabled={!hostVoiceEnabled}
+      >
         <div className={styles.rowText}>
           <span className={styles.rowLabel}>Read questions aloud</span>
-          <span className={styles.rowSub}>Host reads each question instead of banter. Needs host voice on.</span>
+          <span className={styles.rowSub}>
+            {hostVoiceEnabled
+              ? 'Host reads each question instead of banter.'
+              : 'Turn on host voice first to use this.'}
+          </span>
         </div>
-        <span className={`${styles.toggle} ${readQuestionsAloud ? styles.toggleOn : ''}`}>
+        <span className={`${styles.toggle} ${readQuestionsAloud && hostVoiceEnabled ? styles.toggleOn : ''}`}>
           <span className={styles.toggleKnob} />
         </span>
       </button>

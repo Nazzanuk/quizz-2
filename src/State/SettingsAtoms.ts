@@ -47,7 +47,7 @@ export const hostVoiceEnabledAtom = atom(
 );
 
 const baseHideTextUiAtom = atom(
-  typeof window !== 'undefined' ? getPlayerProfile().hideTextUi : true,
+  typeof window !== 'undefined' ? getPlayerProfile().hideTextUi : false,
 );
 
 export const hideTextUiAtom = atom(

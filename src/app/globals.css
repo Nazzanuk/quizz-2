@@ -2,6 +2,9 @@
   --neo-bg: #fffdf5;
   --neo-ink: #000000;
   --neo-accent: #ff5a5f;
+  /* Darker red for accent-colored *text* — the light #ff5a5f fails contrast on
+     pale backgrounds (e.g. the critical countdown). Use as a fill, ink as text. */
+  --neo-accent-ink: #d11f24;
   --neo-secondary: #ffd93d;
   --neo-muted: #c4b5fd;
   --neo-lime: #8cff66;

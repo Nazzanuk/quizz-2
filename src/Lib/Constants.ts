@@ -20,6 +20,9 @@ export const PLAY_TIMINGS = {
   answerRevealDelayMs: 140,
   answerRevealHoldMs: 520,
   timeoutRevealHoldMs: 700,
+  // Hold longer when the player got it wrong (or timed out) so they actually
+  // have time to read which answer was correct before auto-advancing.
+  wrongRevealHoldMs: 1700,
   milestonePulseMs: 1300,
   resultsSummaryDelayMs: 150,
   resultsDetailsDelayMs: 320,

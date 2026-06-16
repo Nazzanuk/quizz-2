@@ -29,6 +29,16 @@
   box-shadow: none;
 }
 
+.row:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+.row:disabled:active {
+  transform: none;
+}
+
 @media (hover: hover) {
   .row:hover {
     background: var(--neo-cyan);
