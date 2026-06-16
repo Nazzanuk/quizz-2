@@ -3,6 +3,9 @@ import { getSiteUrl } from '@/Lib/SiteUrl';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { listPublicQuizzes } from '@/Lib/Db/Queries';
 
+// Regenerate hourly so newly-public quizzes appear without a redeploy.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
