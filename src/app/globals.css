@@ -418,15 +418,22 @@ a {
   50% { transform: translateY(-10px) rotate(4deg); }
 }
 
-/* Ambient motion for the fixed background layers. */
+/* Ambient motion for the fixed background layers — wandering, multi-waypoint
+   paths so it drifts naturally instead of swinging like a pendulum. */
 @keyframes neo-bg-drift {
-  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.8; }
-  50% { transform: translate3d(-3.5%, 2.5%, 0) scale(1.06); opacity: 1; }
+  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.82; }
+  28%  { transform: translate3d(-4%, 2%, 0) scale(1.06); opacity: 1; }
+  55%  { transform: translate3d(2.5%, 4.5%, 0) scale(1.03); opacity: 0.92; }
+  80%  { transform: translate3d(4%, -1.5%, 0) scale(1.07); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.82; }
 }
 
 @keyframes neo-bg-sway {
-  0%, 100% { transform: rotate(-8deg) translateY(0); }
-  50% { transform: rotate(-2deg) translateY(-3%); }
+  0%   { transform: rotate(-8deg) translate(0, 0); }
+  30%  { transform: rotate(-3deg) translate(-1.5%, -3%); }
+  55%  { transform: rotate(-6deg) translate(2%, -1.5%); }
+  80%  { transform: rotate(-1deg) translate(1%, -4%); }
+  100% { transform: rotate(-8deg) translate(0, 0); }
 }
 
 /* Gentle continuous crawl of the dot/line grid so the whole surface feels alive. */
