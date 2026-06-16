@@ -23,8 +23,12 @@ async function checkRateLimit(key: string, limit: number, windowMs: number): Pro
   const expiresAt = (windowId + 1) * windowMs;
   const windowKey = `${key}:${windowId}`;
 
-  // Best-effort sweep of expired counters (indexed on expires_at).
-  await db.run(sql`DELETE FROM rate_limits WHERE expires_at < ${now}`).catch(() => {});
+  // Sweep expired counters only ~1% of the time (indexed on expires_at), so the
+  // common path is a single write (the upsert below) rather than delete+upsert
+  // on every request — avoids write amplification on Turso.
+  if (Math.random() < 0.01) {
+    await db.run(sql`DELETE FROM rate_limits WHERE expires_at < ${now}`).catch(() => {});
+  }
 
   try {
     const result = await db.run(sql`
