@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { getQuiz, getQuizRun, getRunAttempts } from '@/Lib/Db/Queries';
+import { getQuiz, getQuizRun } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
-import type { QuestionAttempt, Quiz, QuizRun } from '@/Lib/Types';
+import type { Quiz, QuizRun } from '@/Lib/Types';
 
 const SITE_NAME = 'Quiz Dart';
 
@@ -53,7 +53,7 @@ export async function buildRunMetadata(quizId: string, runId: string): Promise<M
 
   const pct = scorePct(detail.run);
   const title = `${pct}% on ${detail.quiz.title}`;
-  const description = buildRunDescription(detail.run, detail.attempts);
+  const description = buildRunDescription(detail.run);
   const url = `/quiz/${quizId}/results/${runId}`;
 
   // Image comes from the colocated opengraph-image route (generated PNG).
@@ -88,7 +88,6 @@ async function getRunForMetadata(
 ): Promise<{
   quiz: Quiz;
   run: QuizRun;
-  attempts: QuestionAttempt[];
 } | null> {
   await runMigrations();
   const [quiz, run] = await Promise.all([
@@ -98,8 +97,7 @@ async function getRunForMetadata(
 
   if (!quiz || !run || run.quizId !== quizId) return null;
 
-  const attempts = await getRunAttempts(runId);
-  return { quiz, run, attempts };
+  return { quiz, run };
 }
 
 function buildQuizDescription(quiz: Quiz): string {
@@ -110,12 +108,9 @@ function buildQuizDescription(quiz: Quiz): string {
   return `Take this ${quiz.questionCount}-question quiz and compare your score.`;
 }
 
-function buildRunDescription(run: QuizRun, attempts: QuestionAttempt[]): string {
+function buildRunDescription(run: QuizRun): string {
   const pct = scorePct(run);
-  const proof = attempts.length > 0
-    ? `${attempts.length} answer receipts`
-    : `${run.total} questions`;
-  return `Scored ${pct}%: ${run.correct}/${run.total} correct, best streak ${run.bestStreak}. View ${proof} before you start the quiz.`;
+  return `Scored ${pct}%: ${run.correct}/${run.total} correct, best streak ${run.bestStreak}. Try the quiz and compare your score.`;
 }
 
 function scorePct(run: Pick<QuizRun, 'correct' | 'total'>): number {

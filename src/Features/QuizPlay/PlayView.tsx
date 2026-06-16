@@ -87,6 +87,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const questionFormats = useAtomValue(questionFormatsAtom);
   const initPlay = useSetAtom(initPlayAtom);
   const resetPlay = useSetAtom(resetPlayAtom);
+  const lastRun = useAtomValue(lastRunAtom);
   const setLastRun = useSetAtom(lastRunAtom);
   const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
@@ -190,6 +191,16 @@ export default function PlayView({ quizId }: PlayViewProps) {
   // How many questions a full run asks (picked at random). Practice runs
   // replay a specific set, so they pass null to skip the cap.
   const runLimit = quiz?.questionsPerRun ?? DEFAULT_QUESTIONS_PER_RUN;
+  const localPracticeQuestionIds = useMemo(() => {
+    if (!practiceRunId || lastRun?.quizId !== quizId || lastRun.runId !== practiceRunId) {
+      return null;
+    }
+
+    return {
+      runId: practiceRunId,
+      ids: lastRun.wrongQuestionIds,
+    };
+  }, [lastRun, practiceRunId, quizId]);
 
   useEffect(() => () => {
     resetPlay();
@@ -197,6 +208,10 @@ export default function PlayView({ quizId }: PlayViewProps) {
 
   useEffect(() => {
     if (!practiceRunId) {
+      return;
+    }
+
+    if (localPracticeQuestionIds) {
       return;
     }
 
@@ -218,10 +233,11 @@ export default function PlayView({ quizId }: PlayViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [practiceRunId, quizId]);
+  }, [localPracticeQuestionIds, practiceRunId, quizId]);
 
-  const practiceIds = practiceRunId && practiceQuestionIds?.runId === practiceRunId
-    ? practiceQuestionIds.ids
+  const effectivePracticeQuestionIds = localPracticeQuestionIds ?? practiceQuestionIds;
+  const practiceIds = practiceRunId && effectivePracticeQuestionIds?.runId === practiceRunId
+    ? effectivePracticeQuestionIds.ids
     : null;
   const playableQuestions = useMemo(() => {
     if (!practiceRunId) return questions;

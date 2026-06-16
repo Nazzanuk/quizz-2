@@ -63,6 +63,10 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     : detail?.run.recap ?? '';
 
   useEffect(() => {
+    if (!fresh) {
+      return;
+    }
+
     let cancelled = false;
     fetchQuiz(quizId)
       .then((quiz) => {
@@ -72,7 +76,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     return () => {
       cancelled = true;
     };
-  }, [quizId]);
+  }, [fresh, quizId]);
 
   useEffect(() => {
     if (freshDetail) {
@@ -83,6 +87,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     fetchRun(quizId, runId)
       .then((data) => {
         if (cancelled) return;
+        if (data.quiz) setQuizMeta(data.quiz);
         setFetchedState({ key: routeKey, detail: data });
       })
       .catch((err) => {
@@ -175,7 +180,9 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     );
   }
 
-  const wrongCount = detail.attempts.filter((attempt) => !attempt.correct).length;
+  const wrongCount = fresh
+    ? detail.attempts.filter((attempt) => !attempt.correct).length
+    : Math.max(detail.run.total - detail.run.correct, 0);
   const pct = detail.run.total > 0
     ? Math.round((detail.run.correct / detail.run.total) * 100)
     : 0;
@@ -184,7 +191,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
   const handleShareResult = async () => {
     const result = await shareLink({
       title: `${pct}% on ${quizTitle}`,
-      text: `${detail.run.correct}/${detail.run.total} correct. View the score proof and try the quiz.`,
+      text: `${detail.run.correct}/${detail.run.total} correct. Try the quiz and compare your score.`,
       url: window.location.href,
     }).catch(() => null);
     if (result === 'cancelled') return;
@@ -227,10 +234,12 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
         />
         <Leaderboard quizId={quizId} compact />
         {fresh && <InstallPrompt />}
-        <AttemptBreakdown
-          attempts={detail.attempts}
-          questions={detail.questions}
-        />
+        {fresh && (
+          <AttemptBreakdown
+            attempts={detail.attempts}
+            questions={detail.questions}
+          />
+        )}
       </div>
     </AppShell>
   );

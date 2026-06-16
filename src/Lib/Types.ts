@@ -278,6 +278,7 @@ export interface QuizRunDetail {
   run: QuizRun;
   attempts: QuestionAttempt[];
   questions: Question[];
+  quiz?: Pick<Quiz, 'title' | 'topic'>;
 }
 
 export interface LastRunSnapshot {
