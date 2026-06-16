@@ -6,6 +6,11 @@
   background: var(--neo-bg);
   border: var(--neo-border-thin);
   box-shadow: var(--neo-shadow-sm);
+  /* The run now scrolls as one page; keep the countdown pinned below the
+     header so it stays visible on long questions during a timed round. */
+  position: sticky;
+  top: calc(3.4rem + env(safe-area-inset-top));
+  z-index: 5;
 }
 
 .row {

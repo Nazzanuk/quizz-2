@@ -25,14 +25,13 @@
 }
 
 .liveContent {
-  /* flex (not height:100%) so the cage is bound by the focused main's flex
-     box — see .mainFocused. This lets .options become the real scroll
-     container instead of overflowing the page, so a vertical swipe that
-     starts on an answer scrolls the list (with touch-action: pan-y) rather
-     than being trapped by a non-scrolling overscroll-contain box. */
-  flex: 1;
+  /* The live run scrolls as one normal page. A previous design caged it to
+     the viewport with nested overflow:hidden boxes and let only the answer
+     list scroll internally — but that inner scroller trapped any swipe that
+     started on an answer (overscroll-behavior: contain) and never chained to
+     the page, so swiping an answer scrolled nothing. Letting the whole thing
+     flow means a swipe anywhere — including on an answer — scrolls the page. */
   min-height: 0;
-  overflow: hidden;
   gap: 0.7rem;
 }
 
@@ -47,10 +46,7 @@
 }
 
 .questionWrap {
-  flex: 1;
-  min-height: 0;
   display: flex;
-  overflow: hidden;
   animation: slideInRight 180ms ease-out both;
 }
 
