@@ -61,17 +61,17 @@
 }
 
 /* Per-blob amplitudes, periods and phase so no two share a rhythm. */
-.anchor:nth-child(1) .driftX { --ax: 44px; --px: 12s; --dx: -2s; }
-.anchor:nth-child(1) .driftY { --ay: 34px; --py: 17s; --dy: -9s; }
-.anchor:nth-child(1) .blob { --rot: 9deg; --pr: 21s; --dr: -4s; }
+.anchor:nth-child(1) .driftX { --ax: 80px; --px: 12s; --dx: -2s; }
+.anchor:nth-child(1) .driftY { --ay: 62px; --py: 17s; --dy: -9s; }
+.anchor:nth-child(1) .blob { --rot: 12deg; --pr: 21s; --dr: -4s; }
 
-.anchor:nth-child(2) .driftX { --ax: 38px; --px: 19s; --dx: -6s; }
-.anchor:nth-child(2) .driftY { --ay: 40px; --py: 13s; --dy: -3s; }
-.anchor:nth-child(2) .blob { --rot: 12deg; --pr: 16s; --dr: -8s; border-radius: 9999px; }
+.anchor:nth-child(2) .driftX { --ax: 70px; --px: 19s; --dx: -6s; }
+.anchor:nth-child(2) .driftY { --ay: 74px; --py: 13s; --dy: -3s; }
+.anchor:nth-child(2) .blob { --rot: 16deg; --pr: 16s; --dr: -8s; border-radius: 9999px; }
 
-.anchor:nth-child(3) .driftX { --ax: 34px; --px: 15s; --dx: -11s; }
-.anchor:nth-child(3) .driftY { --ay: 28px; --py: 23s; --dy: -5s; }
-.anchor:nth-child(3) .blob { --rot: 8deg; --pr: 18s; --dr: -1s; }
+.anchor:nth-child(3) .driftX { --ax: 64px; --px: 15s; --dx: -11s; }
+.anchor:nth-child(3) .driftY { --ay: 52px; --py: 23s; --dy: -5s; }
+.anchor:nth-child(3) .blob { --rot: 11deg; --pr: 18s; --dr: -1s; }
 
 @keyframes floatX {
   0% { transform: translateX(calc(var(--ax) * -1)); }
@@ -86,9 +86,9 @@
 }
 
 @keyframes floatR {
-  0% { transform: rotate(calc(var(--rot) * -1)) scale(1); }
-  50% { transform: rotate(var(--rot)) scale(1.09); }
-  100% { transform: rotate(calc(var(--rot) * -1)) scale(1); }
+  0% { transform: rotate(calc(var(--rot) * -1)) scale(0.96); }
+  50% { transform: rotate(var(--rot)) scale(1.14); }
+  100% { transform: rotate(calc(var(--rot) * -1)) scale(0.96); }
 }
 
 @media (prefers-reduced-motion: reduce) {

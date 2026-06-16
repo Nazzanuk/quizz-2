@@ -421,19 +421,19 @@ a {
 /* Ambient motion for the fixed background layers — closed elliptical loops with
    linear timing, so the wash glides continuously without easing to a stop. */
 @keyframes neo-bg-drift {
-  0%   { transform: translate3d(0, -2.5%, 0) scale(1.02); }
-  25%  { transform: translate3d(-4%, 0, 0) scale(1.05); }
-  50%  { transform: translate3d(0, 3.5%, 0) scale(1.02); }
-  75%  { transform: translate3d(4%, 0, 0) scale(1.06); }
-  100% { transform: translate3d(0, -2.5%, 0) scale(1.02); }
+  0%   { transform: translate3d(0, -5%, 0) scale(1.02); }
+  25%  { transform: translate3d(-7%, 0, 0) scale(1.08); }
+  50%  { transform: translate3d(0, 6%, 0) scale(1.03); }
+  75%  { transform: translate3d(7%, 0, 0) scale(1.1); }
+  100% { transform: translate3d(0, -5%, 0) scale(1.02); }
 }
 
 @keyframes neo-bg-sway {
-  0%   { transform: rotate(-8deg) translate(0, -1.5%); }
-  25%  { transform: rotate(-6deg) translate(-2%, 0); }
-  50%  { transform: rotate(-7deg) translate(0, 2%); }
-  75%  { transform: rotate(-5deg) translate(2%, 0); }
-  100% { transform: rotate(-8deg) translate(0, -1.5%); }
+  0%   { transform: rotate(-9deg) translate(0, -3%); }
+  25%  { transform: rotate(-5deg) translate(-4%, 0); }
+  50%  { transform: rotate(-8deg) translate(0, 4%); }
+  75%  { transform: rotate(-3deg) translate(4%, 0); }
+  100% { transform: rotate(-9deg) translate(0, -3%); }
 }
 
 /* Gentle continuous crawl of the dot/line grid so the whole surface feels alive. */
@@ -471,11 +471,11 @@ a {
 }
 
 ::view-transition-old(root) {
-  animation: 160ms ease-out both fadeOutScale;
+  animation: 140ms ease-out both vtFadeOut;
 }
 
 ::view-transition-new(root) {
-  animation: 220ms ease-out both fadeInScale;
+  animation: 200ms ease-out both vtFadeIn;
 }
 
 ::view-transition-old(quizz-tabbar),
@@ -485,10 +485,12 @@ a {
   animation: none;
 }
 
-@keyframes fadeOutScale {
-  to { transform: scale(0.98); }
+/* Smooth crossfade between pages (no zoom — the old scale read as an abrupt
+   zoom-in on every navigation). */
+@keyframes vtFadeOut {
+  to { opacity: 0; }
 }
 
-@keyframes fadeInScale {
-  from { transform: scale(1.02); }
+@keyframes vtFadeIn {
+  from { opacity: 0; }
 }
