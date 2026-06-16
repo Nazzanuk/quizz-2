@@ -59,7 +59,7 @@ export const hideTextUiAtom = atom(
 );
 
 const baseReadQuestionsAloudAtom = atom(
-  typeof window !== 'undefined' ? getPlayerProfile().readQuestionsAloud : false,
+  typeof window !== 'undefined' ? getPlayerProfile().readQuestionsAloud : true,
 );
 
 export const readQuestionsAloudAtom = atom(

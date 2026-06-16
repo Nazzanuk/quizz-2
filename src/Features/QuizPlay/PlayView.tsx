@@ -366,10 +366,14 @@ export default function PlayView({ quizId }: PlayViewProps) {
     const opener = streak === 0 && !questionStats[current.id]
       ? preRenderedQuestionOpeners[current.id] ?? dynamicOpener
       : dynamicOpener;
-    // When "read questions aloud" is on, the host speaks the question itself
-    // instead of arbitrary banter.
+    // When "read questions aloud" is on, the host speaks the prompt itself
+    // instead of arbitrary banter. In Jeopardy the prompt is the answer and the
+    // player must guess the question, so read the answer — never the question
+    // (which would give it away).
     const line = readQuestionsAloud
-      ? current.questionText
+      ? (current.format === 'jeopardy'
+        ? `The answer is: ${current.answerText}. What is the correct question?`
+        : current.questionText)
       : [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
     showHostCue({

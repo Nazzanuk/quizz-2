@@ -27,7 +27,7 @@ function buildDefaultProfile(): PlayerProfile {
     preferredMode: 'quick',
     hostVoiceEnabled: true,
     hideTextUi: true,
-    readQuestionsAloud: false,
+    readQuestionsAloud: true,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
     quizzes: {},
