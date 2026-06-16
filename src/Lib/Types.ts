@@ -503,4 +503,8 @@ export interface PlayerProfile {
   // they sign in (if still available). null until they pick one. Cleared (along
   // with anonId) once migrated into a signed-in account.
   username: string | null;
+  // Bumped when a preference default changes so existing profiles can be
+  // migrated once (see migrateProfile). Absent on profiles saved before
+  // versioning was introduced — treated as 0.
+  prefsVersion?: number;
 }
