@@ -46,3 +46,6 @@ local.db
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# Project standardises on pnpm; block the npm lockfile.
+package-lock.json
