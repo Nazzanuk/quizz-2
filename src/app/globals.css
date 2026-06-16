@@ -106,8 +106,8 @@ body::before {
   background:
     linear-gradient(90deg, transparent 0 58%, var(--neo-secondary) 58% 74%, transparent 74%),
     linear-gradient(180deg, transparent 0 64%, var(--neo-muted) 64% 82%, transparent 82%);
-  /* Slow drift so the colour panels feel alive. */
-  animation: neo-bg-drift 16s ease-in-out infinite;
+  /* Continuous looping drift (linear, so it never eases to a stop). */
+  animation: neo-bg-drift 27s linear infinite;
   will-change: transform, opacity;
 }
 
@@ -124,8 +124,8 @@ body::after {
   color: transparent;
   -webkit-text-stroke: 3px var(--neo-ink);
   transform: rotate(-8deg);
-  /* Sway on the giant backdrop word. */
-  animation: neo-bg-sway 13s ease-in-out infinite;
+  /* Continuous looping sway on the giant backdrop word. */
+  animation: neo-bg-sway 23s linear infinite;
   will-change: transform;
 }
 
@@ -418,22 +418,22 @@ a {
   50% { transform: translateY(-10px) rotate(4deg); }
 }
 
-/* Ambient motion for the fixed background layers — wandering, multi-waypoint
-   paths so it drifts naturally instead of swinging like a pendulum. */
+/* Ambient motion for the fixed background layers — closed elliptical loops with
+   linear timing, so the wash glides continuously without easing to a stop. */
 @keyframes neo-bg-drift {
-  0%   { transform: translate3d(0, 0, 0) scale(1); opacity: 0.82; }
-  28%  { transform: translate3d(-4%, 2%, 0) scale(1.06); opacity: 1; }
-  55%  { transform: translate3d(2.5%, 4.5%, 0) scale(1.03); opacity: 0.92; }
-  80%  { transform: translate3d(4%, -1.5%, 0) scale(1.07); opacity: 1; }
-  100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.82; }
+  0%   { transform: translate3d(0, -2.5%, 0) scale(1.02); }
+  25%  { transform: translate3d(-4%, 0, 0) scale(1.05); }
+  50%  { transform: translate3d(0, 3.5%, 0) scale(1.02); }
+  75%  { transform: translate3d(4%, 0, 0) scale(1.06); }
+  100% { transform: translate3d(0, -2.5%, 0) scale(1.02); }
 }
 
 @keyframes neo-bg-sway {
-  0%   { transform: rotate(-8deg) translate(0, 0); }
-  30%  { transform: rotate(-3deg) translate(-1.5%, -3%); }
-  55%  { transform: rotate(-6deg) translate(2%, -1.5%); }
-  80%  { transform: rotate(-1deg) translate(1%, -4%); }
-  100% { transform: rotate(-8deg) translate(0, 0); }
+  0%   { transform: rotate(-8deg) translate(0, -1.5%); }
+  25%  { transform: rotate(-6deg) translate(-2%, 0); }
+  50%  { transform: rotate(-7deg) translate(0, 2%); }
+  75%  { transform: rotate(-5deg) translate(2%, 0); }
+  100% { transform: rotate(-8deg) translate(0, -1.5%); }
 }
 
 /* Gentle continuous crawl of the dot/line grid so the whole surface feels alive. */

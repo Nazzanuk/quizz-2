@@ -25,55 +25,75 @@
   mix-blend-mode: multiply;
 }
 
-.blob {
+.anchor {
   position: absolute;
-  border: var(--neo-border);
-  border-radius: 0;
-  box-shadow: var(--neo-shadow);
-  /* Organic, wandering float — multi-waypoint paths that return to start via a
-     different route, so it reads as drifting rather than a pendulum. Keyframes
-     live in this module so CSS Modules scopes the name consistently. */
-  animation: blobFloat1 19s ease-in-out infinite;
+}
+
+/* Each layer drives one transform axis on its own period. Because the periods
+   are coprime and phase-offset, the combined X+Y+rotation motion never reverses
+   in lock-step or returns to the same place — it wanders like a floating object
+   rather than a pendulum. Defaults below are overridden per blob. */
+.driftX {
+  --ax: 40px;
+  --px: 13s;
+  --dx: -2s;
+  animation: floatX var(--px) ease-in-out var(--dx) infinite;
   will-change: transform;
 }
 
-.blob:nth-child(2) {
-  border-radius: 9999px;
-  animation: blobFloat2 23s ease-in-out infinite;
+.driftY {
+  --ay: 32px;
+  --py: 17s;
+  --dy: -9s;
+  animation: floatY var(--py) ease-in-out var(--dy) infinite;
+  will-change: transform;
 }
 
-.blob:nth-child(3) {
-  animation: blobFloat3 21s ease-in-out infinite;
+.blob {
+  --rot: 9deg;
+  --pr: 21s;
+  --dr: -4s;
+  border: var(--neo-border);
+  border-radius: 0;
+  box-shadow: var(--neo-shadow);
+  animation: floatR var(--pr) ease-in-out var(--dr) infinite;
+  will-change: transform;
 }
 
-@keyframes blobFloat1 {
-  0%   { transform: translate(0, 0) rotate(-8deg) scale(1); }
-  22%  { transform: translate(-34px, 22px) rotate(-1deg) scale(1.06); }
-  44%  { transform: translate(16px, 42px) rotate(7deg) scale(1.11); }
-  68%  { transform: translate(40px, 12px) rotate(3deg) scale(1.04); }
-  86%  { transform: translate(12px, -22px) rotate(-6deg) scale(1.08); }
-  100% { transform: translate(0, 0) rotate(-8deg) scale(1); }
+/* Per-blob amplitudes, periods and phase so no two share a rhythm. */
+.anchor:nth-child(1) .driftX { --ax: 44px; --px: 12s; --dx: -2s; }
+.anchor:nth-child(1) .driftY { --ay: 34px; --py: 17s; --dy: -9s; }
+.anchor:nth-child(1) .blob { --rot: 9deg; --pr: 21s; --dr: -4s; }
+
+.anchor:nth-child(2) .driftX { --ax: 38px; --px: 19s; --dx: -6s; }
+.anchor:nth-child(2) .driftY { --ay: 40px; --py: 13s; --dy: -3s; }
+.anchor:nth-child(2) .blob { --rot: 12deg; --pr: 16s; --dr: -8s; border-radius: 9999px; }
+
+.anchor:nth-child(3) .driftX { --ax: 34px; --px: 15s; --dx: -11s; }
+.anchor:nth-child(3) .driftY { --ay: 28px; --py: 23s; --dy: -5s; }
+.anchor:nth-child(3) .blob { --rot: 8deg; --pr: 18s; --dr: -1s; }
+
+@keyframes floatX {
+  0% { transform: translateX(calc(var(--ax) * -1)); }
+  50% { transform: translateX(var(--ax)); }
+  100% { transform: translateX(calc(var(--ax) * -1)); }
 }
 
-@keyframes blobFloat2 {
-  0%   { transform: translate(0, 0) rotate(6deg) scale(1); }
-  26%  { transform: translate(30px, 26px) rotate(-3deg) scale(1.1); }
-  50%  { transform: translate(-20px, 38px) rotate(10deg) scale(1.05); }
-  72%  { transform: translate(-38px, 6px) rotate(2deg) scale(1.12); }
-  90%  { transform: translate(-8px, -24px) rotate(8deg) scale(1.06); }
-  100% { transform: translate(0, 0) rotate(6deg) scale(1); }
+@keyframes floatY {
+  0% { transform: translateY(calc(var(--ay) * -1)); }
+  50% { transform: translateY(var(--ay)); }
+  100% { transform: translateY(calc(var(--ay) * -1)); }
 }
 
-@keyframes blobFloat3 {
-  0%   { transform: translate(0, 0) rotate(4deg) scale(1); }
-  20%  { transform: translate(26px, -28px) rotate(-6deg) scale(1.09); }
-  46%  { transform: translate(-22px, -14px) rotate(6deg) scale(1.13); }
-  70%  { transform: translate(-30px, 24px) rotate(-2deg) scale(1.05); }
-  88%  { transform: translate(14px, 30px) rotate(5deg) scale(1.1); }
-  100% { transform: translate(0, 0) rotate(4deg) scale(1); }
+@keyframes floatR {
+  0% { transform: rotate(calc(var(--rot) * -1)) scale(1); }
+  50% { transform: rotate(var(--rot)) scale(1.09); }
+  100% { transform: rotate(calc(var(--rot) * -1)) scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .driftX,
+  .driftY,
   .blob {
     animation: none;
   }

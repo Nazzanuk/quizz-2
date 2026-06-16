@@ -10,14 +10,14 @@ interface BlobConfig {
   bottom?: string;
   left?: string;
   right?: string;
-  delay?: number;
 }
 
-// Fixed positions; colours are chosen per-screen below for variety.
+// Fixed anchor positions; colours are chosen per-screen below for variety.
+// Per-blob motion (amplitude/period/phase) is defined in the CSS module.
 const POSITIONS: Omit<BlobConfig, 'color'>[] = [
   { size: 300, top: '-80px', right: '-60px' },
-  { size: 220, bottom: '-40px', left: '-30px', delay: -3 },
-  { size: 180, top: '40%', right: '10%', delay: -5 },
+  { size: 220, bottom: '-40px', left: '-30px' },
+  { size: 180, top: '40%', right: '10%' },
 ];
 
 // Each screen gets a different but stable trio of accent colours, so the
@@ -53,20 +53,23 @@ export default function BlobField({ blobs }: BlobFieldProps) {
   return (
     <div className={styles.field} aria-hidden>
       {resolved.map((blob, i) => (
+        // Nested layers each animate one transform axis (X / Y / rotate) on its
+        // own period, so the composite motion wanders continuously instead of
+        // swinging back and forth in lock-step.
         <div
           key={i}
-          className={styles.blob}
-          style={{
-            width: blob.size,
-            height: blob.size,
-            background: blob.color,
-            top: blob.top,
-            bottom: blob.bottom,
-            left: blob.left,
-            right: blob.right,
-            animationDelay: blob.delay ? `${blob.delay}s` : undefined,
-          }}
-        />
+          className={styles.anchor}
+          style={{ top: blob.top, bottom: blob.bottom, left: blob.left, right: blob.right }}
+        >
+          <div className={styles.driftX}>
+            <div className={styles.driftY}>
+              <div
+                className={styles.blob}
+                style={{ width: blob.size, height: blob.size, background: blob.color }}
+              />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );
