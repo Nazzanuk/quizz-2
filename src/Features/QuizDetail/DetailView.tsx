@@ -88,9 +88,10 @@ export default function DetailView({ quizId }: DetailViewProps) {
       title: 'Report this quiz',
       message: 'Flag this quiz for review if it looks harmful, abusive, or inappropriate. Our team will take a look.',
       confirmLabel: 'Report',
-      onConfirm: async () => {
+      prompt: { label: 'Reason (optional)', placeholder: "What's wrong with this quiz?", maxLength: 500 },
+      onConfirm: async (reason) => {
         try {
-          await reportQuiz(quizId);
+          await reportQuiz(quizId, reason);
           addToast({ message: 'Thanks — this quiz has been reported', type: 'success' });
           haptic('tap');
         } catch {

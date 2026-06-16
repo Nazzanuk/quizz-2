@@ -10,7 +10,10 @@ export interface ConfirmDialogState {
   title: string;
   message: string;
   confirmLabel?: string;
-  onConfirm: () => void;
+  // When set, the dialog shows an optional free-text field (e.g. a report
+  // reason) and passes its trimmed value to onConfirm.
+  prompt?: { label?: string; placeholder?: string; maxLength?: number };
+  onConfirm: (value?: string) => void;
 }
 
 export const toastQueueAtom = atom<ToastItem[]>([]);

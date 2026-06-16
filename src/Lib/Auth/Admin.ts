@@ -1,15 +1,19 @@
 import { env } from '@/Lib/Env';
 import { getSessionUser } from './Session';
 
-// Admins are configured via the ADMIN_EMAILS env var (comma-separated). Used to
-// gate the lightweight moderation endpoints/page.
+// The app owner is an admin by default so moderation/analytics work without
+// extra config. ADMIN_EMAILS (comma-separated) overrides/extends this.
+const DEFAULT_ADMIN_EMAILS = ['nazzanuk@gmail.com'];
+
+// Admins are configured via the ADMIN_EMAILS env var (comma-separated), falling
+// back to the owner. Used to gate the moderation and analytics surfaces.
 function adminEmails(): Set<string> {
-  return new Set(
-    (env.ADMIN_EMAILS ?? '')
-      .split(',')
-      .map((email) => email.trim().toLowerCase())
-      .filter(Boolean),
-  );
+  const configured = (env.ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+  const emails = configured.length > 0 ? configured : DEFAULT_ADMIN_EMAILS;
+  return new Set(emails.map((email) => email.toLowerCase()));
 }
 
 export function isAdminEmail(email: string | null | undefined): boolean {

@@ -69,6 +69,6 @@ export const STARTER_CREDITS = 5;
 // --- Legal / contact -------------------------------------------------------
 // Shown on the privacy & terms pages. Point SUPPORT_EMAIL at a real, monitored
 // inbox before launch (it is the data-controller contact for privacy requests).
-export const SUPPORT_EMAIL = 'hello@quizdart.app';
+export const SUPPORT_EMAIL = 'nazzanuk@gmail.com';
 // Effective date shown on the legal pages; bump when the policies change.
 export const LEGAL_EFFECTIVE_DATE = 'June 15, 2026';

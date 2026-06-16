@@ -12,6 +12,7 @@ const EXIT_DURATION_MS = 180;
 export default function ConfirmDialog() {
   const [dialog, setDialog] = useAtom(confirmDialogAtom);
   const [closing, setClosing] = useState(false);
+  const [value, setValue] = useState('');
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ConfirmDialog() {
     closeTimer.current = setTimeout(() => {
       setDialog(null);
       setClosing(false);
+      setValue('');
     }, EXIT_DURATION_MS);
   };
 
@@ -38,7 +40,8 @@ export default function ConfirmDialog() {
     // Pop the dialog's history entry before onConfirm so a navigation in the
     // callback doesn't leave a stale entry under the new page.
     const { onConfirm } = dialog;
-    consumeEntry(() => onConfirm());
+    const trimmed = value.trim();
+    consumeEntry(() => onConfirm(trimmed || undefined));
     dismiss();
   };
 
@@ -53,6 +56,17 @@ export default function ConfirmDialog() {
       >
         <h3 className={styles.title}>{dialog.title}</h3>
         <p className={styles.message}>{dialog.message}</p>
+        {dialog.prompt && (
+          <textarea
+            className={styles.input}
+            value={value}
+            placeholder={dialog.prompt.placeholder}
+            maxLength={dialog.prompt.maxLength ?? 500}
+            aria-label={dialog.prompt.label ?? 'Details'}
+            onChange={(e) => setValue(e.target.value)}
+            rows={3}
+          />
+        )}
         <div className={styles.actions}>
           <Button variant="ghost" onClick={requestDismiss}>
             Cancel
