@@ -8,12 +8,33 @@
  * Re-run any time to regenerate; existing files are overwritten.
  */
 
-import { writeFile, mkdir } from 'node:fs/promises';
+import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
-import { loadEnvConfig } from '@next/env';
 
-// Pick up ELEVENLABS_API_KEY from .env.local like the app does.
-loadEnvConfig(process.cwd());
+// Pick up ELEVENLABS_API_KEY from .env.local without depending on a Next
+// internal package (which pnpm doesn't hoist). Minimal KEY=VALUE parser;
+// existing process.env values win.
+async function loadEnvLocal(): Promise<void> {
+  try {
+    const text = await readFile(resolve(process.cwd(), '.env.local'), 'utf8');
+    for (const line of text.split('\n')) {
+      const match = /^\s*([\w.-]+)\s*=\s*(.*)\s*$/.exec(line);
+      if (!match || match[1].startsWith('#')) continue;
+      const key = match[1];
+      if (process.env[key] !== undefined) continue;
+      let value = match[2].trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  } catch {
+    // No .env.local — rely on the ambient environment.
+  }
+}
 
 interface SoundSpec {
   name: string;
@@ -57,15 +78,14 @@ const SOUNDS: SoundSpec[] = [
   },
 ];
 
-const API_KEY = process.env.ELEVENLABS_API_KEY;
 const OUT_DIR = resolve(process.cwd(), 'public', 'sounds');
 const ENDPOINT = 'https://api.elevenlabs.io/v1/sound-generation';
 
-async function generateOne(spec: SoundSpec): Promise<void> {
+async function generateOne(spec: SoundSpec, apiKey: string): Promise<void> {
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: {
-      'xi-api-key': API_KEY!,
+      'xi-api-key': apiKey,
       'Content-Type': 'application/json',
       Accept: 'audio/mpeg',
     },
@@ -89,13 +109,15 @@ async function generateOne(spec: SoundSpec): Promise<void> {
 }
 
 async function main() {
-  if (!API_KEY) {
+  await loadEnvLocal();
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  if (!apiKey) {
     console.error('Missing ELEVENLABS_API_KEY env var.');
     process.exit(1);
   }
   console.log(`Generating ${SOUNDS.length} sounds → ${OUT_DIR}`);
   for (const spec of SOUNDS) {
-    await generateOne(spec);
+    await generateOne(spec, apiKey);
   }
   console.log('Done.');
 }
