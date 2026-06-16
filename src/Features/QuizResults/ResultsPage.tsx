@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { fetchQuiz, fetchRun, generateHostRecap, trackShare } from '@/Lib/Api/Client';
-import { getPlayerProfile } from '@/Lib/PlayerProfile';
+import { fetchQuiz, fetchRun, generateHostRecap, setAnonName, trackShare } from '@/Lib/Api/Client';
+import { getAnonId, getLocalUsername, getPlayerProfile, setLocalUsername } from '@/Lib/PlayerProfile';
+import { useSession } from '@/Lib/Auth/Client';
+import { USERNAME_MAX, validateUsername } from '@/Lib/Types';
 import type {
   LastRunSnapshot,
   Question,
@@ -13,7 +15,7 @@ import type {
 } from '@/Lib/Types';
 import { lastRunAtom } from '@/State/PlayAtoms';
 import { hostVoiceEnabledAtom } from '@/State/SettingsAtoms';
-import { addToastAtom } from '@/State/UiAtoms';
+import { addToastAtom, confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import Card from '@/Features/Shared/Card';
@@ -42,6 +44,8 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
   const lastRun = useAtomValue(lastRunAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
   const addToast = useSetAtom(addToastAtom);
+  const setConfirm = useSetAtom(confirmDialogAtom);
+  const { data: session } = useSession();
   const { navigate } = useTransitionRouter();
   const freshDetail = useMemo(
     () => snapshotToDetail(lastRun, quizId, runId),
@@ -149,6 +153,43 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
       .then((response) => setUpgradedRecap({ runId, text: response.recap }))
       .catch(() => {});
   }, [detail, fresh, freshDetail?.run, lastRun?.previousBest, quizId, quizMeta, runId]);
+
+  // After a guest finishes a run, offer to claim their leaderboard spot with a
+  // public name. Once per run, and only if they haven't already chosen one.
+  const namePromptedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!fresh || !detail || session?.user) return;
+    if (getLocalUsername()) return;
+    if (namePromptedRef.current === runId) return;
+    namePromptedRef.current = runId;
+
+    const anonId = getAnonId();
+    const score = detail.run.total > 0
+      ? Math.round((detail.run.correct / detail.run.total) * 100)
+      : 0;
+    setConfirm({
+      title: "You're on the board!",
+      message: `You scored ${score}%. Add a public name to claim your spot on the leaderboard — it becomes your account name when you sign in, and only your first attempt counts.`,
+      confirmLabel: 'Claim my spot',
+      prompt: { label: 'Public name', placeholder: 'e.g. quizwhiz', maxLength: USERNAME_MAX },
+      onConfirm: async (name) => {
+        const trimmed = (name ?? '').trim();
+        if (!trimmed) return;
+        const formatError = validateUsername(trimmed);
+        if (formatError) {
+          addToast({ message: formatError, type: 'error' });
+          return;
+        }
+        try {
+          await setAnonName(anonId, trimmed);
+          setLocalUsername(trimmed);
+          addToast({ message: `You're on the board as ${trimmed}`, type: 'success' });
+        } catch {
+          addToast({ message: "Couldn't save your name — try again", type: 'error' });
+        }
+      },
+    });
+  }, [fresh, detail, session?.user, runId, setConfirm, addToast]);
 
   const hostCue: HostCue | null = fresh && recap
     ? {

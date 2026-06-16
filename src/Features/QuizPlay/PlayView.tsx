@@ -16,7 +16,8 @@ import {
 } from '@/Lib/Constants';
 import { fetchHostSession, fetchRun, getResultsSummary, saveResult } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
-import { recordPlayerRun, getPlayerProfile } from '@/Lib/PlayerProfile';
+import { recordPlayerRun, getPlayerProfile, getAnonId, getLocalUsername } from '@/Lib/PlayerProfile';
+import { useSession } from '@/Lib/Auth/Client';
 import type {
   HostConfidenceLevel,
   PlayerProfile,
@@ -86,6 +87,8 @@ const HOST_PERSONA = 'sarcastic_pub_host' as const;
 
 export default function PlayView({ quizId }: PlayViewProps) {
   const { quiz, questions, patchQuestion, error, notFound } = useQuiz(quizId);
+  const { data: session } = useSession();
+  const isSignedIn = Boolean(session?.user);
   const searchParams = useSearchParams();
   const practiceRunId = searchParams.get('practice');
   const { navigate, replace } = useTransitionRouter();
@@ -577,6 +580,11 @@ export default function PlayView({ quizId }: PlayViewProps) {
               recap: fallbackRecap,
               perQuestion,
               attempts: nextAttempts,
+              // Signed-out players are attributed to a stable guest id so their
+              // run can land on the leaderboard and migrate when they sign in.
+              ...(isSignedIn
+                ? {}
+                : { anonId: getAnonId(), playerName: getLocalUsername() ?? undefined }),
             });
 
             setLastRun({
@@ -630,6 +638,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       questionStats,
       questions,
       quizId,
+      isSignedIn,
       readQuestionsAloud,
       releaseExitGuard,
       replace,

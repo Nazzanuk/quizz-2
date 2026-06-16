@@ -15,7 +15,10 @@ export async function GET(req: Request, { params }: Params) {
   const url = new URL(req.url);
   const limit = parseLimit(url.searchParams.get('limit'), 10);
   const sessionUser = await getSessionUser(req);
-  const leaderboard = await getQuizLeaderboard(quizId, limit, sessionUser?.id ?? null);
+  // Signed-out viewers can pass their guest id to get their own rank highlighted.
+  const anonId = url.searchParams.get('anonId');
+  const viewerId = sessionUser?.id ?? (anonId || null);
+  const leaderboard = await getQuizLeaderboard(quizId, limit, viewerId);
   return NextResponse.json(leaderboard);
 }
 

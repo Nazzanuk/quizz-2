@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { fetchLeaderboard } from '@/Lib/Api/Client';
 import { useSession } from '@/Lib/Auth/Client';
+import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type { QuizLeaderboard } from '@/Lib/Types';
 import styles from './Leaderboard.module.css';
 
@@ -15,8 +16,20 @@ interface LeaderboardProps {
 
 export default function Leaderboard({ quizId, compact = false, limit }: LeaderboardProps) {
   const { data: session } = useSession();
-  const viewerId = session?.user?.id ?? null;
+  const signedInId = session?.user?.id ?? null;
   const rowLimit = limit ?? (compact ? 5 : 10);
+  // Signed-out viewers are highlighted via their local guest id (only if they
+  // already have one — i.e. they've played). Resolved after mount to avoid a
+  // hydration mismatch.
+  const [anonId, setAnonId] = useState<string | null>(null);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      setAnonId(signedInId ? null : (getPlayerProfile().anonId || null));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [signedInId]);
+  const viewerId = signedInId ?? anonId;
+
   // Key the fetched result by quizId so a quiz change reads as "loading"
   // without a synchronous setState reset inside the effect.
   const [fetched, setFetched] = useState<{ quizId: string; board: QuizLeaderboard | null } | null>(
@@ -25,7 +38,7 @@ export default function Leaderboard({ quizId, compact = false, limit }: Leaderbo
 
   useEffect(() => {
     let cancelled = false;
-    fetchLeaderboard(quizId, rowLimit)
+    fetchLeaderboard(quizId, rowLimit, anonId ?? undefined)
       .then((data) => {
         if (!cancelled) setFetched({ quizId, board: data });
       })
@@ -35,7 +48,7 @@ export default function Leaderboard({ quizId, compact = false, limit }: Leaderbo
     return () => {
       cancelled = true;
     };
-  }, [quizId, rowLimit]);
+  }, [quizId, rowLimit, anonId]);
 
   const loaded = fetched?.quizId === quizId;
   const board = loaded ? fetched.board : null;
@@ -82,7 +95,7 @@ export default function Leaderboard({ quizId, compact = false, limit }: Leaderbo
 
       {entries.length === 0 ? (
         <p className={styles.empty}>
-          No ranked players yet. Sign in, pick a username, and play to claim #1.
+          No ranked players yet. Play and add a name to claim #1.
         </p>
       ) : (
         <ol className={styles.list}>
@@ -117,8 +130,12 @@ export default function Leaderboard({ quizId, compact = false, limit }: Leaderbo
       {/* When the viewer ranks outside the shown rows, surface their standing. */}
       {yourRank !== null && !viewerOnBoard && (
         <p className={styles.yourRank}>
-          Your best ranks <strong>#{yourRank}</strong>.
+          Your first attempt ranks <strong>#{yourRank}</strong>.
         </p>
+      )}
+
+      {!compact && entries.length > 0 && (
+        <p className={styles.note}>Ranked by each player&apos;s first attempt.</p>
       )}
     </section>
   );

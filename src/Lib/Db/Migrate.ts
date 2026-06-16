@@ -67,6 +67,12 @@ export async function runMigrations(): Promise<void> {
     created_at TEXT NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS anon_players (
+    id TEXT PRIMARY KEY,
+    username TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
   await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_results (
     id TEXT PRIMARY KEY,
     quiz_id TEXT NOT NULL,

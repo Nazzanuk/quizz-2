@@ -34,7 +34,39 @@ function buildDefaultProfile(): PlayerProfile {
     categories: {},
     quizzes: {},
     recentRecaps: [],
+    anonId: '',
+    username: null,
   };
+}
+
+// A stable per-device guest id, created lazily on the first anonymous run so a
+// purely signed-in user never gets one (and so never triggers a claim).
+export function getAnonId(): string {
+  const profile = getPlayerProfile();
+  if (profile.anonId) return profile.anonId;
+  const anonId = crypto.randomUUID();
+  savePlayerProfile({ ...profile, anonId });
+  return anonId;
+}
+
+export function getLocalUsername(): string | null {
+  return getPlayerProfile().username;
+}
+
+export function setLocalUsername(username: string): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, username };
+  savePlayerProfile(next);
+  return next;
+}
+
+// After a guest's runs are migrated into a signed-in account, drop the guest
+// identity so a later signed-out session starts fresh (and never re-claims).
+export function clearAnonIdentity(): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, anonId: '', username: null };
+  savePlayerProfile(next);
+  return next;
 }
 
 export function getPlayerProfile(): PlayerProfile {

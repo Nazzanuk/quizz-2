@@ -81,5 +81,7 @@ function getFallbackProfile(): PlayerProfile {
     categories: {},
     quizzes: {},
     recentRecaps: [],
+    anonId: '',
+    username: null,
   };
 }

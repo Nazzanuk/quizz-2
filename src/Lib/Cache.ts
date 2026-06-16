@@ -16,6 +16,14 @@ function purgeExpired(now: number): void {
   }
 }
 
+// Drops every cached entry whose key starts with `prefix`. Used to force a
+// recompute after a write (e.g. re-attributing runs invalidates `lb:` cores).
+export function invalidateCacheByPrefix(prefix: string): void {
+  for (const key of store.keys()) {
+    if (key.startsWith(prefix)) store.delete(key);
+  }
+}
+
 // Returns the cached value if fresh, else computes via fn(), caches, and returns.
 export async function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
   const now = Date.now();

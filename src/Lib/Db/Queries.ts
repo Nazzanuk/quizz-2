@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, gte, inArray, sql } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account, quizReports, analyticsEvents } from './Schema';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, anonPlayers, user, session, account, quizReports, analyticsEvents } from './Schema';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
@@ -32,7 +32,7 @@ import {
 } from '../Types';
 import { STARTER_CREDITS } from '../Constants';
 import { nowISO } from '../Utils';
-import { cached } from '../Cache';
+import { cached, invalidateCacheByPrefix } from '../Cache';
 
 // Owner-scoped: the dashboard only ever lists the signed-in creator's quizzes.
 export async function listQuizzes(ownerId: string): Promise<Quiz[]> {
@@ -551,9 +551,12 @@ async function computeLeaderboardCore(quizId: string): Promise<{
       correct: quizRuns.correct,
       total: quizRuns.total,
       bestStreak: quizRuns.bestStreak,
+      createdAt: quizRuns.createdAt,
     })
     .from(quizRuns)
-    .where(eq(quizRuns.quizId, quizId));
+    .where(eq(quizRuns.quizId, quizId))
+    // Ascending so each player's FIRST run is the one we encounter first.
+    .orderBy(quizRuns.createdAt);
 
   const scored = runs.filter((run) => run.total > 0);
   const averagePct = scored.length > 0
@@ -562,26 +565,29 @@ async function computeLeaderboardCore(quizId: string): Promise<{
     )
     : null;
 
-  const byUser = new Map<string, { bestRatio: number; plays: number; bestStreak: number }>();
+  // Rank by each player's FIRST scored attempt only — replays count toward the
+  // play tally but never change their score, so the board can't be farmed.
+  const byUser = new Map<string, { ratio: number; plays: number; bestStreak: number }>();
   for (const run of runs) {
     if (!run.userId || run.total <= 0) continue;
-    const ratio = run.correct / run.total;
     const current = byUser.get(run.userId);
     if (!current) {
-      byUser.set(run.userId, { bestRatio: ratio, plays: 1, bestStreak: run.bestStreak });
+      byUser.set(run.userId, {
+        ratio: run.correct / run.total,
+        plays: 1,
+        bestStreak: run.bestStreak,
+      });
     } else {
-      current.bestRatio = Math.max(current.bestRatio, ratio);
       current.plays += 1;
-      current.bestStreak = Math.max(current.bestStreak, run.bestStreak);
     }
   }
 
-  const names = await getUserDisplayNames([...byUser.keys()]);
+  const names = await getDisplayNames([...byUser.keys()]);
   const ranked: LeaderboardEntry[] = [...byUser.entries()]
     .map(([userId, agg]) => ({
       userId,
-      name: names.get(userId) ?? 'Player',
-      bestPct: Math.round(agg.bestRatio * 100),
+      name: names.get(userId) ?? 'Guest',
+      bestPct: Math.round(agg.ratio * 100),
       plays: agg.plays,
       bestStreak: agg.bestStreak,
     }))
@@ -653,14 +659,65 @@ export async function listPublicQuizzes(
     .limit(limit);
 }
 
-// Maps user ids to their public display name (chosen username, else Google name).
-async function getUserDisplayNames(userIds: string[]): Promise<Map<string, string>> {
-  if (userIds.length === 0) return new Map();
-  const rows = await db
+// Maps player ids to a public display name. Registered users resolve to their
+// chosen username (else Google name); guest ids resolve to their chosen guest
+// name. Ids with no name are omitted, and the caller shows "Guest".
+async function getDisplayNames(ids: string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const result = new Map<string, string>();
+
+  const userRows = await db
     .select({ id: user.id, name: user.name, username: user.username })
     .from(user)
-    .where(inArray(user.id, userIds));
-  return new Map(rows.map((row) => [row.id, row.username?.trim() || row.name]));
+    .where(inArray(user.id, ids));
+  for (const row of userRows) result.set(row.id, row.username?.trim() || row.name);
+
+  const missing = ids.filter((id) => !result.has(id));
+  if (missing.length > 0) {
+    const anonRows = await db
+      .select({ id: anonPlayers.id, username: anonPlayers.username })
+      .from(anonPlayers)
+      .where(inArray(anonPlayers.id, missing));
+    for (const row of anonRows) {
+      const name = row.username?.trim();
+      if (name) result.set(row.id, name);
+    }
+  }
+  return result;
+}
+
+// --- Guest (anonymous) players ---------------------------------------------
+
+// Ensures a guest row exists for an anonId; only sets the name when one is given
+// (a later anonymous run must not wipe a previously chosen guest name).
+export async function upsertAnonPlayer(anonId: string, username: string | null): Promise<void> {
+  await db.run(sql`
+    INSERT INTO anon_players (id, username, created_at)
+    VALUES (${anonId}, ${username}, ${nowISO()})
+    ON CONFLICT(id) DO UPDATE SET username = COALESCE(${username}, anon_players.username)
+  `);
+  invalidateCacheByPrefix('lb:');
+}
+
+// Sets/changes a guest's public name (from the post-run "claim your spot" prompt).
+export async function setAnonUsername(anonId: string, username: string): Promise<void> {
+  await db.run(sql`
+    INSERT INTO anon_players (id, username, created_at)
+    VALUES (${anonId}, ${username}, ${nowISO()})
+    ON CONFLICT(id) DO UPDATE SET username = ${username}
+  `);
+  invalidateCacheByPrefix('lb:');
+}
+
+// Re-attributes every run from a guest id to a signed-in user, then drops the
+// guest row. Returns the number of runs moved.
+export async function claimAnonRuns(anonId: string, userId: string): Promise<number> {
+  const result = await db.run(
+    sql`UPDATE quiz_runs SET user_id = ${userId} WHERE user_id = ${anonId}`,
+  );
+  await db.run(sql`DELETE FROM anon_players WHERE id = ${anonId}`).catch(() => {});
+  invalidateCacheByPrefix('lb:');
+  return Number((result as { rowsAffected?: number }).rowsAffected ?? 0);
 }
 
 // --- Usernames -------------------------------------------------------------
