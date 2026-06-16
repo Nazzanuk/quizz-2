@@ -16,6 +16,7 @@
  *     npm run reset-credits -- --apply  # write
  */
 
+import './load-env'; // must run before any module that reads env at import time
 import { db } from '../src/Lib/Db/Client';
 import { user } from '../src/Lib/Db/Schema';
 import { runMigrations } from '../src/Lib/Db/Migrate';

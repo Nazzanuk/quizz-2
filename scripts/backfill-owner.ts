@@ -15,6 +15,7 @@
  * Idempotent: only touches rows where owner_id IS NULL.
  */
 
+import './load-env'; // must run before any module that reads env at import time
 import { runMigrations } from '../src/Lib/Db/Migrate';
 import { getUserByEmail, backfillQuizOwner } from '../src/Lib/Db/Queries';
 

@@ -17,6 +17,7 @@
  *     npx tsx scripts/dedupe-quizzes.ts --apply    # delete
  */
 
+import './load-env'; // must run before any module that reads env at import time
 import { db } from '../src/Lib/Db/Client';
 import { quizzes } from '../src/Lib/Db/Schema';
 import { deleteQuiz } from '../src/Lib/Db/Queries';
