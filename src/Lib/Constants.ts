@@ -79,9 +79,21 @@ export const STARTER_CREDITS = 5;
 export const MAX_IMAGES_PER_GENERATION = 24;
 
 // Max characters accepted for fields forwarded to paid LLM / TTS APIs.
-export const MAX_MATERIAL_LENGTH = 20_000;
+// Material rides Gemini 3.5's 1M-token window, so a whole chapter can be pasted
+// (~300k chars ≈ 75k tokens, well within budget after the prompt + grounding).
+export const MAX_MATERIAL_LENGTH = 300_000;
 export const MAX_TOPIC_LENGTH = 300;
 export const MAX_HOST_TEXT_LENGTH = 2_000;
+
+// --- Gemini generation -----------------------------------------------------
+// GA model with a 1M-token context window, configurable thinking, and support
+// for combining Google Search grounding with structured JSON output.
+export const GEMINI_MODEL = 'gemini-3.5-flash';
+// Generous output ceiling so a large quiz plus thinking tokens never truncates
+// (model max is ~65k). Host one-liners pass their own small cap.
+export const MAX_GENERATION_OUTPUT_TOKENS = 64_000;
+// Grounded, high-thinking generation can run longer than a plain text call.
+export const AI_GENERATION_TIMEOUT_MS = 90_000;
 
 // Bounds for user-authored quiz/question text (DB + render safety).
 export const MAX_QUIZ_TITLE_LENGTH = 200;

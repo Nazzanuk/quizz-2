@@ -1,11 +1,12 @@
 import {
-  GoogleGenerativeAI,
+  GoogleGenAI,
   HarmBlockThreshold,
   HarmCategory,
-  SchemaType,
+  ThinkingLevel,
+  Type,
   type SafetySetting,
   type Schema,
-} from '@google/generative-ai';
+} from '@google/genai';
 import {
   normalizeQuestionDifficulty,
   normalizeQuizFormat,
@@ -16,54 +17,106 @@ import {
   type QuizFormat,
 } from '../Types';
 import { requireServerEnv } from '../Env';
-import { AI_TEXT_TIMEOUT_MS } from '../Constants';
-
-// Applied to every model call so a hung Gemini request can't pin a server worker.
-const REQUEST_OPTIONS = { timeout: AI_TEXT_TIMEOUT_MS } as const;
+import {
+  AI_GENERATION_TIMEOUT_MS,
+  AI_TEXT_TIMEOUT_MS,
+  GEMINI_MODEL,
+  MAX_GENERATION_OUTPUT_TOKENS,
+} from '../Constants';
 
 // Constructed lazily so a missing key surfaces at generation time with a clear
 // error, rather than crashing module import during build.
-let genAIInstance: GoogleGenerativeAI | null = null;
-function getGenAI(): GoogleGenerativeAI {
+let genAIInstance: GoogleGenAI | null = null;
+function getGenAI(): GoogleGenAI {
   if (!genAIInstance) {
-    genAIInstance = new GoogleGenerativeAI(requireServerEnv('GOOGLE_AI_API_KEY'));
+    genAIInstance = new GoogleGenAI({ apiKey: requireServerEnv('GOOGLE_AI_API_KEY') });
   }
   return genAIInstance;
 }
 
+interface GenerateJsonOpts {
+  schema: Schema;
+  contents: string;
+  temperature?: number;
+  // Enable Grounding with Google Search so factual content is checked against
+  // live results instead of the model's (Jan 2025) training cutoff.
+  grounded?: boolean;
+  thinkingLevel?: ThinkingLevel;
+  maxOutputTokens?: number;
+  timeoutMs?: number;
+}
+
+// Single entry point for structured (JSON-schema) generation. On Gemini 3.5,
+// Google Search grounding can run alongside a response schema — but if a
+// grounded call returns nothing (a blocked/empty edge case with tool+schema
+// combos), it retries once without grounding so a quiz is still produced.
+async function generateJson(opts: GenerateJsonOpts): Promise<string> {
+  const run = (useTools: boolean) =>
+    getGenAI().models.generateContent({
+      model: GEMINI_MODEL,
+      contents: opts.contents,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: opts.schema,
+        safetySettings: SAFETY_SETTINGS,
+        maxOutputTokens: opts.maxOutputTokens ?? MAX_GENERATION_OUTPUT_TOKENS,
+        ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
+        ...(opts.thinkingLevel ? { thinkingConfig: { thinkingLevel: opts.thinkingLevel } } : {}),
+        ...(useTools ? { tools: [{ googleSearch: {} }] } : {}),
+        // A fresh per-attempt deadline so a hung call can't pin a worker.
+        abortSignal: AbortSignal.timeout(opts.timeoutMs ?? AI_TEXT_TIMEOUT_MS),
+      },
+    });
+
+  if (opts.grounded) {
+    try {
+      const text = (await run(true)).text;
+      if (text && text.trim()) return text;
+    } catch (err) {
+      console.warn(
+        '[gemini] grounded generation failed, retrying without grounding:',
+        err instanceof Error ? err.message : err,
+      );
+    }
+    return (await run(false)).text ?? '';
+  }
+
+  return (await run(false)).text ?? '';
+}
+
 const quizResponseSchema: Schema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
-    title: { type: SchemaType.STRING },
-    description: { type: SchemaType.STRING },
+    title: { type: Type.STRING },
+    description: { type: Type.STRING },
     questions: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          format: { type: SchemaType.STRING },
-          questionText: { type: SchemaType.STRING },
-          answerText: { type: SchemaType.STRING },
+          format: { type: Type.STRING },
+          questionText: { type: Type.STRING },
+          answerText: { type: Type.STRING },
           options: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING },
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
           },
           imageDescription: {
-            type: SchemaType.STRING,
+            type: Type.STRING,
             nullable: true,
           },
           optionImageDescriptions: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING, nullable: true },
+            type: Type.ARRAY,
+            items: { type: Type.STRING, nullable: true },
             nullable: true,
           },
-          category: { type: SchemaType.STRING },
-          difficulty: { type: SchemaType.STRING },
-          explanation: { type: SchemaType.STRING },
-          factText: { type: SchemaType.STRING },
+          category: { type: Type.STRING },
+          difficulty: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          factText: { type: Type.STRING },
           tags: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING },
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
           },
         },
         required: [
@@ -84,21 +137,21 @@ const quizResponseSchema: Schema = {
 };
 
 const metadataResponseSchema: Schema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
     questions: {
-      type: SchemaType.ARRAY,
+      type: Type.ARRAY,
       items: {
-        type: SchemaType.OBJECT,
+        type: Type.OBJECT,
         properties: {
-          id: { type: SchemaType.STRING },
-          category: { type: SchemaType.STRING },
-          difficulty: { type: SchemaType.STRING },
-          explanation: { type: SchemaType.STRING },
-          factText: { type: SchemaType.STRING },
+          id: { type: Type.STRING },
+          category: { type: Type.STRING },
+          difficulty: { type: Type.STRING },
+          explanation: { type: Type.STRING },
+          factText: { type: Type.STRING },
           tags: {
-            type: SchemaType.ARRAY,
-            items: { type: SchemaType.STRING },
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
           },
         },
         required: ['id', 'category', 'difficulty', 'explanation', 'factText', 'tags'],
@@ -109,9 +162,9 @@ const metadataResponseSchema: Schema = {
 };
 
 const lineResponseSchema: Schema = {
-  type: SchemaType.OBJECT,
+  type: Type.OBJECT,
   properties: {
-    text: { type: SchemaType.STRING },
+    text: { type: Type.STRING },
   },
   required: ['text'],
 };
@@ -151,10 +204,13 @@ export async function generateQuiz(opts: {
   count: number;
   existingQuestions?: string[];
 }): Promise<GeneratedQuiz> {
-  const model = getJsonModel(quizResponseSchema);
-  const prompt = buildPrompt(opts);
-  const result = await model.generateContent(prompt, REQUEST_OPTIONS);
-  const text = result.response.text();
+  const text = await generateJson({
+    schema: quizResponseSchema,
+    contents: buildPrompt(opts),
+    grounded: true,
+    thinkingLevel: ThinkingLevel.HIGH,
+    timeoutMs: AI_GENERATION_TIMEOUT_MS,
+  });
   return parseGeneratedQuiz(text);
 }
 
@@ -163,9 +219,13 @@ export async function generateQuestionMetadata(opts: {
   title?: string | null;
   questions: Question[];
 }): Promise<GeneratedQuestionMetadata[]> {
-  const model = getJsonModel(metadataResponseSchema);
-  const result = await model.generateContent(buildMetadataPrompt(opts), REQUEST_OPTIONS);
-  const text = result.response.text();
+  const text = await generateJson({
+    schema: metadataResponseSchema,
+    contents: buildMetadataPrompt(opts),
+    grounded: true,
+    thinkingLevel: ThinkingLevel.MEDIUM,
+    timeoutMs: AI_GENERATION_TIMEOUT_MS,
+  });
   const parsed = JSON.parse(text) as {
     questions: Array<{
       id: string;
@@ -196,9 +256,13 @@ export async function generateHostSessionIntro(opts: {
   categories: string[];
   hardCount: number;
 }): Promise<string> {
-  const model = getJsonModel(lineResponseSchema, 1.1);
-  const result = await model.generateContent(buildHostIntroPrompt(opts), REQUEST_OPTIONS);
-  const text = result.response.text();
+  const text = await generateJson({
+    schema: lineResponseSchema,
+    contents: buildHostIntroPrompt(opts),
+    temperature: 1.1,
+    thinkingLevel: ThinkingLevel.MINIMAL,
+    maxOutputTokens: 2048,
+  });
   return parseLine(text);
 }
 
@@ -219,9 +283,13 @@ export async function generateHostRecap(opts: {
   weaknesses: string[];
   profile: PlayerProfile;
 }): Promise<string> {
-  const model = getJsonModel(lineResponseSchema, 1.1);
-  const result = await model.generateContent(buildHostRecapPrompt(opts), REQUEST_OPTIONS);
-  const text = result.response.text();
+  const text = await generateJson({
+    schema: lineResponseSchema,
+    contents: buildHostRecapPrompt(opts),
+    temperature: 1.1,
+    thinkingLevel: ThinkingLevel.MINIMAL,
+    maxOutputTokens: 2048,
+  });
   return parseLine(text);
 }
 
@@ -234,18 +302,6 @@ const SAFETY_SETTINGS: SafetySetting[] = [
   HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
   HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
 ].map((category) => ({ category, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE }));
-
-function getJsonModel(responseSchema: Schema, temperature?: number) {
-  return getGenAI().getGenerativeModel({
-    model: 'gemini-3-flash-preview',
-    safetySettings: SAFETY_SETTINGS,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema,
-      ...(temperature !== undefined ? { temperature } : {}),
-    },
-  });
-}
 
 const HOST_VARIETY_RULES = [
   'Variety rules: every line must feel newly written, never templated.',
