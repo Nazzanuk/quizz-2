@@ -104,6 +104,9 @@ body::before {
   background:
     linear-gradient(90deg, transparent 0 58%, var(--neo-secondary) 58% 74%, transparent 74%),
     linear-gradient(180deg, transparent 0 64%, var(--neo-muted) 64% 82%, transparent 82%);
+  /* Subtle, slow drift so the colour panels feel alive. */
+  animation: neo-bg-drift 24s ease-in-out infinite alternate;
+  will-change: transform, opacity;
 }
 
 body::after {
@@ -119,6 +122,9 @@ body::after {
   color: transparent;
   -webkit-text-stroke: 3px var(--neo-ink);
   transform: rotate(-8deg);
+  /* Gentle sway on the giant backdrop word. */
+  animation: neo-bg-sway 18s ease-in-out infinite alternate;
+  will-change: transform;
 }
 
 /* On desktop the content card centers and shrinks relative to the viewport,
@@ -408,6 +414,17 @@ a {
 @keyframes float-slow {
   0%, 100% { transform: translateY(0) rotate(-6deg); }
   50% { transform: translateY(-10px) rotate(4deg); }
+}
+
+/* Subtle, slow ambient motion for the fixed background layers. */
+@keyframes neo-bg-drift {
+  from { transform: translate3d(0, 0, 0); opacity: 0.85; }
+  to { transform: translate3d(2.5%, -1.5%, 0); opacity: 1; }
+}
+
+@keyframes neo-bg-sway {
+  from { transform: rotate(-8deg) translateY(0); }
+  to { transform: rotate(-4deg) translateY(-1.5%); }
 }
 
 @keyframes reveal {

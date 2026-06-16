@@ -31,16 +31,30 @@
   border-radius: 0;
   box-shadow: var(--neo-shadow);
   transform: rotate(-8deg);
-  animation: float-slow 7s steps(2, end) infinite;
+  /* Slow, smooth drift for subtle continuous movement. Keyframes are defined
+     in this module so CSS Modules scopes the name consistently. */
+  animation: blobDrift 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes blobDrift {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-12px) rotate(3deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob {
+    animation: none;
+  }
 }
 
 .blob:nth-child(2) {
   border-radius: 9999px;
   transform: rotate(6deg);
-  animation-duration: 9s;
+  animation-duration: 21s;
 }
 
 .blob:nth-child(3) {
   transform: rotate(4deg);
-  animation-duration: 8s;
+  animation-duration: 18s;
 }

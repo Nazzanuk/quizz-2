@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import styles from './BlobField.module.css';
 
 interface BlobConfig {
@@ -12,20 +13,46 @@ interface BlobConfig {
   delay?: number;
 }
 
-const DEFAULT_BLOBS: BlobConfig[] = [
-  { color: 'var(--neo-accent)', size: 300, top: '-80px', right: '-60px' },
-  { color: 'var(--neo-muted)', size: 220, bottom: '-40px', left: '-30px', delay: -3 },
-  { color: 'var(--neo-lime)', size: 180, top: '40%', right: '10%', delay: -5 },
+// Fixed positions; colours are chosen per-screen below for variety.
+const POSITIONS: Omit<BlobConfig, 'color'>[] = [
+  { size: 300, top: '-80px', right: '-60px' },
+  { size: 220, bottom: '-40px', left: '-30px', delay: -3 },
+  { size: 180, top: '40%', right: '10%', delay: -5 },
 ];
+
+// Each screen gets a different but stable trio of accent colours, so the
+// background feels varied as you move around the app without flickering.
+const PALETTES: string[][] = [
+  ['var(--neo-accent)', 'var(--neo-muted)', 'var(--neo-lime)'],
+  ['var(--neo-cyan)', 'var(--neo-secondary)', 'var(--neo-accent)'],
+  ['var(--neo-lime)', 'var(--neo-accent)', 'var(--neo-cyan)'],
+  ['var(--neo-muted)', 'var(--neo-lime)', 'var(--neo-secondary)'],
+  ['var(--neo-secondary)', 'var(--neo-cyan)', 'var(--neo-muted)'],
+];
+
+function hashString(value: string): number {
+  let hash = 0;
+  for (let i = 0; i < value.length; i++) {
+    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
+  }
+  return hash;
+}
 
 interface BlobFieldProps {
   blobs?: BlobConfig[];
 }
 
-export default function BlobField({ blobs = DEFAULT_BLOBS }: BlobFieldProps) {
+export default function BlobField({ blobs }: BlobFieldProps) {
+  const pathname = usePathname();
+  const palette = PALETTES[hashString(pathname || '/') % PALETTES.length];
+  const resolved = blobs ?? POSITIONS.map((position, i) => ({
+    ...position,
+    color: palette[i % palette.length],
+  }));
+
   return (
     <div className={styles.field} aria-hidden>
-      {blobs.map((blob, i) => (
+      {resolved.map((blob, i) => (
         <div
           key={i}
           className={styles.blob}
