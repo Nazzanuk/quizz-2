@@ -31,6 +31,7 @@ import {
 } from '../Types';
 import { STARTER_CREDITS } from '../Constants';
 import { nowISO } from '../Utils';
+import { cached } from '../Cache';
 
 // Owner-scoped: the dashboard only ever lists the signed-in creator's quizzes.
 export async function listQuizzes(ownerId: string): Promise<Quiz[]> {
@@ -532,15 +533,15 @@ export async function getQuizAggregateStats(quizId: string): Promise<QuizAggrega
 // entries only include signed-in players, taking each player's single best run.
 // Aggregation happens in JS — fine at a quiz's run volume and far simpler than
 // SQL window functions through the query builder.
-export async function getQuizLeaderboard(
-  quizId: string,
-  limit = 10,
-  viewerId?: string | null,
-): Promise<{
+// Viewer-independent core: averages, play count, and the full ranked list. This
+// is the expensive part (loads + aggregates all the quiz's runs), so it's cached
+// briefly; per-request `yourRank` is derived from it without re-querying.
+const LEADERBOARD_TTL_MS = 30_000;
+
+async function computeLeaderboardCore(quizId: string): Promise<{
   averagePct: number | null;
   totalPlays: number;
-  entries: LeaderboardEntry[];
-  yourRank: number | null;
+  ranked: LeaderboardEntry[];
 }> {
   const runs = await db
     .select({
@@ -588,12 +589,26 @@ export async function getQuizLeaderboard(
       b.plays - a.plays ||
       a.name.localeCompare(b.name));
 
-  const yourIndex = viewerId ? ranked.findIndex((entry) => entry.userId === viewerId) : -1;
+  return { averagePct, totalPlays: runs.length, ranked };
+}
+
+export async function getQuizLeaderboard(
+  quizId: string,
+  limit = 10,
+  viewerId?: string | null,
+): Promise<{
+  averagePct: number | null;
+  totalPlays: number;
+  entries: LeaderboardEntry[];
+  yourRank: number | null;
+}> {
+  const core = await cached(`lb:${quizId}`, LEADERBOARD_TTL_MS, () => computeLeaderboardCore(quizId));
+  const yourIndex = viewerId ? core.ranked.findIndex((entry) => entry.userId === viewerId) : -1;
 
   return {
-    averagePct,
-    totalPlays: runs.length,
-    entries: ranked.slice(0, limit),
+    averagePct: core.averagePct,
+    totalPlays: core.totalPlays,
+    entries: core.ranked.slice(0, limit),
     yourRank: yourIndex >= 0 ? yourIndex + 1 : null,
   };
 }
@@ -602,21 +617,23 @@ export async function getQuizLeaderboard(
 // are excluded, and the inner join means only quizzes with at least one run
 // surface — so unplayed drafts never leak into the global feed.
 export async function getTopQuizzes(limit = 5): Promise<TopQuiz[]> {
-  const rows = await db
-    .select({ quiz: quizzes, plays: sql<number>`count(${quizRuns.id})` })
-    .from(quizzes)
-    .innerJoin(quizRuns, eq(quizRuns.quizId, quizzes.id))
-    // Discover lists only quizzes the creator explicitly made public, and never
-    // anything taken down by moderation.
-    .where(and(
-      eq(quizzes.visibility, 'public'),
-      sql`(${quizzes.status} IS NULL OR ${quizzes.status} != 'blocked')`,
-    ))
-    .groupBy(quizzes.id)
-    .orderBy(desc(sql`count(${quizRuns.id})`))
-    .limit(limit);
+  return cached(`discover:${limit}`, 30_000, async () => {
+    const rows = await db
+      .select({ quiz: quizzes, plays: sql<number>`count(${quizRuns.id})` })
+      .from(quizzes)
+      .innerJoin(quizRuns, eq(quizRuns.quizId, quizzes.id))
+      // Discover lists only quizzes the creator explicitly made public, and never
+      // anything taken down by moderation.
+      .where(and(
+        eq(quizzes.visibility, 'public'),
+        sql`(${quizzes.status} IS NULL OR ${quizzes.status} != 'blocked')`,
+      ))
+      .groupBy(quizzes.id)
+      .orderBy(desc(sql`count(${quizRuns.id})`))
+      .limit(limit);
 
-  return rows.map((row) => ({ ...parseQuiz(row.quiz), plays: Number(row.plays) }));
+    return rows.map((row) => ({ ...parseQuiz(row.quiz), plays: Number(row.plays) }));
+  });
 }
 
 // Maps user ids to their public display name (chosen username, else Google name).
