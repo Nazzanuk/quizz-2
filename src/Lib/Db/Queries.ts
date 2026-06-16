@@ -326,6 +326,7 @@ export async function insertQuizRun(data: {
       streakAfter: attempt.streakAfter,
       wasFinalQuestion: attempt.wasFinalQuestion ? 1 : 0,
       hostMode: data.mode,
+      playFormat: attempt.playFormat ?? null,
       createdAt,
     })),
   );
@@ -1060,6 +1061,7 @@ function parseQuestionAttempt(row: typeof questionAttempts.$inferSelect): Questi
     streakAfter: row.streakAfter,
     wasFinalQuestion: row.wasFinalQuestion === 1,
     hostMode: normalizeHostMode(row.hostMode),
+    playFormat: row.playFormat ? normalizeQuizFormat(row.playFormat) : null,
     createdAt: row.createdAt,
   };
 }

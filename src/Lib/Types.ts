@@ -266,6 +266,10 @@ export interface QuestionAttempt {
   streakAfter: number;
   wasFinalQuestion: boolean;
   hostMode: HostMode;
+  // The format the question was actually presented as (mcq questions are shown
+  // as jeopardy/true_false at random). Null for runs recorded before this was
+  // tracked. Drives correct rendering of the results breakdown.
+  playFormat: QuizFormat | null;
   createdAt: string;
 }
 
@@ -398,6 +402,7 @@ export interface SaveResultAttemptInput {
   streakBefore: number;
   streakAfter: number;
   wasFinalQuestion: boolean;
+  playFormat: QuizFormat | null;
 }
 
 export interface SaveResultRequest {

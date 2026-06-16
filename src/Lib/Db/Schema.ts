@@ -178,5 +178,7 @@ export const questionAttempts = sqliteTable('question_attempts', {
   streakAfter: integer('streak_after').notNull(),
   wasFinalQuestion: integer('was_final_question').notNull(),
   hostMode: text('host_mode').notNull(),
+  // How the question was presented this run (mcq/jeopardy/true_false/...).
+  playFormat: text('play_format'),
   createdAt: text('created_at').notNull(),
 });

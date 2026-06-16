@@ -24,6 +24,7 @@ import { haptic } from '@/Features/Shared/Haptic';
 import { shareLink } from '@/Features/Shared/Share';
 import ResultsView from '@/Features/QuizPlay/ResultsView';
 import HostStage, { type HostCue } from '@/Features/QuizPlay/HostStage';
+import { getTrueFalseClaim } from '@/Features/QuizPlay/Formats/trueFalseClaim';
 import { useTransitionRouter } from '@/Features/Shared/Navigate';
 import {
   averageResponseMs,
@@ -286,6 +287,7 @@ function AttemptBreakdown({
       </div>
       {attempts.map((attempt) => {
         const question = questionById.get(attempt.questionId);
+        const display = attemptDisplay(attempt, question);
         return (
           <Card
             key={attempt.id}
@@ -298,7 +300,7 @@ function AttemptBreakdown({
                 {attempt.correct ? 'Correct' : attempt.timedOut ? 'Timed out' : 'Missed'}
               </span>
             </div>
-            <h3 className={styles.question}>{question?.questionText ?? 'Question unavailable'}</h3>
+            <h3 className={styles.question}>{display.questionLine}</h3>
             <dl className={styles.detailGrid}>
               <div>
                 <dt>Your answer</dt>
@@ -306,7 +308,7 @@ function AttemptBreakdown({
               </div>
               <div>
                 <dt>Correct answer</dt>
-                <dd>{question?.answerText ?? 'Unknown'}</dd>
+                <dd>{display.correctAnswer}</dd>
               </div>
               <div>
                 <dt>Response</dt>
@@ -324,6 +326,34 @@ function AttemptBreakdown({
   );
 }
 
+// Render each attempt the way it was actually played. mcq questions are shown
+// as jeopardy/true_false at random, so a question's stored answerText isn't the
+// "correct answer" the player was choosing in those modes.
+function attemptDisplay(
+  attempt: QuestionAttempt,
+  question: Question | undefined,
+): { questionLine: string; correctAnswer: string } {
+  if (!question) {
+    return { questionLine: 'Question unavailable', correctAnswer: 'Unknown' };
+  }
+  switch (attempt.playFormat) {
+    case 'jeopardy':
+      return {
+        questionLine: `The answer was "${question.answerText}" — what was the question?`,
+        correctAnswer: question.questionText,
+      };
+    case 'true_false': {
+      const { claim, isTrue } = getTrueFalseClaim(question);
+      return {
+        questionLine: `${question.questionText} — was the answer "${claim}"?`,
+        correctAnswer: isTrue ? 'True' : 'False',
+      };
+    }
+    default:
+      return { questionLine: question.questionText, correctAnswer: question.answerText };
+  }
+}
+
 function toSaveAttempts(attempts: QuestionAttempt[]): SaveResultAttemptInput[] {
   return attempts.map((attempt) => ({
     questionId: attempt.questionId,
@@ -336,6 +366,7 @@ function toSaveAttempts(attempts: QuestionAttempt[]): SaveResultAttemptInput[] {
     streakBefore: attempt.streakBefore,
     streakAfter: attempt.streakAfter,
     wasFinalQuestion: attempt.wasFinalQuestion,
+    playFormat: attempt.playFormat,
   }));
 }
 

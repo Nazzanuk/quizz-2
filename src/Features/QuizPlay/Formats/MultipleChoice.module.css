@@ -91,6 +91,9 @@
   color: var(--neo-ink);
   text-align: left;
   cursor: pointer;
+  /* Let a vertical swipe that starts on a button scroll the answer list
+     instead of being swallowed by the press interaction. */
+  touch-action: pan-y;
   box-shadow: var(--neo-shadow);
   transition:
     transform var(--neo-fast),
@@ -164,6 +167,7 @@
   background: var(--neo-white);
   overflow: visible;
   cursor: pointer;
+  touch-action: pan-y;
   transition:
     transform var(--neo-fast),
     box-shadow var(--neo-fast),

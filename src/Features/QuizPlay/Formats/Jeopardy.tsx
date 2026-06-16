@@ -33,10 +33,23 @@ export default function Jeopardy({
   onOptionSelect,
 }: JeopardyProps) {
   const options = useMemo(() => {
-    const distractors = shuffleArraySeeded(
-      allQuestions.filter((q) => q.id !== question.id).map((q) => q.questionText),
-      `jeopardy-distractors:${question.id}`,
-    ).slice(0, 3);
+    // Only reuse other *mcq* question stems as distractors — fill_blank /
+    // odd_one_out stems ("Three of these were directed by…") read as nonsense
+    // next to a single answer. Prefer same-category stems so the wrong options
+    // feel like plausible alternative questions.
+    const pool = allQuestions.filter((q) => q.id !== question.id && q.format === 'mcq');
+    const sameCategory = pool.filter(
+      (q) => question.category && q.category === question.category,
+    );
+    const otherCategory = pool.filter(
+      (q) => !(question.category && q.category === question.category),
+    );
+    const distractors = [
+      ...shuffleArraySeeded(sameCategory, `jeopardy-cat:${question.id}`),
+      ...shuffleArraySeeded(otherCategory, `jeopardy-rest:${question.id}`),
+    ]
+      .slice(0, 3)
+      .map((q) => q.questionText);
     return shuffleArraySeeded(
       [question.questionText, ...distractors],
       `jeopardy-options:${question.id}`,

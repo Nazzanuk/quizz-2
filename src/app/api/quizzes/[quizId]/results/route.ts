@@ -8,6 +8,7 @@ import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
   normalizeHostPersona,
+  normalizeQuizFormat,
   type SaveResultRequest,
 } from '@/Lib/Types';
 
@@ -81,6 +82,7 @@ export async function POST(req: Request, { params }: Params) {
         streakBefore: attempt.streakBefore,
         streakAfter: attempt.streakAfter,
         wasFinalQuestion: attempt.wasFinalQuestion,
+        playFormat: attempt.playFormat ? normalizeQuizFormat(attempt.playFormat) : null,
       })),
     });
     await track('run_completed', { userId: sessionUser?.id ?? null, quizId });

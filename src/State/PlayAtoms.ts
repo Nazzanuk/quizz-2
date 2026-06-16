@@ -24,6 +24,10 @@ export const scoreAtom = atom((get) => {
 // mcq-format questions are presented at play time as one of these, at random,
 // for variety. jeopardy and true_false reuse the same question data.
 const RANDOMISED_MCQ_FORMATS: QuizFormat[] = ['mcq', 'jeopardy', 'true_false'];
+// Jeopardy builds its 3 wrong options from OTHER mcq questions' stems, so it
+// needs at least 4 mcq questions in the pool to form a plausible option set.
+const RANDOMISED_MCQ_FORMATS_NO_JEOPARDY: QuizFormat[] = ['mcq', 'true_false'];
+const MIN_MCQ_FOR_JEOPARDY = 4;
 
 export function isPlayableQuestion(question: Question): boolean {
   if (!Array.isArray(question.options) || question.options.length !== 4) return false;
@@ -32,12 +36,12 @@ export function isPlayableQuestion(question: Question): boolean {
     || question.format === 'odd_one_out';
 }
 
-function getPlayFormat(question: Question): QuizFormat {
+function getPlayFormat(question: Question, mcqFormats: QuizFormat[]): QuizFormat {
   if (question.format === 'fill_blank' || question.format === 'odd_one_out') {
     return question.format;
   }
 
-  return RANDOMISED_MCQ_FORMATS[Math.floor(Math.random() * RANDOMISED_MCQ_FORMATS.length)];
+  return mcqFormats[Math.floor(Math.random() * mcqFormats.length)];
 }
 
 export const initPlayAtom = atom(
@@ -49,9 +53,17 @@ export const initPlayAtom = atom(
     ? shuffled.slice(0, payload.limit)
     : shuffled;
   const order = limited.map((q) => q.id);
+  // Jeopardy distractors come from the whole playable pool's mcq stems, so gate
+  // it on that count — not the per-run subset.
+  const mcqPoolCount = payload.questions.filter(
+    (q) => isPlayableQuestion(q) && q.format === 'mcq',
+  ).length;
+  const mcqFormats = mcqPoolCount >= MIN_MCQ_FOR_JEOPARDY
+    ? RANDOMISED_MCQ_FORMATS
+    : RANDOMISED_MCQ_FORMATS_NO_JEOPARDY;
   const formats = new Map<string, QuizFormat>();
   limited.forEach((q) => {
-    formats.set(q.id, getPlayFormat(q));
+    formats.set(q.id, getPlayFormat(q, mcqFormats));
   });
   set(questionOrderAtom, order);
   set(questionFormatsAtom, formats);

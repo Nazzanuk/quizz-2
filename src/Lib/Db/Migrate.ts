@@ -181,6 +181,9 @@ export async function runMigrations(): Promise<void> {
     sql`ALTER TABLE user ADD COLUMN username TEXT`,
     // Moderation status for takedowns (null = active).
     sql`ALTER TABLE quizzes ADD COLUMN status TEXT`,
+    // How each question was presented in a run (mcq shown as jeopardy/true_false
+    // at random), so the results breakdown can render it the way it was played.
+    sql`ALTER TABLE question_attempts ADD COLUMN play_format TEXT`,
   ]) {
     try {
       await db.run(stmt);
