@@ -636,6 +636,21 @@ export async function getTopQuizzes(limit = 5): Promise<TopQuiz[]> {
   });
 }
 
+// Public, non-blocked quizzes for the sitemap (includes ones with no plays yet).
+export async function listPublicQuizzes(
+  limit = 1000,
+): Promise<{ id: string; updatedAt: string }[]> {
+  return db
+    .select({ id: quizzes.id, updatedAt: quizzes.updatedAt })
+    .from(quizzes)
+    .where(and(
+      eq(quizzes.visibility, 'public'),
+      sql`(${quizzes.status} IS NULL OR ${quizzes.status} != 'blocked')`,
+    ))
+    .orderBy(desc(quizzes.updatedAt))
+    .limit(limit);
+}
+
 // Maps user ids to their public display name (chosen username, else Google name).
 async function getUserDisplayNames(userIds: string[]): Promise<Map<string, string>> {
   if (userIds.length === 0) return new Map();
