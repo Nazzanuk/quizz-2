@@ -18,6 +18,14 @@
   gap: 0.5rem;
 }
 
+/* On the narrowest phones five columns squeeze the chips below a comfortable
+   tap size — drop to three so each stays wide enough to hit. */
+@media (max-width: 360px) {
+  .chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .chip {
   min-height: 48px;
   padding: 0.7rem 0;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Quiz } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
 import SafeImage from '@/Features/Shared/SafeImage';
@@ -61,6 +61,15 @@ function EditableHeaderFields({ quiz, onSave }: EditableHeaderFieldsProps) {
   const [title, setTitle] = useState(quiz.title);
   const [desc, setDesc] = useState(quiz.description ?? '');
   const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  // Auto-save on blur is easy to miss, so confirm it landed with a brief
+  // "Saved" tick that clears itself after a couple of seconds.
+  useEffect(() => {
+    if (!justSaved) return;
+    const id = window.setTimeout(() => setJustSaved(false), 2200);
+    return () => window.clearTimeout(id);
+  }, [justSaved]);
 
   const handleBlur = async () => {
     const trimmedTitle = title.trim();
@@ -75,8 +84,10 @@ function EditableHeaderFields({ quiz, onSave }: EditableHeaderFieldsProps) {
     if (trimmedTitle === quiz.title && trimmedDesc === (quiz.description ?? '')) return;
 
     setSaving(true);
+    setJustSaved(false);
     await onSave({ title: trimmedTitle, description: trimmedDesc || null });
     setSaving(false);
+    setJustSaved(true);
   };
 
   return (
@@ -98,9 +109,9 @@ function EditableHeaderFields({ quiz, onSave }: EditableHeaderFieldsProps) {
         rows={2}
       />
 
-      {saving && (
+      {(saving || justSaved) && (
         <p className={styles.meta}>
-          <span className={styles.saving}>saving…</span>
+          <span className={styles.saving}>{saving ? 'saving…' : 'Saved ✓'}</span>
         </p>
       )}
     </>

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { fetchStats } from '@/Lib/Api/Client';
 import { useSession } from '@/Lib/Auth/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type { PlayerProfile, StatsResponse } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
+import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import SignInButton from '@/Features/Shared/SignInButton';
 import EmptyState from '@/Features/Home/EmptyState';
@@ -21,13 +22,24 @@ export default function ProgressView() {
   const [stats, setStats] = useState<StatsResponse | null>(null);
 
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [statsError, setStatsError] = useState(false);
 
-  useEffect(() => {
+  const fetchStatsData = useCallback(() => {
     fetchStats(12)
-      .then(setStats)
-      .catch(() => {})
+      .then((data) => setStats(data))
+      .catch(() => setStatsError(true))
       .finally(() => setStatsLoaded(true));
   }, []);
+
+  const retry = useCallback(() => {
+    setStatsError(false);
+    setStatsLoaded(false);
+    fetchStatsData();
+  }, [fetchStatsData]);
+
+  useEffect(() => {
+    fetchStatsData();
+  }, [fetchStatsData]);
 
   const totals = useMemo(() => {
     const apiTotals = stats?.totals;
@@ -63,7 +75,15 @@ export default function ProgressView() {
           <ProgressLoadingState />
         ) : empty ? (
           signedIn ? (
-            <EmptyState />
+            statsError ? (
+              <Card color="bg">
+                <p className={styles.kicker}>Couldn&apos;t load your stats</p>
+                <p>Check your connection and try again.</p>
+                <Button variant="secondary" onClick={retry}>Try again</Button>
+              </Card>
+            ) : (
+              <EmptyState />
+            )
           ) : (
             <Card color="lavender">
               <p className={styles.kicker}>Sign in to track progress</p>

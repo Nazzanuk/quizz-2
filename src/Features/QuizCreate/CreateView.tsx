@@ -32,7 +32,11 @@ export default function CreateView() {
   const [error, setError] = useState('');
 
   const outOfCredits = account !== null && account.credits <= 0;
-  const canSubmit = (topic.trim() || material.trim()) && !generating && !outOfCredits;
+  const hasInput = Boolean(topic.trim() || material.trim());
+  const canSubmit = hasInput && !generating && !outOfCredits;
+  // Surface why the button is disabled when the only thing missing is input
+  // (credits/sign-in already have their own messaging above the button).
+  const needsInput = !hasInput && !outOfCredits;
 
   // Warn before leaving (tab close / refresh) while a quiz is generating — the
   // request is blocking and the spent credit isn't refunded on navigation.
@@ -142,6 +146,10 @@ export default function CreateView() {
             )}
 
             {error && <p className={styles.error} role="alert">{error}</p>}
+
+            {needsInput && (
+              <p className={styles.credits}>Add a topic or paste material to generate.</p>
+            )}
 
             <Button
               type="submit"

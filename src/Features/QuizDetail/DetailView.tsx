@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
 import { fetchQuizRuns, getResultsSummary, reportQuiz, trackShare } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { useSession } from '@/Lib/Auth/Client';
 import { recordViewedQuiz } from '@/Lib/ViewedQuizzes';
+import { isPlayableQuestion } from '@/State/PlayAtoms';
 import { DEFAULT_QUESTIONS_PER_RUN } from '@/Lib/Constants';
 import type { QuizRun, QuizVisibility, ResultsSummary } from '@/Lib/Types';
 import { formatDate } from '@/Lib/Utils';
@@ -39,19 +40,30 @@ export default function DetailView({ quizId }: DetailViewProps) {
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [runs, setRuns] = useState<QuizRun[]>([]);
   const [runsLoaded, setRunsLoaded] = useState(false);
+  const [runsError, setRunsError] = useState(false);
   const addToast = useSetAtom(addToastAtom);
   const setConfirm = useSetAtom(confirmDialogAtom);
+
+  const fetchRuns = useCallback(() => {
+    fetchQuizRuns(quizId, 5)
+      .then(setRuns)
+      .catch(() => setRunsError(true))
+      .finally(() => setRunsLoaded(true));
+  }, [quizId]);
+
+  const retryRuns = useCallback(() => {
+    setRunsError(false);
+    setRunsLoaded(false);
+    fetchRuns();
+  }, [fetchRuns]);
 
   useEffect(() => {
     getResultsSummary(quizId)
       .then(setStats)
       .catch(() => {})
       .finally(() => setStatsLoaded(true));
-    fetchQuizRuns(quizId, 5)
-      .then(setRuns)
-      .catch(() => {})
-      .finally(() => setRunsLoaded(true));
-  }, [quizId]);
+    fetchRuns();
+  }, [quizId, fetchRuns]);
 
   // Quizzes opened from a shared link (i.e. not owned by the viewer) are logged
   // locally so they surface in the home screen's "Discovered" section.
@@ -116,6 +128,11 @@ export default function DetailView({ quizId }: DetailViewProps) {
     );
   }
 
+  const isOwner = session?.user?.id === quiz.ownerId;
+  // A quiz can hold questions that are all in a retired format — surface that
+  // here so the player learns it up front instead of after tapping Play.
+  const playable = questions.some(isPlayableQuestion);
+
   return (
     <AppShell>
       <BlobField />
@@ -127,11 +144,20 @@ export default function DetailView({ quizId }: DetailViewProps) {
           imagesPending={imagesPending}
         />
 
-        {session?.user?.id === quiz.ownerId && (
+        {isOwner && (
           <span className={styles.visBadge}>{VISIBILITY_LABEL[quiz.visibility]}</span>
         )}
 
-        {questions.length > 0 && (
+        {questions.length > 0 && !playable && (
+          <Card color="bg" className={styles.emptyRunCard}>
+            <p>
+              This quiz uses a retired question format and can&apos;t be played right now.
+              {isOwner ? ' Add fresh questions in the editor to bring it back.' : ''}
+            </p>
+          </Card>
+        )}
+
+        {playable && (
           <>
             <Link href={`/quiz/${quizId}/play`} className={styles.playLink}>
               <Button variant="primary" fullWidth>Play quiz</Button>
@@ -165,7 +191,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
           </>
         )}
 
-        {questions.length > 0 && <Leaderboard quizId={quizId} />}
+        {playable && <Leaderboard quizId={quizId} />}
 
         <section className={styles.recentRuns}>
           <div className={styles.questionsHeader}>
@@ -180,6 +206,11 @@ export default function DetailView({ quizId }: DetailViewProps) {
                 <div key={index} className={`uiSkeleton ${styles.loadingRunRow}`} />
               ))}
             </div>
+          ) : runsError ? (
+            <Card color="bg" className={styles.emptyRunCard}>
+              <p>Couldn&apos;t load your runs — check your connection.</p>
+              <Button variant="secondary" onClick={retryRuns}>Try again</Button>
+            </Card>
           ) : runs.length > 0 ? (
             <div className={styles.runList}>
               {runs.map((run) => (
@@ -203,7 +234,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
           )}
         </section>
 
-        {session?.user?.id === quiz.ownerId ? (
+        {isOwner ? (
           <Link href={`/quiz/${quizId}/edit`} className={styles.editLink}>
             <Button variant="secondary" fullWidth>Edit quiz</Button>
           </Link>

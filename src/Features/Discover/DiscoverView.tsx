@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchTopQuizzes } from '@/Lib/Api/Client';
 import type { TopQuiz } from '@/Lib/Types';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import ScrollReveal from '@/Features/Shared/ScrollReveal';
+import Button from '@/Features/Shared/Button';
 import Card from '@/Features/Shared/Card';
 import QuizCard from '@/Features/Home/QuizCard';
 import SharedQuizzes from '@/Features/Home/SharedQuizzes';
@@ -13,12 +14,23 @@ import styles from './DiscoverView.module.css';
 
 export default function DiscoverView() {
   const [top, setTop] = useState<TopQuiz[] | null>(null);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const fetchTop = useCallback(() => {
     fetchTopQuizzes(5)
       .then(setTop)
-      .catch(() => setTop([]));
+      .catch(() => setError(true));
   }, []);
+
+  const retry = useCallback(() => {
+    setError(false);
+    setTop(null);
+    fetchTop();
+  }, [fetchTop]);
+
+  useEffect(() => {
+    fetchTop();
+  }, [fetchTop]);
 
   // Skip the shared-with-you list for anything already shown in the top feed.
   const topIds = new Set((top ?? []).map((quiz) => quiz.id));
@@ -40,7 +52,12 @@ export default function DiscoverView() {
             <span className={styles.sectionKicker}>Trending</span>
             <h2 className={styles.sectionTitle}>Top quizzes</h2>
           </div>
-          {top === null ? (
+          {error ? (
+            <Card color="bg" className={styles.empty}>
+              <p>Couldn&apos;t load the top quizzes — check your connection.</p>
+              <Button variant="secondary" onClick={retry}>Try again</Button>
+            </Card>
+          ) : top === null ? (
             <TopLoadingState />
           ) : top.length === 0 ? (
             <Card color="bg" className={styles.empty}>

@@ -35,7 +35,7 @@ import {
   lastRunAtom,
 } from '@/State/PlayAtoms';
 import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom, readQuestionsAloudAtom, settingsOpenAtom } from '@/State/SettingsAtoms';
-import { confirmDialogAtom } from '@/State/UiAtoms';
+import { addToastAtom, confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
 import LoadingSpinner from '@/Features/Shared/LoadingSpinner';
@@ -766,6 +766,7 @@ function ActiveQuestion({
   onAnswer,
 }: ActiveQuestionProps) {
   const [interactionLocked, setInteractionLocked] = useState(false);
+  const addToast = useSetAtom(addToastAtom);
   // Pause the countdown while an overlay (leave-run confirm, settings sheet)
   // covers the question — answering is impossible behind it.
   const confirmOpen = useAtomValue(confirmDialogAtom) !== null;
@@ -773,11 +774,28 @@ function ActiveQuestion({
   // Auto-pause when the app is backgrounded (a call, notification, or app
   // switch) so the timer can't run a question down while the player is away.
   const [backgrounded, setBackgrounded] = useState(false);
+  // Read the latest lock state inside the visibility handler without
+  // re-subscribing the listener each render.
+  const lockedRef = useRef(false);
   useEffect(() => {
-    const onVisibility = () => setBackgrounded(document.visibilityState === 'hidden');
+    lockedRef.current = interactionLocked;
+  }, [interactionLocked]);
+  const pausedAwayRef = useRef(false);
+  useEffect(() => {
+    const onVisibility = () => {
+      const hidden = document.visibilityState === 'hidden';
+      setBackgrounded(hidden);
+      if (hidden) {
+        // Only flag a pause if a live question was actually counting down.
+        if (!lockedRef.current) pausedAwayRef.current = true;
+      } else if (pausedAwayRef.current) {
+        pausedAwayRef.current = false;
+        addToast({ message: 'Timer paused while you were away', type: 'info' });
+      }
+    };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, []);
+  }, [addToast]);
   const [pressedValue, setPressedValue] = useState<string | null>(null);
   const [selectedValue, setSelectedValue] = useState<string | null>(null);
   const transitionIdsRef = useRef<number[]>([]);
@@ -885,6 +903,16 @@ function ActiveQuestion({
           onOptionSelect={handleOptionSelect}
         />
       </div>
+      {/* On a miss or timeout, surface the "why" so the round still teaches
+          something instead of just marking the answer wrong. */}
+      {!hideTextUi
+        && current.explanation
+        && (answerPhase === 'revealed-wrong' || answerPhase === 'timed-out') && (
+        <div className={styles.explanation}>
+          <span className={styles.explanationLabel}>Why</span>
+          <p>{current.explanation}</p>
+        </div>
+      )}
     </>
   );
 }

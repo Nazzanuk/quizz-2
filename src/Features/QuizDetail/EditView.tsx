@@ -236,7 +236,7 @@ export default function EditView({ quizId }: EditViewProps) {
               }
             }}
           >
-            Done
+            Back to quiz
           </button>
         </div>
 
