@@ -3,6 +3,7 @@ import { getQuiz, getQuestions, updateQuiz, deleteQuiz } from '@/Lib/Db/Queries'
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
 import { isAdminEmail } from '@/Lib/Auth/Admin';
+import { track } from '@/Lib/Analytics';
 import { isQuizVisibility, type Quiz } from '@/Lib/Types';
 
 interface Params {
@@ -33,6 +34,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const questions = await getQuestions(quizId);
+  await track('quiz_viewed', { quizId });
   return NextResponse.json({ ...quiz, questions });
 }
 

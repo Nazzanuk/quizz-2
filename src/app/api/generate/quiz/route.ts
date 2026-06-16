@@ -14,6 +14,7 @@ import {
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
 import { enforceRateLimit } from '@/Lib/RateLimit';
+import { track } from '@/Lib/Analytics';
 import {
   DEFAULT_QUESTION_COUNT,
   DEFAULT_QUESTIONS_PER_RUN,
@@ -150,6 +151,7 @@ export async function POST(req: Request) {
     }
   });
 
+  await track('quiz_created', { userId: sessionUser.id, quizId: quiz.id });
   return NextResponse.json(quiz, { status: 201 });
 }
 

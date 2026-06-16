@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getResultsSummary, insertQuizResult, insertQuizRun } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { track } from '@/Lib/Analytics';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
@@ -68,6 +69,7 @@ export async function POST(req: Request, { params }: Params) {
         wasFinalQuestion: attempt.wasFinalQuestion,
       })),
     });
+    await track('run_completed', { userId: sessionUser?.id ?? null, quizId });
   }
 
   return NextResponse.json({ ok: true }, { status: 201 });

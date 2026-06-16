@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAtomValue, useSetAtom } from 'jotai';
-import { fetchQuiz, fetchRun, generateHostRecap } from '@/Lib/Api/Client';
+import { fetchQuiz, fetchRun, generateHostRecap, trackShare } from '@/Lib/Api/Client';
 import { getPlayerProfile } from '@/Lib/PlayerProfile';
 import type {
   LastRunSnapshot,
@@ -189,6 +189,7 @@ export default function ResultsPage({ quizId, runId }: ResultsPageProps) {
     }).catch(() => null);
     if (result === 'cancelled') return;
 
+    if (result !== null) trackShare(quizId);
     addToast({
       message: result === null ? 'Could not copy score link' : result === 'shared' ? 'Share sheet opened' : 'Score link copied',
       type: result === null ? 'error' : 'success',

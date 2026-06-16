@@ -189,6 +189,28 @@ export interface TopQuiz extends Quiz {
   plays: number;
 }
 
+// First-party analytics event types (see src/Lib/Analytics.ts).
+export const ANALYTICS_EVENT_TYPES = [
+  'sign_in',
+  'quiz_created',
+  'run_completed',
+  'quiz_viewed',
+  'quiz_shared',
+] as const;
+
+export type AnalyticsEventType = (typeof ANALYTICS_EVENT_TYPES)[number];
+
+export function isAnalyticsEventType(value: string): value is AnalyticsEventType {
+  return (ANALYTICS_EVENT_TYPES as readonly string[]).includes(value);
+}
+
+export interface AnalyticsSummary {
+  totals: Record<string, number>;
+  daily: { date: string; total: number }[];
+  topViewed: { quizId: string; title: string; count: number }[];
+  topPlayed: { quizId: string; title: string; count: number }[];
+}
+
 // A reported quiz row for the admin moderation view.
 export interface ReportedQuiz {
   quizId: string;

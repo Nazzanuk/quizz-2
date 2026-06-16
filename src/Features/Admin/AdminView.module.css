@@ -26,6 +26,27 @@
   text-transform: uppercase;
 }
 
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.tab {
+  padding: 0.4rem 0.8rem;
+  background: var(--neo-white);
+  border: var(--neo-border-thin);
+  box-shadow: var(--neo-shadow-sm);
+  color: var(--neo-ink);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tabActive {
+  background: var(--neo-secondary);
+}
+
 .state {
   padding: 1rem;
   font-weight: 700;

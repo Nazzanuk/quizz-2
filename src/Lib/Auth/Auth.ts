@@ -54,6 +54,17 @@ function createAuth() {
     // Lightweight built-in abuse guard (in-memory). Per-user credits are the
     // primary spend cap; this throttles raw request floods.
     rateLimit: { enabled: true },
+    databaseHooks: {
+      session: {
+        create: {
+          // A new session = a sign-in. Best-effort analytics; never block auth.
+          after: async (session) => {
+            const { track } = await import('@/Lib/Analytics');
+            await track('sign_in', { userId: session.userId });
+          },
+        },
+      },
+    },
     plugins: [nextCookies()],
   });
 }

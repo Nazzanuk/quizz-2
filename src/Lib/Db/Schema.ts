@@ -51,6 +51,16 @@ export const quizReports = sqliteTable('quiz_reports', {
   createdAt: text('created_at').notNull(),
 });
 
+// First-party product analytics. Privacy-light: an event type plus optional
+// user/quiz ids we already store — no IPs, user agents, or other PII.
+export const analyticsEvents = sqliteTable('analytics_events', {
+  id: text('id').primaryKey(),
+  type: text('type').notNull(),
+  userId: text('user_id'),
+  quizId: text('quiz_id'),
+  createdAt: text('created_at').notNull(),
+});
+
 // Fixed-window rate-limit counters. Shared across instances via the DB, so the
 // limit holds regardless of which server handles a request.
 export const rateLimits = sqliteTable('rate_limits', {

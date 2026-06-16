@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from '@/Features/Shared/TransitionLink';
 import { useSetAtom } from 'jotai';
-import { fetchQuizRuns, getResultsSummary, reportQuiz } from '@/Lib/Api/Client';
+import { fetchQuizRuns, getResultsSummary, reportQuiz, trackShare } from '@/Lib/Api/Client';
 import { useQuiz } from '@/Lib/Hooks/UseQuiz';
 import { useSession } from '@/Lib/Auth/Client';
 import { recordViewedQuiz } from '@/Lib/ViewedQuizzes';
@@ -76,6 +76,7 @@ export default function DetailView({ quizId }: DetailViewProps) {
     }).catch(() => null);
     if (result === 'cancelled') return;
 
+    if (result !== null) trackShare(quizId);
     addToast({
       message: result === null ? 'Could not copy link' : result === 'shared' ? 'Share sheet opened' : 'Link copied',
       type: result === null ? 'error' : 'success',

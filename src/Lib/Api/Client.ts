@@ -1,5 +1,6 @@
 import type {
   AccountResponse,
+  AnalyticsSummary,
   GenerateQuizRequest,
   HostRecapRequest,
   HostRecapResponse,
@@ -82,6 +83,15 @@ export function fetchTopQuizzes(limit = 5): Promise<TopQuiz[]> {
   return request(`/discover?limit=${limit}`);
 }
 
+// Fire-and-forget analytics beacon for a share action; failures are ignored.
+export function trackShare(quizId: string): void {
+  void fetch(`${BASE}/track`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'quiz_shared', quizId }),
+  }).catch(() => {});
+}
+
 export function reportQuiz(quizId: string, reason?: string): Promise<{ ok: true }> {
   return request(`/quizzes/${quizId}/report`, {
     method: 'POST',
@@ -91,6 +101,10 @@ export function reportQuiz(quizId: string, reason?: string): Promise<{ ok: true 
 
 export function fetchReportedQuizzes(): Promise<ReportedQuiz[]> {
   return request('/admin/reports');
+}
+
+export function fetchAnalytics(): Promise<AnalyticsSummary> {
+  return request('/admin/analytics');
 }
 
 export function setQuizStatus(quizId: string, status: QuizStatus): Promise<{ ok: true; status: QuizStatus }> {

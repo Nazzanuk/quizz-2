@@ -59,6 +59,14 @@ export async function runMigrations(): Promise<void> {
     expires_at INTEGER NOT NULL
   )`);
 
+  await db.run(sql`CREATE TABLE IF NOT EXISTS analytics_events (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    user_id TEXT,
+    quiz_id TEXT,
+    created_at TEXT NOT NULL
+  )`);
+
   await db.run(sql`CREATE TABLE IF NOT EXISTS quiz_results (
     id TEXT PRIMARY KEY,
     quiz_id TEXT NOT NULL,
@@ -199,6 +207,18 @@ export async function runMigrations(): Promise<void> {
   // Cheap expiry sweep for rate-limit counters.
   try {
     await db.run(sql`CREATE INDEX IF NOT EXISTS rate_limits_expires ON rate_limits(expires_at)`);
+  } catch {
+    // index already exists — ignore
+  }
+
+  // Analytics aggregation by time and type.
+  try {
+    await db.run(sql`CREATE INDEX IF NOT EXISTS analytics_created ON analytics_events(created_at)`);
+  } catch {
+    // index already exists — ignore
+  }
+  try {
+    await db.run(sql`CREATE INDEX IF NOT EXISTS analytics_type ON analytics_events(type)`);
   } catch {
     // index already exists — ignore
   }

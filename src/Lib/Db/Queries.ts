@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, inArray, sql } from 'drizzle-orm';
 import { db } from './Client';
-import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account, quizReports } from './Schema';
+import { quizzes, questions, images, quizResults, quizRuns, questionAttempts, user, session, account, quizReports, analyticsEvents } from './Schema';
 import {
   normalizeHostConfidenceLevel,
   normalizeHostMode,
@@ -16,6 +16,7 @@ import {
   type Question,
   type QuestionAggregateStats,
   type QuestionDifficulty,
+  type AnalyticsSummary,
   type Quiz,
   type QuizAggregateStats,
   type QuizFormat,
@@ -733,6 +734,86 @@ export async function listReportedQuizzes(): Promise<ReportedQuiz[]> {
   }
 
   return [...grouped.values()].sort((a, b) => b.lastReportedAt.localeCompare(a.lastReportedAt));
+}
+
+// --- Analytics -------------------------------------------------------------
+
+export async function insertAnalyticsEvent(data: {
+  type: string;
+  userId?: string | null;
+  quizId?: string | null;
+}): Promise<void> {
+  await db.insert(analyticsEvents).values({
+    id: crypto.randomUUID(),
+    type: data.type,
+    userId: data.userId ?? null,
+    quizId: data.quizId ?? null,
+    createdAt: nowISO(),
+  });
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function topQuizzesByEvent(
+  type: string,
+): Promise<{ quizId: string; title: string; count: number }[]> {
+  const rows = await db
+    .select({ quizId: analyticsEvents.quizId, count: sql<number>`count(*)` })
+    .from(analyticsEvents)
+    .where(and(eq(analyticsEvents.type, type), sql`${analyticsEvents.quizId} IS NOT NULL`))
+    .groupBy(analyticsEvents.quizId)
+    .orderBy(desc(sql`count(*)`))
+    .limit(5);
+
+  const ids = rows.map((row) => row.quizId).filter((id): id is string => id != null);
+  if (ids.length === 0) return [];
+  const titleRows = await db
+    .select({ id: quizzes.id, title: quizzes.title })
+    .from(quizzes)
+    .where(inArray(quizzes.id, ids));
+  const titleById = new Map(titleRows.map((row) => [row.id, row.title]));
+
+  return rows
+    .filter((row) => row.quizId != null)
+    .map((row) => ({
+      quizId: row.quizId as string,
+      title: titleById.get(row.quizId as string) ?? 'Deleted quiz',
+      count: Number(row.count),
+    }));
+}
+
+// Admin analytics: all-time totals per event type, a 14-day daily trend, and the
+// top quizzes by views and plays.
+export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
+  const totalsRows = await db
+    .select({ type: analyticsEvents.type, count: sql<number>`count(*)` })
+    .from(analyticsEvents)
+    .groupBy(analyticsEvents.type);
+  const totals: Record<string, number> = {};
+  for (const row of totalsRows) totals[row.type] = Number(row.count);
+
+  const cutoff = new Date(Date.now() - 14 * DAY_MS).toISOString();
+  const recent = await db
+    .select({ createdAt: analyticsEvents.createdAt })
+    .from(analyticsEvents)
+    .where(gte(analyticsEvents.createdAt, cutoff));
+  const dayCounts = new Map<string, number>();
+  for (const row of recent) {
+    const day = row.createdAt.slice(0, 10);
+    dayCounts.set(day, (dayCounts.get(day) ?? 0) + 1);
+  }
+  const daily: { date: string; total: number }[] = [];
+  for (let i = 13; i >= 0; i--) {
+    const day = new Date(Date.now() - i * DAY_MS).toISOString().slice(0, 10);
+    daily.push({ date: day, total: dayCounts.get(day) ?? 0 });
+  }
+
+  const [topViewed, topPlayed] = await Promise.all([
+    topQuizzesByEvent('quiz_viewed'),
+    topQuizzesByEvent('run_completed'),
+  ]);
+
+  return { totals, daily, topViewed, topPlayed };
 }
 
 // --- Data export & account deletion (GDPR/CCPA) ----------------------------

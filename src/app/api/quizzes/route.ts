@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { listQuizzes, insertQuiz } from '@/Lib/Db/Queries';
 import { runMigrations } from '@/Lib/Db/Migrate';
 import { getSessionUser } from '@/Lib/Auth/Session';
+import { track } from '@/Lib/Analytics';
 
 // The dashboard feed: only the signed-in creator's own quizzes.
 export async function GET(req: Request) {
@@ -39,5 +40,6 @@ export async function POST(req: Request) {
     format: body.format,
   });
 
+  await track('quiz_created', { userId: sessionUser.id, quizId: quiz.id });
   return NextResponse.json(quiz, { status: 201 });
 }

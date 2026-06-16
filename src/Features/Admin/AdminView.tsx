@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   ApiError,
   fetchReportedQuizzes,
@@ -55,6 +56,10 @@ export default function AdminView() {
       <div className={styles.content}>
         <p className={styles.kicker}>Moderation</p>
         <h1 className={styles.heading}>Reports</h1>
+        <nav className={styles.tabs}>
+          <span className={`${styles.tab} ${styles.tabActive}`}>Reports</span>
+          <Link href="/admin/analytics" className={styles.tab}>Analytics</Link>
+        </nav>
 
         {forbidden ? (
           <Card color="lavender" className={styles.state}>
