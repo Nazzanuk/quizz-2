@@ -34,7 +34,7 @@ import {
   isPlayableQuestion,
   lastRunAtom,
 } from '@/State/PlayAtoms';
-import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom, settingsOpenAtom } from '@/State/SettingsAtoms';
+import { hideTextUiAtom, hostModeAtom, hostVoiceEnabledAtom, readQuestionsAloudAtom, settingsOpenAtom } from '@/State/SettingsAtoms';
 import { confirmDialogAtom } from '@/State/UiAtoms';
 import AppShell from '@/Features/Shared/AppShell';
 import BlobField from '@/Features/Shared/BlobField';
@@ -89,6 +89,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
   const setLastRun = useSetAtom(lastRunAtom);
   const hostMode = useAtomValue(hostModeAtom);
   const hostVoiceEnabled = useAtomValue(hostVoiceEnabledAtom);
+  const readQuestionsAloud = useAtomValue(readQuestionsAloudAtom);
   const hideTextUi = useAtomValue(hideTextUiAtom);
   const [previousBest, setPreviousBest] = useState<number | null>(null);
   const [streak, setStreak] = useState(0);
@@ -365,12 +366,16 @@ export default function PlayView({ quizId }: PlayViewProps) {
     const opener = streak === 0 && !questionStats[current.id]
       ? preRenderedQuestionOpeners[current.id] ?? dynamicOpener
       : dynamicOpener;
-    const line = [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
+    // When "read questions aloud" is on, the host speaks the question itself
+    // instead of arbitrary banter.
+    const line = readQuestionsAloud
+      ? current.questionText
+      : [idx === 0 ? hostIntro : '', opener].filter(Boolean).join(' ');
 
     showHostCue({
       id: `${runIdRef.current}:question:${current.id}:${idx}`,
       text: line,
-      kind: idx === 0 && hostIntro ? 'intro' : 'question',
+      kind: readQuestionsAloud ? 'question' : (idx === 0 && hostIntro ? 'intro' : 'question'),
       audioPrefetch: idx === 0 && HOST_MODE_CONFIG[hostMode].enableVoicePrefetch,
     }, true);
   }, [
@@ -383,6 +388,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
     questionOrder.length,
     questionStats,
     preRenderedQuestionOpeners,
+    readQuestionsAloud,
     showResult,
     showHostCue,
     streak,
@@ -446,20 +452,24 @@ export default function PlayView({ quizId }: PlayViewProps) {
       const nextAttempts = [...attemptsRef.current, attempt];
       attemptsRef.current = nextAttempts;
 
-      const reaction = buildAnswerReaction({
-        question,
-        attempt,
-        mode: hostMode,
-        stats: questionStats[questionId],
-        previousWasWrong,
-        seed: runIdRef.current,
-      });
+      // In read-questions mode the host stays focused on reading questions,
+      // so skip the arbitrary post-answer banter.
+      if (!readQuestionsAloud) {
+        const reaction = buildAnswerReaction({
+          question,
+          attempt,
+          mode: hostMode,
+          stats: questionStats[questionId],
+          previousWasWrong,
+          seed: runIdRef.current,
+        });
 
-      showHostCue({
-        id: `${runIdRef.current}:answer:${questionId}:${idx}`,
-        text: reaction,
-        kind: 'answer',
-      });
+        showHostCue({
+          id: `${runIdRef.current}:answer:${questionId}:${idx}`,
+          text: reaction,
+          kind: 'answer',
+        });
+      }
 
       const beatDelayMs = Math.max(
         event.timedOut ? PLAY_TIMINGS.timeoutRevealHoldMs : PLAY_TIMINGS.answerRevealHoldMs,
@@ -578,6 +588,7 @@ export default function PlayView({ quizId }: PlayViewProps) {
       questionStats,
       questions,
       quizId,
+      readQuestionsAloud,
       releaseExitGuard,
       replace,
       scheduleUi,

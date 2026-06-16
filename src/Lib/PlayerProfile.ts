@@ -27,6 +27,7 @@ function buildDefaultProfile(): PlayerProfile {
     preferredMode: 'quick',
     hostVoiceEnabled: true,
     hideTextUi: true,
+    readQuestionsAloud: false,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
     quizzes: {},
@@ -77,6 +78,13 @@ export function setPlayerHostVoiceEnabled(enabled: boolean): PlayerProfile {
 export function setPlayerHideTextUi(enabled: boolean): PlayerProfile {
   const profile = getPlayerProfile();
   const next = { ...profile, hideTextUi: enabled };
+  savePlayerProfile(next);
+  return next;
+}
+
+export function setPlayerReadQuestionsAloud(enabled: boolean): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, readQuestionsAloud: enabled };
   savePlayerProfile(next);
   return next;
 }

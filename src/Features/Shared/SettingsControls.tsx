@@ -8,6 +8,7 @@ import {
   hostModeAtom,
   hideTextUiAtom,
   hostVoiceEnabledAtom,
+  readQuestionsAloudAtom,
 } from '@/State/SettingsAtoms';
 import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { notifyHostAudioInteraction, playHostVoicePreview } from '@/Features/QuizPlay/HostVoice';
@@ -25,6 +26,7 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
   const [muted, setMuted] = useAtom(soundMutedAtom);
   const [hapticOn, setHapticOn] = useAtom(hapticEnabledAtom);
   const [hostVoiceEnabled, setHostVoiceEnabled] = useAtom(hostVoiceEnabledAtom);
+  const [readQuestionsAloud, setReadQuestionsAloud] = useAtom(readQuestionsAloudAtom);
   const [hideTextUi, setHideTextUi] = useAtom(hideTextUiAtom);
   const [hostMode, setHostMode] = useAtom(hostModeAtom);
   const audioIssues = useAudioIssues();
@@ -56,6 +58,12 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
   const toggleHideTextUi = () => {
     const next = !hideTextUi;
     setHideTextUi(next);
+    if (next) haptic('tap');
+  };
+
+  const toggleReadQuestionsAloud = () => {
+    const next = !readQuestionsAloud;
+    setReadQuestionsAloud(next);
     if (next) haptic('tap');
   };
 
@@ -99,6 +107,16 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
           <span className={styles.rowSub}>ElevenLabs narration for intros, recaps, and bigger beats</span>
         </div>
         <span className={`${styles.toggle} ${hostVoiceEnabled ? styles.toggleOn : ''}`}>
+          <span className={styles.toggleKnob} />
+        </span>
+      </button>
+
+      <button type="button" className={styles.row} onClick={toggleReadQuestionsAloud}>
+        <div className={styles.rowText}>
+          <span className={styles.rowLabel}>Read questions aloud</span>
+          <span className={styles.rowSub}>Host reads each question instead of banter. Needs host voice on.</span>
+        </div>
+        <span className={`${styles.toggle} ${readQuestionsAloud ? styles.toggleOn : ''}`}>
           <span className={styles.toggleKnob} />
         </span>
       </button>

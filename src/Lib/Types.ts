@@ -464,6 +464,8 @@ export interface PlayerProfile {
   preferredMode: HostMode;
   hostVoiceEnabled: boolean;
   hideTextUi: boolean;
+  // When on, the host reads each question aloud instead of arbitrary banter.
+  readQuestionsAloud: boolean;
   selectedHost: HostPersona;
   categories: Record<string, PlayerCategoryProfile>;
   quizzes: Record<string, PlayerQuizProfile>;
