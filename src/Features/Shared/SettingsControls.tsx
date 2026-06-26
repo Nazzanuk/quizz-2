@@ -9,6 +9,8 @@ import {
   hideTextUiAtom,
   hostVoiceEnabledAtom,
   readQuestionsAloudAtom,
+  largeTextAtom,
+  reduceMotionAtom,
 } from '@/State/SettingsAtoms';
 import { useAudioIssues } from '@/Lib/Hooks/UseAudioIssues';
 import { notifyHostAudioInteraction, playHostVoicePreview } from '@/Features/QuizPlay/HostVoice';
@@ -28,6 +30,8 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
   const [hostVoiceEnabled, setHostVoiceEnabled] = useAtom(hostVoiceEnabledAtom);
   const [readQuestionsAloud, setReadQuestionsAloud] = useAtom(readQuestionsAloudAtom);
   const [hideTextUi, setHideTextUi] = useAtom(hideTextUiAtom);
+  const [largeText, setLargeText] = useAtom(largeTextAtom);
+  const [reduceMotion, setReduceMotion] = useAtom(reduceMotionAtom);
   const [hostMode, setHostMode] = useAtom(hostModeAtom);
   const audioIssues = useAudioIssues();
   const [testingVoice, setTestingVoice] = useState(false);
@@ -67,6 +71,18 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
     if (next) haptic('tap');
   };
 
+  const toggleLargeText = () => {
+    const next = !largeText;
+    setLargeText(next);
+    if (next) haptic('tap');
+  };
+
+  const toggleReduceMotion = () => {
+    const next = !reduceMotion;
+    setReduceMotion(next);
+    if (next) haptic('tap');
+  };
+
   const testHostVoice = async () => {
     if (testingVoice) return;
     setTestingVoice(true);
@@ -97,6 +113,26 @@ export default function SettingsControls({ className = '' }: SettingsControlsPro
           <span className={styles.rowSub}>Android only; iOS Safari ignores it</span>
         </div>
         <span className={`${styles.toggle} ${hapticOn ? styles.toggleOn : ''}`}>
+          <span className={styles.toggleKnob} />
+        </span>
+      </button>
+
+      <button type="button" className={styles.row} onClick={toggleLargeText}>
+        <div className={styles.rowText}>
+          <span className={styles.rowLabel}>Larger text</span>
+          <span className={styles.rowSub}>Bigger, more readable text across the app and quiz runs.</span>
+        </div>
+        <span className={`${styles.toggle} ${largeText ? styles.toggleOn : ''}`}>
+          <span className={styles.toggleKnob} />
+        </span>
+      </button>
+
+      <button type="button" className={styles.row} onClick={toggleReduceMotion}>
+        <div className={styles.rowText}>
+          <span className={styles.rowLabel}>Reduce motion</span>
+          <span className={styles.rowSub}>Turn off the subtle background drift and other ambient animation.</span>
+        </div>
+        <span className={`${styles.toggle} ${reduceMotion ? styles.toggleOn : ''}`}>
           <span className={styles.toggleKnob} />
         </span>
       </button>

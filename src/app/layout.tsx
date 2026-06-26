@@ -8,6 +8,7 @@ import SettingsPanel from '@/Features/Shared/SettingsPanel';
 import InstallPromptListener from '@/Features/Shared/InstallPromptListener';
 import AnonClaim from '@/Features/Shared/AnonClaim';
 import ZoomLock from '@/Features/Shared/ZoomLock';
+import PreferencesSync from '@/Features/Shared/PreferencesSync';
 import { getSiteUrl } from '@/Lib/SiteUrl';
 import './globals.css';
 
@@ -63,8 +64,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${archivoBlack.variable}`}>
+      <head>
+        {/* Apply persisted accessibility prefs before first paint so enabling
+            larger text or reduced motion never flashes the default UI first. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var p=JSON.parse(localStorage.getItem('quizz.playerProfile')||'{}');var e=document.documentElement;if(p.largeText)e.dataset.largeText='true';if(p.reduceMotion)e.dataset.reduceMotion='true';}catch(_){}`,
+          }}
+        />
+      </head>
       <body>
         <Provider>
+          <PreferencesSync />
           {children}
           <Toast />
           <AudioAlerts />

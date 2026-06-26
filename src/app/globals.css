@@ -469,6 +469,26 @@ a {
   }
 }
 
+/* Accessibility: "Larger text" (off by default). Set on <html> by the pre-paint
+   script and PreferencesSync. The UI is overwhelmingly rem-based, so bumping the
+   root font scales text — and rem-based spacing — proportionally everywhere,
+   including quiz runs. Targeted padding trims for dense screens live in the
+   relevant CSS modules so bigger text doesn't force extra scrolling. */
+html[data-large-text='true'] {
+  font-size: 115%;
+}
+
+/* Accessibility: "Reduce motion" (off by default). Mirrors the
+   prefers-reduced-motion rule above so players who opt in lose the ambient
+   background drift and other non-essential animation. */
+html[data-reduce-motion='true'],
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 @view-transition {
   navigation: auto;
 }

@@ -301,3 +301,23 @@
     transform: none;
   }
 }
+
+/* "Larger text" enlarges every rem (including padding). Claw some of that
+   spacing back on the answer list so the bigger question + options still fit
+   without forcing extra scrolling. */
+:global(html[data-large-text='true']) .options {
+  gap: 0.6rem;
+}
+
+:global(html[data-large-text='true']) .question {
+  padding: 0.65rem 0.7rem;
+}
+
+:global(html[data-large-text='true']) .optionInner {
+  min-height: 3.4rem;
+  padding: 0.6rem 0.8rem;
+}
+
+:global(html[data-large-text='true']) .imageLabel {
+  padding: 0.55rem 0.7rem 0.7rem;
+}

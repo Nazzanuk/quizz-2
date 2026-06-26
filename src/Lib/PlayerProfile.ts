@@ -35,6 +35,9 @@ function buildDefaultProfile(): PlayerProfile {
     // full text UI back on in settings.
     hideTextUi: true,
     readQuestionsAloud: true,
+    // Accessibility prefs default off so everyone gets the current experience.
+    largeText: false,
+    reduceMotion: false,
     selectedHost: 'sarcastic_pub_host',
     categories: {},
     quizzes: {},
@@ -145,6 +148,20 @@ export function setPlayerHideTextUi(enabled: boolean): PlayerProfile {
 export function setPlayerReadQuestionsAloud(enabled: boolean): PlayerProfile {
   const profile = getPlayerProfile();
   const next = { ...profile, readQuestionsAloud: enabled };
+  savePlayerProfile(next);
+  return next;
+}
+
+export function setPlayerLargeText(enabled: boolean): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, largeText: enabled };
+  savePlayerProfile(next);
+  return next;
+}
+
+export function setPlayerReduceMotion(enabled: boolean): PlayerProfile {
+  const profile = getPlayerProfile();
+  const next = { ...profile, reduceMotion: enabled };
   savePlayerProfile(next);
   return next;
 }
