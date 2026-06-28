@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { generateQuiz } from '@/Lib/Ai/Gemini';
+import { generateQuiz, GroundingRequiredError } from '@/Lib/Ai/Gemini';
 import { scheduleQuizImages } from '@/Lib/Ai/QuizImages';
 import {
   insertQuiz,
@@ -107,6 +107,15 @@ export async function POST(req: Request) {
   } catch (err) {
     // Refund the credit if generation never produced anything.
     await refundCredit(sessionUser.id);
+    // A recency-critical topic we couldn't ground with live search: don't serve
+    // a stale answer. Surface a clear, retryable message (credit already
+    // refunded) instead of a generic 500.
+    if (err instanceof GroundingRequiredError) {
+      return NextResponse.json(
+        { error: 'grounding_unavailable', message: err.message },
+        { status: 503 },
+      );
+    }
     throw err;
   }
 

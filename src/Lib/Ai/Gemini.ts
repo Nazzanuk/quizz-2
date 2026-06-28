@@ -42,6 +42,11 @@ interface GenerateJsonOpts {
   // Enable Grounding with Google Search so factual content is checked against
   // live results instead of the model's (Jan 2025) training cutoff.
   grounded?: boolean;
+  // When true, the call must produce evidence that Google Search actually ran;
+  // if it can't be confirmed (even after a retry) it throws instead of falling
+  // back to an ungrounded, possibly-stale answer. Used for recency-critical
+  // topics so a quiz about a current sports season never ships from memory.
+  requireGrounding?: boolean;
   thinkingLevel?: ThinkingLevel;
   maxOutputTokens?: number;
   timeoutMs?: number;
@@ -49,6 +54,18 @@ interface GenerateJsonOpts {
   // on a slow generation) this aborts the model call instead of letting the
   // work finish and silently create a quiz nobody is waiting for.
   abortSignal?: AbortSignal;
+}
+
+// Thrown when a recency-critical generation could not be grounded with live
+// search. Callers (the quiz route) map this to a retryable error and refund the
+// credit rather than serving stale content.
+export class GroundingRequiredError extends Error {
+  constructor() {
+    super(
+      "Couldn't confirm up-to-date information for this topic right now. Please try again in a moment.",
+    );
+    this.name = 'GroundingRequiredError';
+  }
 }
 
 // Single entry point for structured (JSON-schema) generation. On Gemini 3.5,
@@ -81,37 +98,58 @@ async function generateJson(opts: GenerateJsonOpts): Promise<string> {
     });
 
   if (opts.grounded) {
-    try {
-      const resp = await run(true);
-      const text = resp.text;
-      if (text && text.trim()) {
-        // Passing the search tool doesn't guarantee the model used it. If no
-        // search actually ran, the answer came straight from (stale) training
-        // data — which is exactly how recency-sensitive quizzes drift to an
-        // old season. Surface it rather than shipping it blind.
-        if (!didGroundWithSearch(resp)) {
+    const requireGrounding = opts.requireGrounding ?? false;
+    // Give grounding a second shot before giving up — search activity is
+    // sometimes flaky on the first call. Only worth the extra cost/latency when
+    // grounding is mandatory.
+    const maxAttempts = requireGrounding ? 2 : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const resp = await run(true);
+        const text = resp.text;
+        if (text && text.trim()) {
+          // Passing the search tool doesn't guarantee the model used it. If no
+          // search actually ran, the answer came straight from (stale) training
+          // data — which is exactly how recency-sensitive quizzes drift to an
+          // old season.
+          if (didGroundWithSearch(resp)) return text;
+          if (!requireGrounding) {
+            console.warn(
+              '[gemini] grounded call produced no Google Search activity; answer may rely on stale training data',
+            );
+            return text;
+          }
           console.warn(
-            '[gemini] grounded call produced no Google Search activity; answer may rely on stale training data',
+            `[gemini] recency-critical generation did not ground (attempt ${attempt}/${maxAttempts})`,
+          );
+        } else {
+          console.warn(
+            `[gemini] grounded generation returned empty (attempt ${attempt}/${maxAttempts})`,
           );
         }
-        return text;
+      } catch (err) {
+        // An abort (client disconnected, or the shared deadline fired) means the
+        // signal is now dead — retrying or falling back would hang on the
+        // already-aborted signal or do pointless work. Propagate it. Only a
+        // genuine grounded-specific failure continues.
+        if (abortSignal.aborted) throw err;
+        console.warn(
+          `[gemini] grounded generation failed (attempt ${attempt}/${maxAttempts}):`,
+          err instanceof Error ? err.message : err,
+        );
       }
-      console.warn('[gemini] grounded generation returned empty; retrying without grounding');
-    } catch (err) {
-      // An abort (client disconnected, or the shared deadline fired) means the
-      // signal is now dead — a fallback call would either hang on the
-      // already-aborted signal or do pointless work for nobody. Propagate it
-      // instead of retrying. Only a genuine grounded-specific failure falls back.
-      if (abortSignal.aborted) throw err;
-      console.warn(
-        '[gemini] grounded generation failed, retrying without grounding:',
-        err instanceof Error ? err.message : err,
-      );
+      // Don't start another attempt on a dead signal.
+      if (abortSignal.aborted) break;
     }
-    // Grounded may have returned empty exactly as the signal aborted; don't start
-    // a second call on a dead signal.
+
     if (abortSignal.aborted) throw new Error('Generation aborted');
-    // Last resort so a transient tool/grounding error still yields a quiz.
+    // Grounded attempts exhausted. For recency-critical topics, refuse to serve
+    // a stale answer; the caller refunds the credit and asks the user to retry.
+    if (requireGrounding) {
+      throw new GroundingRequiredError();
+    }
+    // Otherwise a transient tool/grounding error still yields a quiz.
     return (await run(false)).text ?? '';
   }
 
@@ -243,6 +281,43 @@ export interface GeneratedQuestionMetadata {
   tags: string[];
 }
 
+// Decide whether a topic depends on information too recent to trust to the
+// model's training data. Only these topics enforce grounding (and hard-fail if
+// it can't be confirmed) — evergreen topics like "Roman history" or "1990s
+// pop" must NOT hard-fail just because the model answered them from memory
+// without searching.
+function isRecencySensitive(opts: { topic?: string; material?: string }): boolean {
+  const text = `${opts.topic ?? ''} ${opts.material ?? ''}`.toLowerCase();
+  if (!text.trim()) return false;
+
+  // Explicit relative-time language always needs live data.
+  if (
+    /\b(current|currently|latest|most recent|recent|recently|nowadays|present[- ]day|this (?:year|season|month|week)|ongoing|so far|to date|up[- ]to[- ]date|upcoming|next (?:year|season)|reigning|defending champion|in office|who is the)\b/.test(
+      text,
+    )
+  ) {
+    return true;
+  }
+
+  // Periods at or after roughly the model's training cutoff can't be answered
+  // from memory. Anchor the threshold to the current year so it ages correctly.
+  const threshold = new Date().getUTCFullYear() - 1;
+
+  // Four-digit years, e.g. 2025, 2026.
+  for (const m of text.matchAll(/\b(?:19|20)\d{2}\b/g)) {
+    if (Number(m[0]) >= threshold) return true;
+  }
+
+  // Two-digit consecutive season notation, e.g. 25/26, 24-25 (but not a ratio
+  // like 16/9 or a date like 12/25 — a season's two numbers are consecutive).
+  for (const m of text.matchAll(/\b(\d{2})\s?[/-]\s?(\d{2})\b/g)) {
+    const start = Number(m[1]);
+    if (Number(m[2]) === start + 1 && 2000 + start >= threshold) return true;
+  }
+
+  return false;
+}
+
 export async function generateQuiz(opts: {
   topic?: string;
   material?: string;
@@ -254,6 +329,10 @@ export async function generateQuiz(opts: {
     schema: quizResponseSchema,
     contents: buildPrompt(opts),
     grounded: true,
+    // Only enforce grounding for topic-based generation. A material-based quiz
+    // grounds in the pasted source, so live search may rightly not fire — hard-
+    // failing those would be wrong.
+    requireGrounding: !opts.material?.trim() && isRecencySensitive(opts),
     // MEDIUM rather than HIGH: grounding already anchors factual accuracy, and
     // HIGH thinking was the dominant cost in a 30-50s generation for little
     // quality gain on quiz questions.
