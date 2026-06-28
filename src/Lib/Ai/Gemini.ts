@@ -394,9 +394,25 @@ function buildPrompt(opts: {
   count: number;
   existingQuestions?: string[];
 }): string {
-  const source = opts.material
-    ? `Based on the following material:\n\n${opts.material}`
-    : `About the topic: ${opts.topic}`;
+  const topic = opts.topic?.trim();
+  const material = opts.material?.trim();
+
+  // Use BOTH inputs when present: the topic frames the angle, the material is
+  // the source to draw from. Previously material won outright and any topic was
+  // dropped, so "Henry VIII" + pasted Tudor notes ignored the focus entirely.
+  let source: string;
+  if (topic && material) {
+    source = [
+      `Focus the quiz on this topic: ${topic}`,
+      'Draw the questions from the study material below, prioritising the parts relevant to that topic:',
+      '',
+      material,
+    ].join('\n');
+  } else if (material) {
+    source = `Based on the following material:\n\n${material}`;
+  } else {
+    source = `About the topic: ${topic}`;
+  }
 
   const parts = [
     `Generate a quiz with exactly ${opts.count} questions.`,
