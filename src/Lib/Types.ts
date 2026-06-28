@@ -531,6 +531,11 @@ export interface PlayerProfile {
   hideTextUi: boolean;
   // When on, the host reads each question aloud instead of arbitrary banter.
   readQuestionsAloud: boolean;
+  // Accessibility: scale the whole UI up for more readable text. Off by default.
+  largeText: boolean;
+  // Accessibility: disable ambient background drift and other non-essential
+  // motion for players who find it distracting. Off by default.
+  reduceMotion: boolean;
   selectedHost: HostPersona;
   categories: Record<string, PlayerCategoryProfile>;
   quizzes: Record<string, PlayerQuizProfile>;

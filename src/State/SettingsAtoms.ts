@@ -7,6 +7,8 @@ import {
   setPlayerHideTextUi,
   setPlayerHostVoiceEnabled,
   setPlayerReadQuestionsAloud,
+  setPlayerLargeText,
+  setPlayerReduceMotion,
 } from '@/Lib/PlayerProfile';
 import type { HostMode } from '@/Lib/Types';
 
@@ -67,6 +69,30 @@ export const readQuestionsAloudAtom = atom(
   (_get, set, value: boolean) => {
     setPlayerReadQuestionsAloud(value);
     set(baseReadQuestionsAloudAtom, value);
+  },
+);
+
+const baseLargeTextAtom = atom(
+  typeof window !== 'undefined' ? getPlayerProfile().largeText : false,
+);
+
+export const largeTextAtom = atom(
+  (get) => get(baseLargeTextAtom),
+  (_get, set, value: boolean) => {
+    setPlayerLargeText(value);
+    set(baseLargeTextAtom, value);
+  },
+);
+
+const baseReduceMotionAtom = atom(
+  typeof window !== 'undefined' ? getPlayerProfile().reduceMotion : false,
+);
+
+export const reduceMotionAtom = atom(
+  (get) => get(baseReduceMotionAtom),
+  (_get, set, value: boolean) => {
+    setPlayerReduceMotion(value);
+    set(baseReduceMotionAtom, value);
   },
 );
 
