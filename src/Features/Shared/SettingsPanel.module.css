@@ -27,6 +27,12 @@
 }
 
 .sheet {
+  /* Sit above the striped .backdrop::before. Without this the sheet only
+     cleared the backdrop because its entrance animation promoted it into its
+     own stacking context — so disabling motion (reduce-motion or the OS
+     prefers-reduced-motion) dropped it behind the stripes. */
+  position: relative;
+  z-index: 1;
   width: 100%;
   max-width: 480px;
   max-height: 88dvh;
