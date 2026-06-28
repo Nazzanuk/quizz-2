@@ -4,6 +4,7 @@ import {
   HarmCategory,
   ThinkingLevel,
   Type,
+  type GenerateContentResponse,
   type SafetySetting,
   type Schema,
 } from '@google/genai';
@@ -70,18 +71,43 @@ async function generateJson(opts: GenerateJsonOpts): Promise<string> {
 
   if (opts.grounded) {
     try {
-      const text = (await run(true)).text;
-      if (text && text.trim()) return text;
+      const resp = await run(true);
+      const text = resp.text;
+      if (text && text.trim()) {
+        // Passing the search tool doesn't guarantee the model used it. If no
+        // search actually ran, the answer came straight from (stale) training
+        // data — which is exactly how recency-sensitive quizzes drift to an
+        // old season. Surface it rather than shipping it blind.
+        if (!didGroundWithSearch(resp)) {
+          console.warn(
+            '[gemini] grounded call produced no Google Search activity; answer may rely on stale training data',
+          );
+        }
+        return text;
+      }
+      console.warn('[gemini] grounded generation returned empty; retrying without grounding');
     } catch (err) {
       console.warn(
         '[gemini] grounded generation failed, retrying without grounding:',
         err instanceof Error ? err.message : err,
       );
     }
+    // Last resort so a transient tool/grounding error still yields a quiz.
     return (await run(false)).text ?? '';
   }
 
   return (await run(false)).text ?? '';
+}
+
+// True when the response carries evidence that Google Search actually ran
+// (a web query was issued or a retrieved chunk was attached), as opposed to the
+// model answering from memory despite the tool being available.
+function didGroundWithSearch(resp: GenerateContentResponse): boolean {
+  const meta = resp.candidates?.[0]?.groundingMetadata;
+  if (!meta) return false;
+  const queries = meta.webSearchQueries?.length ?? 0;
+  const chunks = meta.groundingChunks?.length ?? 0;
+  return queries > 0 || chunks > 0;
 }
 
 const quizResponseSchema: Schema = {
@@ -309,6 +335,35 @@ const HOST_VARIETY_RULES = [
   'Vary sentence structure and vocabulary between generations — pick a fresh angle (the topic, the player history, the difficulty, the mood) rather than reusing a formula.',
 ].join('\n');
 
+// The model's training data has a hard cutoff, so it has no parametric
+// knowledge of anything after it (a current sports season, "this year"
+// anything, latest standings/records/office-holders). Stamping the real date
+// into the prompt gives it an anchor to resolve relative references against,
+// and tells it when to trust Google Search over its (stale) memory. Without
+// this the model silently answers about the most recent period it was trained
+// on — e.g. a "2025/26 season" request drifts to 2024/25.
+function formatToday(): string {
+  return new Date().toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function buildRecencyInstructions(today: string): string {
+  return [
+    `Today's date is ${today}. Treat this as the authoritative current date — your own training data is older and may be out of date.`,
+    'Many topics are time-sensitive (current sports seasons, "latest"/"this year" anything, league standings, records, prices, who currently holds a role). For these:',
+    '- Rely on the Google Search results you are grounded with, NOT your prior knowledge.',
+    '- Resolve relative or ambiguous time references against today\'s date. A sports season written like "2025/26" means the season running across the 2025 and 2026 calendar years — never answer about an earlier season.',
+    '- For any statistic (top scorer, goals, points, league position, win/loss counts), report it as of today\'s date and count only fixtures or events that have actually been completed by now. Never mix figures from different seasons.',
+    '- If the requested period is still in progress or in the future, base questions only on what has happened so far, and make the time frame explicit in the question text (e.g. "as of June 2026").',
+    '- If you are unsure of a current figure, search for it — do not silently substitute an earlier season or year.',
+  ].join('\n');
+}
+
 function buildPrompt(opts: {
   topic?: string;
   material?: string;
@@ -322,6 +377,7 @@ function buildPrompt(opts: {
   const parts = [
     `Generate a quiz with exactly ${opts.count} questions.`,
     source,
+    buildRecencyInstructions(formatToday()),
     FORMAT_INSTRUCTIONS,
     HOST_METADATA_INSTRUCTIONS,
     'Generate a short, descriptive title and a one-sentence description.',
@@ -411,6 +467,7 @@ function buildMetadataPrompt(opts: {
 
   return [
     'You are enriching quiz questions for a sarcastic but educational pub-quiz host.',
+    `Today's date is ${formatToday()}. For any time-sensitive fact, rely on Google Search results rather than your (older) training data, and make sure explanations and facts are current as of today.`,
     context,
     'For each question, return its id plus category, difficulty, explanation, factText, and tags.',
     'Difficulty must be one of easy, medium, hard.',
