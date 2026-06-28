@@ -45,6 +45,10 @@ interface GenerateJsonOpts {
   thinkingLevel?: ThinkingLevel;
   maxOutputTokens?: number;
   timeoutMs?: number;
+  // The caller's request signal. When the client disconnects (e.g. it gave up
+  // on a slow generation) this aborts the model call instead of letting the
+  // work finish and silently create a quiz nobody is waiting for.
+  abortSignal?: AbortSignal;
 }
 
 // Single entry point for structured (JSON-schema) generation. On Gemini 3.5,
@@ -52,6 +56,14 @@ interface GenerateJsonOpts {
 // grounded call returns nothing (a blocked/empty edge case with tool+schema
 // combos), it retries once without grounding so a quiz is still produced.
 async function generateJson(opts: GenerateJsonOpts): Promise<string> {
+  // One deadline SHARED across both the grounded and ungrounded attempts, rather
+  // than a fresh timeout per attempt — otherwise a grounded call that hangs to
+  // the limit and then falls back could pin a worker for ~2x the timeout. Combine
+  // it with the caller's request signal so a disconnected client cancels too.
+  const deadline = AbortSignal.timeout(opts.timeoutMs ?? AI_TEXT_TIMEOUT_MS);
+  const abortSignal = opts.abortSignal
+    ? AbortSignal.any([opts.abortSignal, deadline])
+    : deadline;
   const run = (useTools: boolean) =>
     getGenAI().models.generateContent({
       model: GEMINI_MODEL,
@@ -64,8 +76,7 @@ async function generateJson(opts: GenerateJsonOpts): Promise<string> {
         ...(opts.temperature !== undefined ? { temperature: opts.temperature } : {}),
         ...(opts.thinkingLevel ? { thinkingConfig: { thinkingLevel: opts.thinkingLevel } } : {}),
         ...(useTools ? { tools: [{ googleSearch: {} }] } : {}),
-        // A fresh per-attempt deadline so a hung call can't pin a worker.
-        abortSignal: AbortSignal.timeout(opts.timeoutMs ?? AI_TEXT_TIMEOUT_MS),
+        abortSignal,
       },
     });
 
@@ -87,11 +98,19 @@ async function generateJson(opts: GenerateJsonOpts): Promise<string> {
       }
       console.warn('[gemini] grounded generation returned empty; retrying without grounding');
     } catch (err) {
+      // An abort (client disconnected, or the shared deadline fired) means the
+      // signal is now dead — a fallback call would either hang on the
+      // already-aborted signal or do pointless work for nobody. Propagate it
+      // instead of retrying. Only a genuine grounded-specific failure falls back.
+      if (abortSignal.aborted) throw err;
       console.warn(
         '[gemini] grounded generation failed, retrying without grounding:',
         err instanceof Error ? err.message : err,
       );
     }
+    // Grounded may have returned empty exactly as the signal aborted; don't start
+    // a second call on a dead signal.
+    if (abortSignal.aborted) throw new Error('Generation aborted');
     // Last resort so a transient tool/grounding error still yields a quiz.
     return (await run(false)).text ?? '';
   }
@@ -229,13 +248,18 @@ export async function generateQuiz(opts: {
   material?: string;
   count: number;
   existingQuestions?: string[];
+  abortSignal?: AbortSignal;
 }): Promise<GeneratedQuiz> {
   const text = await generateJson({
     schema: quizResponseSchema,
     contents: buildPrompt(opts),
     grounded: true,
-    thinkingLevel: ThinkingLevel.HIGH,
+    // MEDIUM rather than HIGH: grounding already anchors factual accuracy, and
+    // HIGH thinking was the dominant cost in a 30-50s generation for little
+    // quality gain on quiz questions.
+    thinkingLevel: ThinkingLevel.MEDIUM,
     timeoutMs: AI_GENERATION_TIMEOUT_MS,
+    abortSignal: opts.abortSignal,
   });
   return parseGeneratedQuiz(text);
 }

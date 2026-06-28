@@ -6,6 +6,7 @@ import {
   insertQuestions,
   getUserCredits,
   getQuizByIdempotencyKey,
+  getRecentQuizByTopic,
   deductCredit,
   refundCredit,
 } from '@/Lib/Db/Queries';
@@ -20,6 +21,7 @@ import {
   MAX_QUESTION_COUNT,
   MAX_TOPIC_LENGTH,
   MIN_QUESTION_COUNT,
+  RETRY_DEDUP_WINDOW_MS,
 } from '@/Lib/Constants';
 
 function clampCount(value: number | undefined): number {
@@ -70,6 +72,17 @@ export async function POST(req: Request) {
     if (existing) return NextResponse.json(existing, { status: 200 });
   }
 
+  // Content-level retry guard (backstop for when the idempotency key didn't
+  // carry over — a different tab, cleared storage, etc.): if this owner just
+  // created a quiz on the same topic, return it instead of generating — and
+  // charging — again. Skipped for material-only quizzes (no stable topic key).
+  const normalizedTopic = topic?.trim().toLowerCase();
+  if (normalizedTopic) {
+    const since = new Date(Date.now() - RETRY_DEDUP_WINDOW_MS).toISOString();
+    const recent = await getRecentQuizByTopic(sessionUser.id, normalizedTopic, since);
+    if (recent) return NextResponse.json(recent, { status: 200 });
+  }
+
   // Apply any due monthly refresh, then spend one credit up front. If the
   // deduction fails the user is out of credits — bail before calling the model.
   await getUserCredits(sessionUser.id);
@@ -87,6 +100,9 @@ export async function POST(req: Request) {
       topic,
       material,
       count: clampCount(count),
+      // Cancel the model call if the client disconnects, so an abandoned slow
+      // request stops instead of finishing and silently creating a quiz.
+      abortSignal: req.signal,
     });
   } catch (err) {
     // Refund the credit if generation never produced anything.

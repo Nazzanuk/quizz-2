@@ -102,6 +102,13 @@ export const MAX_GENERATION_OUTPUT_TOKENS = 64_000;
 // Grounded, high-thinking generation can run longer than a plain text call.
 export const AI_GENERATION_TIMEOUT_MS = 90_000;
 
+// Content-level dedup backstop: if an owner creates a quiz on the same topic
+// again within this window, treat it as an accidental double / lost-response
+// retry and return the existing quiz instead of generating a new one. Short on
+// purpose — nobody deliberately regenerates the same topic within a minute, but
+// a frustrated retry of a slow generation lands well inside it.
+export const RETRY_DEDUP_WINDOW_MS = 60_000;
+
 // Bounds for user-authored quiz/question text (DB + render safety).
 export const MAX_QUIZ_TITLE_LENGTH = 200;
 export const MAX_QUIZ_DESCRIPTION_LENGTH = 2_000;
