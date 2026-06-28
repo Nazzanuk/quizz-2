@@ -102,6 +102,30 @@ export async function getQuizByIdempotencyKey(
   return row ? parseQuiz(row) : null;
 }
 
+// Content-level dedup backstop: the most recent quiz this owner created on the
+// given (already-normalized) topic since `sinceISO`. Catches accidental retries
+// whose idempotency key didn't carry over (e.g. a different tab, or storage that
+// was cleared). Topic is normalized the same way as the dedupe script.
+export async function getRecentQuizByTopic(
+  ownerId: string,
+  normalizedTopic: string,
+  sinceISO: string,
+): Promise<Quiz | null> {
+  const [row] = await db
+    .select()
+    .from(quizzes)
+    .where(
+      and(
+        eq(quizzes.ownerId, ownerId),
+        gte(quizzes.createdAt, sinceISO),
+        sql`lower(trim(${quizzes.topic})) = ${normalizedTopic}`,
+      ),
+    )
+    .orderBy(desc(quizzes.createdAt))
+    .limit(1);
+  return row ? parseQuiz(row) : null;
+}
+
 type InsertQuestion = {
   id: string;
   quizId: string;
